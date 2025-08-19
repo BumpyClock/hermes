@@ -1,0 +1,27 @@
+run:
+  go: '1.24.6'
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - govet
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - misspell
+    - unconvert
+    - gosec
+    - godot
+    - gosimple
+    - gocritic
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/postlight/parser-go
+  govet:
+    check-shadowing: true

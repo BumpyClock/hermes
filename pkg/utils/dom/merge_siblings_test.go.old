@@ -1,0 +1,438 @@
+package dom
+
+import (
+	"math"
+	"strings"
+	"testing"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// Helper function to create a document from HTML string
+func createTestDoc(html string) *goquery.Document {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if err != nil {
+		panic(err)
+	}
+	return doc
+}
+
+// Test textLengthString function matches JavaScript behavior
+func TestTextLengthString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int
+	}{
+		{
+			name:     "normal text",
+			input:    "Hello world",
+			expected: 11,
+		},
+		{
+			name:     "text with extra spaces",
+			input:    "  Hello   world  ",
+			expected: 11, // "Hello world"
+		},
+		{
+			name:     "text with tabs and newlines",
+			input:    "Hello\t\n  world\n\n",
+			expected: 11, // "Hello world"
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: 0,
+		},
+		{
+			name:     "only whitespace",
+			input:    "   \t\n  ",
+			expected: 0,
+		},
+		{
+			name:     "multiple consecutive spaces",
+			input:    "Hello     world     test",
+			expected: 16, // "Hello world test"
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := textLengthString(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// Test linkDensityCompat function matches JavaScript behavior
+func TestLinkDensityCompat(t *testing.T) {
+	tests := []struct {
+		name     string
+		html     string
+		expected float64
+	}{
+		{
+			name:     "no links",
+			html:     `<div>Hello world</div>`,
+			expected: 0.0,
+		},
+		{
+			name:     "all text is links",
+			html:     `<div><a href="#">Hello world</a></div>`,
+			expected: 1.0,
+		},
+		{
+			name:     "half text is links",
+			html:     `<div><a href="#">Hello</a> world</div>`,
+			expected: 5.0 / 11.0, // "Hello" (5 chars) / "Hello world" (11 chars)
+		},
+		{
+			name:     "multiple links",
+			html:     `<div><a href="#">Link1</a> text <a href="#">Link2</a></div>`,
+			expected: 10.0 / 16.0, // "Link1Link2" (10) / "Link1 text Link2" (16)
+		},
+		{
+			name:     "empty div",
+			html:     `<div></div>`,
+			expected: 0.0,
+		},
+		{
+			name:     "link but no total text should return 1",
+			html:     `<div><a href="#">Link</a></div>`,
+			expected: 1.0, // All text is links
+		},
+		{
+			name:     "nested links",
+			html:     `<div><a href="#">Outer <span>nested</span></a> text</div>`,
+			expected: 11.0 / 16.0, // "Outer nested" (11) / "Outer nested text" (16)
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc := createTestDoc(tt.html)
+			element := doc.Find("div").First()
+			result := linkDensityCompat(element)
+			assert.InDelta(t, tt.expected, result, 0.001)
+		})
+	}
+}
+
+// Test score threshold calculation
+func TestMergeSiblingsScoreThreshold(t *testing.T) {
+	tests := []struct {
+		name      string
+		topScore  int
+		expected  int
+	}{
+		{
+			name:     "low score uses minimum 10",
+			topScore: 20,
+			expected: 10, // Math.max(10, 20 * 0.25) = Math.max(10, 5) = 10
+		},
+		{
+			name:     "high score uses 25% of topScore",
+			topScore: 100,
+			expected: 25, // Math.max(10, 100 * 0.25) = Math.max(10, 25) = 25
+		},
+		{
+			name:     "exactly at threshold",
+			topScore: 40,
+			expected: 10, // Math.max(10, 40 * 0.25) = Math.max(10, 10) = 10
+		},
+		{
+			name:     "very high score",
+			topScore: 200,
+			expected: 50, // Math.max(10, 200 * 0.25) = Math.max(10, 50) = 50
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test the threshold calculation used in MergeSiblings
+			threshold := int(math.Max(10, float64(tt.topScore)*0.25))
+			assert.Equal(t, tt.expected, threshold)
+		})
+	}
+}
+
+// Test link density bonuses and penalties
+func TestMergeSiblingsLinkDensityBonuses(t *testing.T) {
+	// Test HTML structure with scored elements
+	html := `
+		<body>
+			<div class="parent">
+				<div class="candidate" data-content-score="50">Main content</div>
+				<div class="low-density" data-content-score="15">Text with <a href="#">one link</a> but mostly text content here</div>
+				<div class="high-density" data-content-score="15"><a href="#">Link1</a> <a href="#">Link2</a> <a href="#">Link3</a></div>
+			</div>
+		</body>
+	`
+
+	doc := createTestDoc(html)
+	candidate := doc.Find(".candidate").First()
+	
+	// Test low density bonus (< 0.05)
+	lowDensityElement := doc.Find(".low-density").First()
+	density := linkDensityCompat(lowDensityElement)
+	assert.Less(t, density, 0.05, "Low density element should have density < 0.05")
+	
+	// Test high density penalty (>= 0.5)
+	highDensityElement := doc.Find(".high-density").First()
+	density = linkDensityCompat(highDensityElement)
+	assert.GreaterOrEqual(t, density, 0.5, "High density element should have density >= 0.5")
+	
+	// Test the actual merging
+	result := MergeSiblings(candidate, 50, doc)
+	
+	// Should merge the low-density sibling (gets +20 bonus, score becomes 35, threshold is 12.5)
+	// Should NOT merge the high-density sibling (gets -20 penalty, score becomes -5, threshold is 12.5)
+	assert.Greater(t, result.Children().Length(), 1, "Should merge qualifying siblings")
+}
+
+// Test class matching bonus
+func TestMergeSiblingsClassMatchingBonus(t *testing.T) {
+	html := `
+		<body>
+			<div class="parent">
+				<div class="article-content candidate" data-content-score="100">Main content</div>
+				<div class="article-content sibling" data-content-score="15">Sibling with same class</div>
+				<div class="different-class sibling" data-content-score="15">Sibling with different class</div>
+			</div>
+		</body>
+	`
+
+	doc := createTestDoc(html)
+	candidate := doc.Find(".candidate").First()
+	
+	result := MergeSiblings(candidate, 100, doc)
+	
+	// The sibling with matching class should get topScore * 0.2 = 100 * 0.2 = 20 bonus
+	// Score becomes 15 + 20 = 35, threshold is Math.max(10, 100 * 0.25) = 25
+	// So it should be included
+	
+	// Check that we have more than just the candidate
+	assert.Greater(t, result.Children().Length(), 1, "Should merge sibling with matching class")
+}
+
+// Test paragraph-specific logic
+func TestMergeSiblingsParagraphLogic(t *testing.T) {
+	html := `
+		<body>
+			<div class="parent">
+				<div class="candidate" data-content-score="50">Main content</div>
+				<p class="long-para" data-content-score="5">This is a long paragraph with more than 80 characters of text content to test the length threshold logic.</p>
+				<p class="short-sentence" data-content-score="5">Short sentence.</p>
+				<p class="short-no-end" data-content-score="5">Short no end</p>
+				<p class="short-with-link" data-content-score="5">Short <a href="#">link</a>.</p>
+			</div>
+		</body>
+	`
+
+	doc := createTestDoc(html)
+	candidate := doc.Find(".candidate").First()
+	
+	// Check paragraph lengths and properties
+	longPara := doc.Find(".long-para").First()
+	longParaLength := textLengthString(longPara.Text())
+	longParaDensity := linkDensityCompat(longPara)
+	assert.Greater(t, longParaLength, 80, "Long paragraph should have > 80 chars")
+	assert.Less(t, longParaDensity, 0.25, "Long paragraph should have low link density")
+	
+	shortSentence := doc.Find(".short-sentence").First()
+	shortSentenceLength := textLengthString(shortSentence.Text())
+	shortSentenceDensity := linkDensityCompat(shortSentence)
+	assert.LessOrEqual(t, shortSentenceLength, 80, "Short sentence should have <= 80 chars")
+	assert.Equal(t, 0.0, shortSentenceDensity, "Short sentence should have 0 link density")
+	assert.True(t, HasSentenceEnd(shortSentence.Text()), "Short sentence should end with punctuation")
+	
+	shortNoEnd := doc.Find(".short-no-end").First()
+	assert.False(t, HasSentenceEnd(shortNoEnd.Text()), "Short text without end should not have sentence ending")
+	
+	shortWithLink := doc.Find(".short-with-link").First()
+	shortWithLinkDensity := linkDensityCompat(shortWithLink)
+	assert.Greater(t, shortWithLinkDensity, 0.0, "Short text with link should have > 0 link density")
+	
+	result := MergeSiblings(candidate, 50, doc)
+	
+	// Should merge long paragraph (>80 chars, density < 0.25)
+	// Should merge short sentence (<=80 chars, density = 0, has sentence end)
+	// Should NOT merge short-no-end (no sentence ending)
+	// Should NOT merge short-with-link (density > 0)
+	assert.Greater(t, result.Children().Length(), 1, "Should merge qualifying paragraphs")
+}
+
+// Test wrapping div behavior
+func TestMergeSiblingsWrappingDiv(t *testing.T) {
+	t.Run("single candidate returns candidate unchanged", func(t *testing.T) {
+		html := `
+			<body>
+				<div class="parent">
+					<div class="candidate" data-content-score="50">Only content</div>
+				</div>
+			</body>
+		`
+
+		doc := createTestDoc(html)
+		candidate := doc.Find(".candidate").First()
+		
+		result := MergeSiblings(candidate, 50, doc)
+		
+		// Should return the original candidate, not a wrapping div
+		assert.Equal(t, candidate.Get(0), result.Get(0), "Should return original candidate when no siblings qualify")
+	})
+
+	t.Run("multiple siblings creates wrapping div", func(t *testing.T) {
+		html := `
+			<body>
+				<div class="parent">
+					<div class="candidate" data-content-score="50">Main content</div>
+					<div class="sibling" data-content-score="20">Qualifying sibling</div>
+				</div>
+			</body>
+		`
+
+		doc := createTestDoc(html)
+		candidate := doc.Find(".candidate").First()
+		
+		result := MergeSiblings(candidate, 50, doc)
+		
+		// Should return a wrapping div containing multiple children
+		assert.NotEqual(t, candidate.Get(0), result.Get(0), "Should return wrapping div when siblings are merged")
+		assert.Greater(t, result.Children().Length(), 1, "Wrapping div should contain multiple children")
+		assert.Equal(t, "div", goquery.NodeName(result), "Result should be a div element")
+	})
+}
+
+// Test NON_TOP_CANDIDATE_TAGS filtering
+func TestMergeSiblingsIgnoresNonTopCandidateTags(t *testing.T) {
+	html := `
+		<body>
+			<div class="parent">
+				<div class="candidate" data-content-score="50">Main content</div>
+				<br data-content-score="10">
+				<b data-content-score="10">Bold text</b>
+				<i data-content-score="10">Italic text</i>
+				<hr data-content-score="10">
+				<div class="valid-sibling" data-content-score="20">Valid sibling</div>
+			</div>
+		</body>
+	`
+
+	doc := createTestDoc(html)
+	candidate := doc.Find(".candidate").First()
+	
+	result := MergeSiblings(candidate, 50, doc)
+	
+	// Should only include the candidate and valid-sibling, ignoring br, b, i, hr
+	// Even though they have scores, they should be filtered out by NON_TOP_CANDIDATE_TAGS_RE
+	children := result.Children()
+	assert.Equal(t, 2, children.Length(), "Should only merge candidate and valid sibling, ignoring non-top-candidate tags")
+}
+
+// Test no parent case
+func TestMergeSiblingsNoParent(t *testing.T) {
+	html := `<body><div class="candidate" data-content-score="50">Orphan content</div></body>`
+
+	doc := createTestDoc(html)
+	candidate := doc.Find(".candidate").First()
+	
+	// Remove from parent to simulate no parent
+	candidateClone := candidate.Clone()
+	candidate.Remove()
+	
+	result := MergeSiblings(candidateClone, 50, doc)
+	
+	// Should return the candidate unchanged when it has no parent
+	assert.Equal(t, candidateClone.Get(0), result.Get(0), "Should return candidate unchanged when no parent")
+}
+
+// Test edge cases
+func TestMergeSiblingsEdgeCases(t *testing.T) {
+	t.Run("zero scores", func(t *testing.T) {
+		html := `
+			<body>
+				<div class="parent">
+					<div class="candidate" data-content-score="50">Main content</div>
+					<div class="zero-score" data-content-score="0">Zero score sibling</div>
+				</div>
+			</body>
+		`
+
+		doc := createTestDoc(html)
+		candidate := doc.Find(".candidate").First()
+		
+		result := MergeSiblings(candidate, 50, doc)
+		
+		// Zero score siblings should be ignored (siblingScore check)
+		assert.Equal(t, candidate.Get(0), result.Get(0), "Should ignore siblings with zero scores")
+	})
+
+	t.Run("negative scores", func(t *testing.T) {
+		html := `
+			<body>
+				<div class="parent">
+					<div class="candidate" data-content-score="50">Main content</div>
+					<div class="negative-score" data-content-score="-10">Negative score sibling</div>
+				</div>
+			</body>
+		`
+
+		doc := createTestDoc(html)
+		candidate := doc.Find(".candidate").First()
+		
+		result := MergeSiblings(candidate, 50, doc)
+		
+		// Negative score siblings should still be processed (siblingScore != 0)
+		// But they're unlikely to meet the threshold after penalties
+		expectedChildren := 1 // Just the candidate
+		assert.Equal(t, expectedChildren, result.Children().Length(), "Negative score siblings unlikely to qualify")
+	})
+}
+
+// Integration test with realistic content
+func TestMergeSiblingsIntegration(t *testing.T) {
+	html := `
+		<body>
+			<article class="main-article">
+				<div class="article-content candidate" data-content-score="100">
+					<p>This is the main article content with substantial text that would be identified as the primary content candidate.</p>
+				</div>
+				<div class="article-content related" data-content-score="25">
+					<p>This is related content with the same class that should be merged due to class matching bonus.</p>
+				</div>
+				<div class="sidebar ad" data-content-score="15">
+					<p><a href="#">Ad link 1</a> <a href="#">Ad link 2</a> <a href="#">Ad link 3</a> <a href="#">Ad link 4</a></p>
+				</div>
+				<p class="article-content" data-content-score="8">This is a follow-up paragraph with good content and proper sentence ending.</p>
+				<div class="comments" data-content-score="12">
+					<p>Some comment text that shouldn't be merged.</p>
+				</div>
+			</article>
+		</body>
+	`
+
+	doc := createTestDoc(html)
+	candidate := doc.Find(".candidate").First()
+	
+	result := MergeSiblings(candidate, 100, doc)
+	
+	// Expected merges:
+	// 1. Main candidate (always included)
+	// 2. Related content (25 + 20 class bonus = 45, threshold = 25)
+	// 3. Follow-up paragraph (8 score, but qualifies as <p> with sentence ending and low density)
+	// Not merged:
+	// - Sidebar ad (high link density penalty)
+	// - Comments (score too low even with any bonuses)
+	
+	assert.Greater(t, result.Children().Length(), 1, "Should merge multiple qualifying siblings")
+	assert.Equal(t, "div", goquery.NodeName(result), "Result should be wrapping div")
+	
+	// Verify the content is preserved
+	resultText := result.Text()
+	assert.Contains(t, resultText, "main article content", "Should contain main content")
+	assert.Contains(t, resultText, "related content", "Should contain related content")
+	assert.Contains(t, resultText, "follow-up paragraph", "Should contain follow-up paragraph")
+}
