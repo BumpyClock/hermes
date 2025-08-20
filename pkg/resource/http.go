@@ -4,9 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
+
+	"github.com/BumpyClock/parser-go/pkg/pools"
 )
 
 // HTTPClient provides a configured HTTP client for fetching resources
@@ -94,9 +95,8 @@ func (c *HTTPClient) doRequest(url string) (*Response, error) {
 	
 	// Check for HTTP errors
 	if resp.StatusCode >= 400 {
-		// Read error response body before closing for better error reporting
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		// Read error response body using pooled buffer for better error reporting
+		body, err := pools.GlobalResponseBodyPool.ReadResponseBody(resp)
 		if err != nil {
 			return nil, fmt.Errorf("HTTP %d: %s (failed to read error response)", resp.StatusCode, resp.Status)
 		}
@@ -108,9 +108,8 @@ func (c *HTTPClient) doRequest(url string) (*Response, error) {
 		}, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
 	
-	// Read response body
-	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	// Read response body using pooled buffer for efficiency
+	body, err := pools.GlobalResponseBodyPool.ReadResponseBody(resp)
 	if err != nil {
 		return nil, fmt.Errorf("reading response body: %w", err)
 	}

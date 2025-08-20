@@ -5,30 +5,15 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/BumpyClock/parser-go/pkg/cache"
+	"github.com/BumpyClock/parser-go/pkg/pools"
 )
 
 // LinkDensity calculates the density of links in an element
 // Returns the ratio of link text length to total text length
 func LinkDensity(element *goquery.Selection) float64 {
-	totalText := strings.TrimSpace(element.Text())
-	if len(totalText) == 0 {
-		return 0
-	}
-
-	var linkTextBuilder strings.Builder
-	element.Find("a").Each(func(index int, link *goquery.Selection) {
-		linkTextBuilder.WriteString(link.Text())
-	})
-	linkText := linkTextBuilder.String()
-
-	linkLength := len(strings.TrimSpace(linkText))
-	totalLength := len(totalText)
-
-	if totalLength == 0 {
-		return 0
-	}
-
-	return float64(linkLength) / float64(totalLength)
+	// Use the optimized cached version for better performance
+	return cache.OptimizedLinkDensity(element)
 }
 
 // NodeIsSufficient determines if a node has enough content to be considered sufficient
@@ -44,7 +29,8 @@ func WithinComment(element *goquery.Selection) bool {
 	// Check if element or any parent has comment-related classes/IDs
 	current := element
 	for current.Length() > 0 {
-		var classAndIdBuilder strings.Builder
+		// Use pooled string builder for efficiency
+		classAndIdBuilder := pools.GlobalStringBuilderPool.Get()
 		if class, exists := current.Attr("class"); exists {
 			classAndIdBuilder.WriteString(class)
 			classAndIdBuilder.WriteString(" ")
@@ -53,6 +39,7 @@ func WithinComment(element *goquery.Selection) bool {
 			classAndIdBuilder.WriteString(id)
 		}
 		classAndId := classAndIdBuilder.String()
+		pools.GlobalStringBuilderPool.Put(classAndIdBuilder)
 
 		// Check for comment indicators
 		if strings.Contains(strings.ToLower(classAndId), "comment") ||

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/BumpyClock/parser-go/pkg/pools"
 )
 
 // Resource provides functionality for fetching and preparing HTML documents
@@ -143,8 +144,8 @@ func (r *Resource) EncodeDoc(content []byte, contentType string, alreadyDecoded 
 		}
 	}
 
-	// Create initial document
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
+	// Create initial document using pooled document creation
+	doc, err := pools.GlobalDocumentPool.Get(strings.NewReader(htmlContent))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
@@ -199,8 +200,8 @@ func (r *Resource) recheckEncoding(content []byte, doc *goquery.Document, header
 				return doc, nil // Return original doc if re-encoding fails
 			}
 
-			// Re-parse with correct encoding
-			newDoc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
+			// Re-parse with correct encoding using pooled document creation
+			newDoc, err := pools.GlobalDocumentPool.Get(strings.NewReader(htmlContent))
 			if err != nil {
 				return doc, nil // Return original doc if re-parsing fails
 			}
