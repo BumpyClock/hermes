@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebSearch",
+      "Bash(npm outdated:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(code:*)",
+      "Bash(go mod init:*)",
+      "Bash(go mod:*)",
+      "Bash(cp:*)",
+      "Bash(find:*)",
+      "Bash(go test:*)",
+      "Bash(go get:*)",
+      "Bash(make:*)",
+      "Bash(./bin/parser:*)",
+      "Bash(go build:*)",
+      "Bash(go run:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Bash(test:*)",
+      "Bash(grep:*)",
+      "Bash(node:*)",
+      "Bash(timeout 30s go test ./pkg/utils/text -run \"TestNormalizeSpaces|TestRemoveAnchor|TestPageNumFromUrl|TestExtractFromUrl\" -v)",
+      "Bash(go vet:*)",
+      "Bash(go doc:*)",
+      "mcp__python-sandbox__run_python_code",
+      "Bash(go list:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "mcp__sequentialthinking__sequentialthinking",
+      "mcp__fetch__fetch"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\adity\\Projects",
+      "C:\\mnt\\c\\Users\\adity\\Projects\\parser",
+      "C:\\Users\\adity\\.claude",
+      "C:\\c\\Users\\adity\\Projects\\parser\\parser-go",
+      "C:\\c\\Users\\adity\\Projects\\parser"
+    ]
+  }
+}
