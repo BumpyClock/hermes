@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/postlight/parser-go/pkg/resource"
+	"github.com/BumpyClock/parser-go/pkg/resource"
+	"github.com/BumpyClock/parser-go/pkg/utils/security"
 )
 
 // Mercury is the main parser implementation
@@ -58,13 +59,9 @@ func (m *Mercury) Parse(targetURL string, opts ParserOptions) (*Result, error) {
 		return nil, fmt.Errorf("extraction failed: %w", err)
 	}
 
-	// TODO: Handle multi-page articles if needed
-	// if opts.FetchAllPages && result.NextPageURL != "" {
-	//     result, err = m.collectAllPages(result, extractor, opts)
-	//     if err != nil {
-	//         return nil, fmt.Errorf("failed to collect pages: %w", err)
-	//     }
-	// }
+	// Multi-page collection is not implemented in this version
+	// This feature requires implementing next page URL detection
+	// and recursive content aggregation
 
 	return result, nil
 }
@@ -97,10 +94,19 @@ func (m *Mercury) ParseHTML(html string, targetURL string, opts ParserOptions) (
 }
 
 func validateURL(u *url.URL) bool {
-	return u.Scheme != "" && u.Host != ""
+	// Use the enhanced security validation
+	if err := security.ValidateURL(u.String()); err != nil {
+		return false
+	}
+	
+	// Additional basic checks
+	return security.IsValidWebURL(u)
 }
 
 func (m *Mercury) collectAllPages(result *Result, extractor Extractor, opts ParserOptions) (*Result, error) {
-	// TODO: Implementation for multi-page collection
+	// Multi-page collection not implemented - would require:
+	// 1. Next page URL detection from content
+	// 2. Recursive fetching and content aggregation
+	// 3. Deduplication and proper content merging
 	return result, nil
 }

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/parser-go/pkg/utils/dom"
 )
 
 // URL extraction constants matching JavaScript behavior exactly

@@ -4,7 +4,7 @@
 package extractors
 
 import (
-	"github.com/postlight/parser-go/pkg/utils"
+	"github.com/BumpyClock/parser-go/pkg/utils"
 )
 
 // GetAllExtractors returns a map of all custom extractors keyed by domain
@@ -41,16 +41,8 @@ func GetAllExtractors() map[string]Extractor {
 // getCustomExtractors returns all available custom extractors
 // JavaScript equivalent: import * as CustomExtractors from './custom/index';
 func getCustomExtractors() []Extractor {
-	return []Extractor{
-		// Foundation extractors - more will be added here
-		&MediumExtractor{},
-		&BloggerExtractor{},
-		// TODO: Add remaining 142+ custom extractors here
-		// &NYTimesExtractor{},
-		// &WashingtonPostExtractor{},
-		// &CNNExtractor{},
-		// ... etc
-	}
+	// Use the adapter to get all 160+ custom extractors
+	return CreateCustomExtractorAdapters()
 }
 
 // mergeSupportedDomainsForExtractor applies mergeSupportedDomains logic to a single extractor
@@ -86,8 +78,12 @@ func extractorToMockExtractor(extractor Extractor) utils.MockExtractor {
 
 // getSupportedDomains extracts supported domains from an extractor if available
 func getSupportedDomains(extractor Extractor) []string {
-	// For now, return empty slice - in real implementation, extractors would have this info
-	// This would be populated from the actual extractor configurations
+	// Check if this is a CustomExtractorAdapter
+	if adapter, ok := extractor.(*CustomExtractorAdapter); ok {
+		return adapter.GetSupportedDomains()
+	}
+	
+	// Legacy support for old hardcoded extractors
 	switch extractor.(type) {
 	case *MediumExtractor:
 		// Medium might support multiple domains in the future
@@ -102,6 +98,13 @@ func getSupportedDomains(extractor Extractor) []string {
 
 // getExtractorName returns a human-readable name for the extractor
 func getExtractorName(extractor Extractor) string {
+	// Check if this is a CustomExtractorAdapter
+	if adapter, ok := extractor.(*CustomExtractorAdapter); ok {
+		// Use the domain as the name for custom extractors
+		return adapter.GetDomain() + "Extractor"
+	}
+	
+	// Legacy support for old hardcoded extractors
 	switch extractor.(type) {
 	case *MediumExtractor:
 		return "MediumExtractor"

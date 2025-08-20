@@ -6,7 +6,7 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/postlight/parser-go/pkg/parser"
+	"github.com/BumpyClock/parser-go/pkg/parser"
 )
 
 func TestSimpleHTMLDebug(t *testing.T) {

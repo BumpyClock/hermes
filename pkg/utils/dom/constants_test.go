@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/postlight/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/parser-go/pkg/utils/dom"
 )
 
 func TestConstants_RegexPatterns(t *testing.T) {

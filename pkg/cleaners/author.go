@@ -6,7 +6,7 @@ package cleaners
 import (
 	"strings"
 	
-	"github.com/postlight/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/parser-go/pkg/utils/text"
 )
 
 // CleanAuthor takes an author string (like 'By David Smith ') and cleans it to

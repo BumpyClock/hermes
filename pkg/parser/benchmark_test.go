@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/postlight/parser-go/pkg/parser"
+	"github.com/BumpyClock/parser-go/pkg/parser"
 )
 
 // BenchmarkParseHTML tests parsing performance with real HTML fixtures

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/postlight/parser-go/pkg/resource"
+	"github.com/BumpyClock/parser-go/pkg/resource"
 )
 
 func TestResource_Create_WithPreparedHTML(t *testing.T) {
@@ -143,7 +143,7 @@ func TestFetchResource_HandlesSuccess(t *testing.T) {
 	
 	require.NoError(t, err)
 	assert.False(t, result.IsError())
-	assert.Equal(t, htmlContent, string(result.Body))
+	assert.Equal(t, htmlContent, string(result.Response.Body))
 	assert.Equal(t, 200, result.Response.StatusCode)
 }
 
@@ -232,12 +232,12 @@ func TestResource_GenerateDoc_InvalidContent(t *testing.T) {
 	r := resource.NewResource()
 	
 	result := &resource.FetchResult{
-		Body: []byte("not html content"),
 		Response: &resource.Response{
 			StatusCode: 200,
 			Headers: http.Header{
 				"Content-Type": []string{"application/json"},
 			},
+			Body: []byte("not html content"),
 		},
 	}
 	
@@ -251,18 +251,18 @@ func TestResource_GenerateDoc_EmptyDocument(t *testing.T) {
 	
 	// Use malformed HTML that won't parse correctly
 	result := &resource.FetchResult{
-		Body: []byte("<html><head></head><body></body></html>"),
 		Response: &resource.Response{
 			StatusCode: 200,
 			Headers: http.Header{
 				"Content-Type": []string{"text/html"},
 			},
+			Body: []byte("<html><head></head><body></body></html>"),
 		},
 	}
 	
 	// This should actually succeed since goquery is more lenient
 	// Let's test with truly invalid HTML instead
-	result.Body = []byte("not html at all")
+	result.Response.Body = []byte("not html at all")
 	
 	doc, err := r.GenerateDoc(result)
 	// Even this might parse, so let's check if we get a document
@@ -313,12 +313,12 @@ func TestResource_Create_EncodingMismatch(t *testing.T) {
 	
 	// Simulate server response with different encoding
 	result := &resource.FetchResult{
-		Body: []byte(htmlWithMetaCharset),
 		Response: &resource.Response{
 			StatusCode: 200,
 			Headers: http.Header{
 				"Content-Type": []string{"text/html; charset=utf-8"},
 			},
+			Body: []byte(htmlWithMetaCharset),
 		},
 		AlreadyDecoded: false,
 	}

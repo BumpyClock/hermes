@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/postlight/parser-go/pkg/resource"
+	"github.com/BumpyClock/parser-go/pkg/resource"
 )
 
 func TestResource_InternationalContent_UTF8(t *testing.T) {

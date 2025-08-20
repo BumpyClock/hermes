@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
@@ -21,18 +22,18 @@ type Resource struct{}
 // - headers: Custom headers to include in the request
 func (r *Resource) Create(rawURL string, preparedResponse string, parsedURL *url.URL, headers map[string]string) (*goquery.Document, error) {
 	var result *FetchResult
-	
+
 	if preparedResponse != "" {
 		// Use provided HTML
 		result = &FetchResult{
-			Body: []byte(preparedResponse),
 			Response: &Response{
 				StatusCode: 200,
 				Status:     "OK",
-				Headers:    map[string][]string{
-					"Content-Type": {"text/html"},
+				Headers: map[string][]string{
+					"Content-Type":   {"text/html"},
 					"Content-Length": {fmt.Sprintf("%d", len(preparedResponse))},
 				},
+				Body: []byte(preparedResponse),
 			},
 			AlreadyDecoded: true,
 		}
@@ -44,48 +45,94 @@ func (r *Resource) Create(rawURL string, preparedResponse string, parsedURL *url
 			return nil, fmt.Errorf("failed to fetch resource: %w", err)
 		}
 	}
-	
+
 	if result.IsError() {
 		return nil, fmt.Errorf("resource fetch failed: %s", result.Message)
 	}
-	
+
 	return r.GenerateDoc(result)
 }
 
 // GenerateDoc creates a goquery Document from fetch result
-// Handles encoding detection and applies DOM preparation pipeline
+// Handles encoding detection and applies DOM preparation pipeline with resource limits
 func (r *Resource) GenerateDoc(result *FetchResult) (*goquery.Document, error) {
+	// Create context with timeout for processing
+	ctx, cancel := context.WithTimeout(context.Background(), MAX_PROCESSING_TIME)
+	defer cancel()
+
+	return r.GenerateDocWithContext(ctx, result)
+}
+
+// GenerateDocWithContext creates a document with context for timeout control
+func (r *Resource) GenerateDocWithContext(ctx context.Context, result *FetchResult) (*goquery.Document, error) {
 	contentType := result.Response.GetContentType()
-	
+
 	// Check if content appears to be HTML/text
 	if !IsTextContent(contentType) {
 		return nil, fmt.Errorf("content does not appear to be text, got: %s", contentType)
 	}
-	
+
+	// Validate resource limits before processing
+	if err := r.ValidateResourceLimits(result.Response.Body); err != nil {
+		return nil, fmt.Errorf("resource limits exceeded: %w", err)
+	}
+
 	// Handle encoding and create initial document
-	doc, err := r.EncodeDoc(result.Body, contentType, result.AlreadyDecoded)
+	doc, err := r.EncodeDoc(result.Response.Body, contentType, result.AlreadyDecoded)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode document: %w", err)
 	}
-	
+
 	// Check if document parsed correctly
 	if doc.Find("*").Length() == 0 {
 		return nil, fmt.Errorf("no children found, likely a bad parse")
 	}
-	
-	// Apply DOM preparation pipeline
-	doc = NormalizeMetaTags(doc)
-	doc = ConvertLazyLoadedImages(doc)
-	doc = Clean(doc)
-	
+
+	// Validate DOM complexity
+	if err := r.ValidateDOMComplexity(doc); err != nil {
+		return nil, fmt.Errorf("DOM too complex: %w", err)
+	}
+
+	// Apply DOM preparation pipeline with context checking
+	select {
+	case <-ctx.Done():
+		return nil, fmt.Errorf("document processing timed out")
+	default:
+		doc = NormalizeMetaTags(doc)
+		doc = ConvertLazyLoadedImages(doc)
+		doc = Clean(doc)
+	}
+
 	return doc, nil
+}
+
+// ValidateResourceLimits checks if the resource is within safe processing limits
+func (r *Resource) ValidateResourceLimits(body []byte) error {
+	bodySize := len(body)
+
+	if bodySize > MAX_DOCUMENT_SIZE {
+		return fmt.Errorf("document size %d bytes exceeds maximum %d bytes", bodySize, MAX_DOCUMENT_SIZE)
+	}
+
+	return nil
+}
+
+// ValidateDOMComplexity checks if the DOM has too many elements
+func (r *Resource) ValidateDOMComplexity(doc *goquery.Document) error {
+	elementCount := doc.Find("*").Length()
+
+	if elementCount > MAX_DOM_ELEMENTS {
+		return fmt.Errorf("DOM has %d elements, exceeds maximum %d", elementCount, MAX_DOM_ELEMENTS)
+	}
+
+	return nil
 }
 
 // EncodeDoc handles character encoding detection and document creation
 func (r *Resource) EncodeDoc(content []byte, contentType string, alreadyDecoded bool) (*goquery.Document, error) {
 	var htmlContent string
 	var err error
-	
+
 	if alreadyDecoded {
 		htmlContent = string(content)
 	} else {
@@ -95,13 +142,13 @@ func (r *Resource) EncodeDoc(content []byte, contentType string, alreadyDecoded 
 			return nil, fmt.Errorf("encoding detection failed: %w", err)
 		}
 	}
-	
+
 	// Create initial document
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
-	
+
 	// After first parse, check for encoding mismatch in meta tags
 	if !alreadyDecoded {
 		doc, err = r.recheckEncoding(content, doc, contentType)
@@ -109,7 +156,7 @@ func (r *Resource) EncodeDoc(content []byte, contentType string, alreadyDecoded 
 			return nil, err
 		}
 	}
-	
+
 	return doc, nil
 }
 
@@ -118,10 +165,10 @@ func (r *Resource) EncodeDoc(content []byte, contentType string, alreadyDecoded 
 func (r *Resource) recheckEncoding(content []byte, doc *goquery.Document, headerContentType string) (*goquery.Document, error) {
 	// Get encoding from Content-Type header
 	headerEncoding := getEncodingFromContentType(headerContentType)
-	
+
 	// Check for meta charset in document
 	var metaContentType string
-	
+
 	// Look for <meta http-equiv="content-type" content="...">
 	doc.Find("meta[http-equiv]").Each(func(i int, s *goquery.Selection) {
 		httpEquiv, _ := s.Attr("http-equiv")
@@ -131,37 +178,37 @@ func (r *Resource) recheckEncoding(content []byte, doc *goquery.Document, header
 			}
 		}
 	})
-	
+
 	// Also check for <meta charset="...">
 	if metaContentType == "" {
 		if charset, exists := doc.Find("meta[charset]").Attr("charset"); exists {
 			metaContentType = "charset=" + charset
 		}
 	}
-	
+
 	// If we found meta charset, check if it differs from header
 	if metaContentType != "" {
 		metaEncoding := getEncodingFromContentType(metaContentType)
-		
+
 		// If encodings differ, re-decode with the correct one
-		if metaEncoding != nil && headerEncoding != nil && 
-		   metaEncoding != headerEncoding {
-			
+		if metaEncoding != nil && headerEncoding != nil &&
+			metaEncoding != headerEncoding {
+
 			htmlContent, err := DetectAndDecodeText(content, metaContentType)
 			if err != nil {
 				return doc, nil // Return original doc if re-encoding fails
 			}
-			
+
 			// Re-parse with correct encoding
 			newDoc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
 			if err != nil {
 				return doc, nil // Return original doc if re-parsing fails
 			}
-			
+
 			return newDoc, nil
 		}
 	}
-	
+
 	return doc, nil
 }
 

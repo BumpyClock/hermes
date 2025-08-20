@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/extractors/generic"
+	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
 )
 
 func TestDateExtraction_Debug(t *testing.T) {

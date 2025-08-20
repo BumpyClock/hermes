@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,6 +30,8 @@ func NewHTTPClient(headers map[string]string) *HTTPClient {
 				MaxIdleConns:       10,
 				IdleConnTimeout:    90 * time.Second,
 				DisableCompression: false,
+				ForceAttemptHTTP2:  false, // Disable HTTP/2 to avoid stuck connection bug
+				TLSNextProto:       make(map[string]func(authority string, c *tls.Conn) http.RoundTripper), // Prevent HTTP/2 negotiation
 			},
 		},
 		headers: headers,
@@ -77,23 +80,12 @@ func (c *HTTPClient) doRequest(url string) (*Response, error) {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 	
-	// Set default headers (using our constants)
-	for key, value := range REQUEST_HEADERS {
+	// Set all headers using centralized configuration
+	allHeaders := MergeHeaders(c.headers)
+	for key, value := range allHeaders {
 		req.Header.Set(key, value)
 	}
-	
-	// Set additional standard headers
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 	// Note: Accept-Encoding is handled automatically by Go's HTTP client when DisableCompression=false
-	req.Header.Set("DNT", "1")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Upgrade-Insecure-Requests", "1")
-	
-	// Add custom headers
-	for key, value := range c.headers {
-		req.Header.Set(key, value)
-	}
 	
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -102,11 +94,17 @@ func (c *HTTPClient) doRequest(url string) (*Response, error) {
 	
 	// Check for HTTP errors
 	if resp.StatusCode >= 400 {
+		// Read error response body before closing for better error reporting
+		body, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("HTTP %d: %s (failed to read error response)", resp.StatusCode, resp.Status)
+		}
 		return &Response{
 			StatusCode: resp.StatusCode,
 			Status:     resp.Status,
 			Headers:    resp.Header,
+			Body:       body,
 		}, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
 	

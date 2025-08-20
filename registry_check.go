@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/postlight/parser-go/pkg/extractors"
-	"github.com/postlight/parser-go/pkg/extractors/custom"
+	"github.com/BumpyClock/parser-go/pkg/extractors"
+	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
 )
 
 func main() {

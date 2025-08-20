@@ -1,12 +1,14 @@
 package resource
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // FetchResource fetches a resource from the given URL with retry logic
@@ -32,14 +34,8 @@ func FetchResource(rawURL string, parsedURL *url.URL, headers map[string]string)
 		}, nil
 	}
 
-	// Merge default headers with custom headers
-	allHeaders := make(map[string]string)
-	for k, v := range REQUEST_HEADERS {
-		allHeaders[k] = v
-	}
-	for k, v := range headers {
-		allHeaders[k] = v
-	}
+	// Use centralized header merging
+	allHeaders := MergeHeaders(headers)
 
 	// Create enhanced HTTP client
 	client := &HTTPClient{
@@ -48,8 +44,10 @@ func FetchResource(rawURL string, parsedURL *url.URL, headers map[string]string)
 			Jar:     jar,
 			Transport: &http.Transport{
 				MaxIdleConns:       10,
-				IdleConnTimeout:    90,
+				IdleConnTimeout:    90 * time.Second,
 				DisableCompression: false,
+				ForceAttemptHTTP2:  false, // Disable HTTP/2 to avoid stuck connection bug
+				TLSNextProto:       make(map[string]func(authority string, c *tls.Conn) http.RoundTripper), // Prevent HTTP/2 negotiation
 			},
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				if len(via) >= 5 {
@@ -79,7 +77,6 @@ func FetchResource(rawURL string, parsedURL *url.URL, headers map[string]string)
 	}
 
 	return &FetchResult{
-		Body:     response.Body,
 		Response: response,
 	}, nil
 }
@@ -126,7 +123,6 @@ func BaseDomain(host string) string {
 
 // FetchResult represents the result of fetching a resource
 type FetchResult struct {
-	Body          []byte
 	Response      *Response
 	Error         bool
 	Message       string

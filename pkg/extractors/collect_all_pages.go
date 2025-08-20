@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/extractors/generic"
-	"github.com/postlight/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
+	"github.com/BumpyClock/parser-go/pkg/utils/text"
 )
 
 // ResourceInterface defines the interface for resource fetching

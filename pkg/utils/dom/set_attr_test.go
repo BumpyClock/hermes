@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/postlight/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/parser-go/pkg/utils/dom"
 )
 
 func TestSetAttr_CheerioStyleNode(t *testing.T) {

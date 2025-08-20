@@ -11,9 +11,10 @@ import (
 
 	"github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/cleaners"
-	"github.com/postlight/parser-go/pkg/extractors/generic"
-	"github.com/postlight/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/parser-go/pkg/cleaners"
+	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
+	"github.com/BumpyClock/parser-go/pkg/utils/security"
+	"github.com/BumpyClock/parser-go/pkg/utils/text"
 )
 
 // extractAllFields orchestrates the complete extraction pipeline
@@ -90,14 +91,15 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 		CleanConditionally:      true,
 	}
 	if content := contentExtractor.Extract(contentParams, contentOpts); content != "" {
-		// Apply content type conversion
+		// Apply content type conversion with security sanitization
 		switch strings.ToLower(opts.ContentType) {
 		case "text":
 			result.Content = text.NormalizeSpaces(stripHTMLTags(content))
 		case "markdown":
 			result.Content = convertToMarkdown(content)
 		default: // "html" or anything else
-			result.Content = content
+			// Sanitize HTML content to prevent XSS attacks
+			result.Content = security.SanitizeHTML(content)
 		}
 		
 		// Extract excerpt if content exists

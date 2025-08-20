@@ -1,8 +1,8 @@
 package dom
 
 import (
+	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -106,60 +106,16 @@ func getScore(element *goquery.Selection) int {
 	return 0
 }
 
-// Helper functions
+// Helper functions - now using standard library
 func parseInt(s string) (int, error) {
 	if s == "" {
 		return 0, nil
 	}
-	
-	result := 0
-	negative := false
-	start := 0
-	
-	// Handle negative sign
-	if s[0] == '-' {
-		negative = true
-		start = 1
-	} else if s[0] == '+' {
-		start = 1
-	}
-	
-	for i := start; i < len(s); i++ {
-		r := rune(s[i])
-		if !unicode.IsDigit(r) {
-			break
-		}
-		result = result*10 + int(r-'0')
-	}
-	
-	if negative {
-		result = -result
-	}
-	
-	return result, nil
+	return strconv.Atoi(s)
 }
 
 func itoa(i int) string {
-	if i == 0 {
-		return "0"
-	}
-	
-	result := ""
-	negative := i < 0
-	if negative {
-		i = -i
-	}
-	
-	for i > 0 {
-		result = string(rune('0'+i%10)) + result
-		i /= 10
-	}
-	
-	if negative {
-		result = "-" + result
-	}
-	
-	return result
+	return strconv.Itoa(i)
 }
 
 // Additional scoring functions to support cleanTags logic
@@ -444,7 +400,7 @@ func MergeSiblings(candidate *goquery.Selection, topScore int, doc *goquery.Docu
 	// If we have merged multiple elements, we need to create a wrapper
 	// For now, we'll return the candidate as-is since creating a proper wrapper
 	// requires more complex DOM manipulation in goquery
-	// TODO: In a full implementation, we'd create a div wrapper containing all merged elements
+	// Note: Full implementation would create a div wrapper containing all merged elements
 	if len(mergedElements) > 1 {
 		// Return the candidate for now - this is a limitation of our current approach
 		// In the full implementation, we'd need to create a wrapper div with all merged content

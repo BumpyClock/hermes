@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/cleaners"
-	"github.com/postlight/parser-go/pkg/extractors/generic"
-	"github.com/postlight/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/parser-go/pkg/cleaners"
+	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
+	"github.com/BumpyClock/parser-go/pkg/utils/dom"
 )
 
 // ExtractOptions contains parameters for the root extractor

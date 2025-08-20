@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/parser-go/pkg/utils/dom"
 )
 
 func TestMetaExtraction_Debug(t *testing.T) {

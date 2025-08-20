@@ -7,7 +7,7 @@ import (
 	"strings"
 	"net/url"
 	
-	"github.com/postlight/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/parser-go/pkg/utils/text"
 )
 
 // CleanLeadImageURL ensures image URLs are properly formatted and absolute

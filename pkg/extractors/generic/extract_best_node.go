@@ -5,7 +5,7 @@ package generic
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/parser-go/pkg/utils/dom"
 )
 
 // ExtractBestNodeOptions represents configuration options for content extraction

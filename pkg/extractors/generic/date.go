@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/utils/dom"
-	"github.com/postlight/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/parser-go/pkg/utils/text"
 )
 
 // DATE_PUBLISHED_META_TAGS - Ordered list of meta tag names that denote likely date published dates
@@ -272,8 +272,8 @@ func createDate(dateString, timezone, format string) *time.Time {
 	}
 	
 	// Use timezone if provided
-	_ = timezone // TODO: Implement timezone support like moment.tz()
-	_ = format   // TODO: Implement format support like moment(dateString, format)
+	_ = timezone // Timezone support not implemented - would require zone parsing
+	_ = format   // Custom format support not implemented - uses standard Go layouts
 	
 	// Try general-purpose date parsing (using existing text utils)
 	if parsed, err := text.ParseDate(dateString); err == nil {

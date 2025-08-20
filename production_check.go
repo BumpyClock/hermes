@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/postlight/parser-go/pkg/parser"
+	"github.com/BumpyClock/parser-go/pkg/parser"
 )
 
 func main() {

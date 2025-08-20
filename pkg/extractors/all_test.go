@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/postlight/parser-go/pkg/utils"
+	"github.com/BumpyClock/parser-go/pkg/utils"
 )
 
 func TestGetAllExtractors(t *testing.T) {

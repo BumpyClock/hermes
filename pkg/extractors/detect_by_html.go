@@ -8,7 +8,7 @@ import (
 )
 
 // Extractor interface for detected extractors
-// This will be replaced by actual extractor types in real implementation
+// Simplified interface for basic extractor functionality
 type Extractor interface {
 	GetDomain() string
 	Extract(*goquery.Document) (interface{}, error)

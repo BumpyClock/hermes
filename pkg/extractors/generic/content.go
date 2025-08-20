@@ -4,12 +4,11 @@
 package generic
 
 import (
-	"reflect"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/utils/dom"
-	"github.com/postlight/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/parser-go/pkg/utils/text"
 )
 
 // ExtractorOptions represents configuration options for content extraction
@@ -68,32 +67,43 @@ func (e *GenericContentExtractor) Extract(params ExtractorParams, opts Extractor
 
 	// We didn't succeed on first pass, one by one disable our extraction opts and try again.
 	// This matches the JavaScript logic exactly: iterate through options that are true and disable them
-	optValue := reflect.ValueOf(&mergedOpts).Elem()
-	optType := optValue.Type()
-
-	for i := 0; i < optValue.NumField(); i++ {
-		field := optValue.Field(i)
-		fieldType := optType.Field(i)
-
-		// Only process boolean fields that are currently true
-		if field.Kind() == reflect.Bool && field.Bool() {
-			// Disable this option
-			field.SetBool(false)
-
-			// Reload HTML for fresh attempt (matches JavaScript behavior)
-			freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(params.HTML))
-			if err != nil {
-				continue
-			}
-
+	
+	// Try disabling StripUnlikelyCandidates
+	if mergedOpts.StripUnlikelyCandidates {
+		mergedOpts.StripUnlikelyCandidates = false
+		
+		freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(params.HTML))
+		if err == nil {
 			node = e.GetContentNode(freshDoc, params.Title, params.URL, mergedOpts)
-
 			if NodeIsSufficient(node) {
 				return e.CleanAndReturnNode(node, freshDoc)
 			}
-
-			// Log which option was disabled for debugging
-			_ = fieldType.Name // Available for debugging if needed
+		}
+	}
+	
+	// Try disabling WeightNodes
+	if mergedOpts.WeightNodes {
+		mergedOpts.WeightNodes = false
+		
+		freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(params.HTML))
+		if err == nil {
+			node = e.GetContentNode(freshDoc, params.Title, params.URL, mergedOpts)
+			if NodeIsSufficient(node) {
+				return e.CleanAndReturnNode(node, freshDoc)
+			}
+		}
+	}
+	
+	// Try disabling CleanConditionally
+	if mergedOpts.CleanConditionally {
+		mergedOpts.CleanConditionally = false
+		
+		freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(params.HTML))
+		if err == nil {
+			node = e.GetContentNode(freshDoc, params.Title, params.URL, mergedOpts)
+			if NodeIsSufficient(node) {
+				return e.CleanAndReturnNode(node, freshDoc)
+			}
 		}
 	}
 
@@ -141,19 +151,11 @@ func (e *GenericContentExtractor) mergeOptions(opts ExtractorOptions) ExtractorO
 	// Start with defaults
 	merged := e.DefaultOpts
 
-	// Override with provided options using reflection to match JavaScript spread operator behavior
-	optValue := reflect.ValueOf(opts)
-	mergedValue := reflect.ValueOf(&merged).Elem()
-
-	for i := 0; i < optValue.NumField(); i++ {
-		field := optValue.Field(i)
-		mergedField := mergedValue.Field(i)
-
-		// Only override if the field has a non-zero value (matches JavaScript undefined behavior)
-		if field.Kind() == reflect.Bool {
-			mergedField.SetBool(field.Bool())
-		}
-	}
+	// Override with provided options - simple field-by-field assignment
+	// This replaces the complex reflection logic with clear, maintainable code
+	merged.StripUnlikelyCandidates = opts.StripUnlikelyCandidates
+	merged.WeightNodes = opts.WeightNodes
+	merged.CleanConditionally = opts.CleanConditionally
 
 	return merged
 }

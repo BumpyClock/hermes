@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/postlight/parser-go/pkg/extractors/custom"
-	"github.com/postlight/parser-go/pkg/extractors/generic"
+	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
+	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
 )
 
 // Registry variables for extractor storage

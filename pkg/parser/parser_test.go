@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/postlight/parser-go/pkg/parser"
+	"github.com/BumpyClock/parser-go/pkg/parser"
 )
 
 func TestParseURL(t *testing.T) {
