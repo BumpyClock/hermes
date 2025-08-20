@@ -15,10 +15,11 @@ func LinkDensity(element *goquery.Selection) float64 {
 		return 0
 	}
 
-	linkText := ""
+	var linkTextBuilder strings.Builder
 	element.Find("a").Each(func(index int, link *goquery.Selection) {
-		linkText += link.Text()
+		linkTextBuilder.WriteString(link.Text())
 	})
+	linkText := linkTextBuilder.String()
 
 	linkLength := len(strings.TrimSpace(linkText))
 	totalLength := len(totalText)
@@ -43,13 +44,15 @@ func WithinComment(element *goquery.Selection) bool {
 	// Check if element or any parent has comment-related classes/IDs
 	current := element
 	for current.Length() > 0 {
-		classAndId := ""
+		var classAndIdBuilder strings.Builder
 		if class, exists := current.Attr("class"); exists {
-			classAndId += class + " "
+			classAndIdBuilder.WriteString(class)
+			classAndIdBuilder.WriteString(" ")
 		}
 		if id, exists := current.Attr("id"); exists {
-			classAndId += id
+			classAndIdBuilder.WriteString(id)
 		}
+		classAndId := classAndIdBuilder.String()
 
 		// Check for comment indicators
 		if strings.Contains(strings.ToLower(classAndId), "comment") ||
@@ -167,13 +170,15 @@ func GetContentScore(element *goquery.Selection) float64 {
 	score -= linkDensity * 10
 
 	// Check class and ID for positive/negative indicators
-	classAndId := ""
+	var classAndIdBuilder strings.Builder
 	if class, exists := element.Attr("class"); exists {
-		classAndId += class + " "
+		classAndIdBuilder.WriteString(class)
+		classAndIdBuilder.WriteString(" ")
 	}
 	if id, exists := element.Attr("id"); exists {
-		classAndId += id
+		classAndIdBuilder.WriteString(id)
 	}
+	classAndId := classAndIdBuilder.String()
 
 	if POSITIVE_SCORE_RE.MatchString(classAndId) {
 		score += 25
@@ -229,13 +234,15 @@ func IsLikelyArticleElement(element *goquery.Selection) bool {
 	}
 
 	// Check class and ID
-	classAndId := ""
+	var classAndIdBuilder strings.Builder
 	if class, exists := element.Attr("class"); exists {
-		classAndId += class + " "
+		classAndIdBuilder.WriteString(class)
+		classAndIdBuilder.WriteString(" ")
 	}
 	if id, exists := element.Attr("id"); exists {
-		classAndId += id
+		classAndIdBuilder.WriteString(id)
 	}
+	classAndId := classAndIdBuilder.String()
 
 	// Look for article-related keywords
 	if POSITIVE_SCORE_RE.MatchString(classAndId) {

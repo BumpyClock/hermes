@@ -125,7 +125,11 @@ func makeAbsoluteURL(href string, base *url.URL) string {
 
 	// Handle protocol-relative URLs
 	if strings.HasPrefix(href, "//") {
-		return base.Scheme + ":" + href
+		var urlBuilder strings.Builder
+		urlBuilder.WriteString(base.Scheme)
+		urlBuilder.WriteString(":")
+		urlBuilder.WriteString(href)
+		return urlBuilder.String()
 	}
 
 	// Parse the relative URL

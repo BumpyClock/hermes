@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/BumpyClock/parser-go/pkg/parser"
 )
 
 // FullExtractor represents a complete custom extractor with all field definitions
@@ -34,18 +35,83 @@ type FullExtractor struct {
 
 // FieldExtractor configuration for extracting a field
 type FieldExtractor struct {
-	Selectors      []interface{} `json:"selectors,omitempty"`      // string or [string, string] for [selector, attr]
-	AllowMultiple  bool          `json:"allowMultiple,omitempty"`  
-	DefaultCleaner bool          `json:"defaultCleaner"`           // defaults to true in JavaScript
+	Selectors      parser.SelectorList `json:"-"`                        // Type-safe selectors  
+	SelectorsLegacy []interface{}       `json:"selectors,omitempty"`      // Deprecated: JSON compatibility
+	AllowMultiple  bool                `json:"allowMultiple,omitempty"`  
+	DefaultCleaner bool                `json:"defaultCleaner"`           // defaults to true in JavaScript
 }
 
 // ContentExtractor configuration for content extraction with transforms and cleaning
 type ContentExtractor struct {
-	Selectors      []interface{}             `json:"selectors,omitempty"`
-	AllowMultiple  bool                      `json:"allowMultiple,omitempty"`
-	DefaultCleaner bool                      `json:"defaultCleaner"`
-	Clean          []string                  `json:"clean,omitempty"`      // Selectors to remove
-	Transforms     map[string]interface{}    `json:"transforms,omitempty"` // Transform functions
+	Selectors       parser.SelectorList       `json:"-"`                    // Type-safe selectors
+	SelectorsLegacy []interface{}             `json:"selectors,omitempty"`  // Deprecated: JSON compatibility
+	AllowMultiple   bool                      `json:"allowMultiple,omitempty"`
+	DefaultCleaner  bool                      `json:"defaultCleaner"`
+	Clean           []string                  `json:"clean,omitempty"`      // Selectors to remove
+	Transforms      parser.TransformRegistry  `json:"-"`                    // Type-safe transforms
+	TransformsLegacy map[string]interface{}   `json:"transforms,omitempty"` // Deprecated: JSON compatibility
+}
+
+// MigrateSelectors converts legacy []interface{} selectors to type-safe SelectorList
+// This enables gradual migration from JavaScript patterns to Go idioms
+func (fe *FieldExtractor) MigrateSelectors() {
+	if len(fe.SelectorsLegacy) > 0 && len(fe.Selectors) == 0 {
+		fe.Selectors = parser.NewSelectorList(fe.SelectorsLegacy)
+	}
+}
+
+// GetSelectors returns the type-safe selectors, migrating from legacy if needed
+func (fe *FieldExtractor) GetSelectors() parser.SelectorList {
+	fe.MigrateSelectors()
+	return fe.Selectors
+}
+
+// SetSelectors sets the type-safe selectors and updates legacy for JSON compatibility
+func (fe *FieldExtractor) SetSelectors(selectors parser.SelectorList) {
+	fe.Selectors = selectors
+	fe.SelectorsLegacy = selectors.ToLegacyInterfaceSlice()
+}
+
+// MigrateSelectors for ContentExtractor
+func (ce *ContentExtractor) MigrateSelectors() {
+	if len(ce.SelectorsLegacy) > 0 && len(ce.Selectors) == 0 {
+		ce.Selectors = parser.NewSelectorList(ce.SelectorsLegacy)
+	}
+}
+
+// GetSelectors returns the type-safe selectors, migrating from legacy if needed
+func (ce *ContentExtractor) GetSelectors() parser.SelectorList {
+	ce.MigrateSelectors()
+	return ce.Selectors
+}
+
+// SetSelectors sets the type-safe selectors and updates legacy for JSON compatibility
+func (ce *ContentExtractor) SetSelectors(selectors parser.SelectorList) {
+	ce.Selectors = selectors
+	ce.SelectorsLegacy = selectors.ToLegacyInterfaceSlice()
+}
+
+// MigrateTransforms converts legacy map[string]interface{} transforms to type-safe TransformRegistry
+func (ce *ContentExtractor) MigrateTransforms() {
+	if len(ce.TransformsLegacy) > 0 && len(ce.Transforms) == 0 {
+		ce.Transforms = parser.ConvertLegacyTransforms(ce.TransformsLegacy)
+	}
+}
+
+// GetTransforms returns the type-safe transforms, migrating from legacy if needed
+func (ce *ContentExtractor) GetTransforms() parser.TransformRegistry {
+	ce.MigrateTransforms()
+	return ce.Transforms
+}
+
+// SetTransforms sets the type-safe transforms and updates legacy for JSON compatibility
+func (ce *ContentExtractor) SetTransforms(transforms parser.TransformRegistry) {
+	ce.Transforms = transforms
+	// Convert back to legacy format for JSON compatibility
+	ce.TransformsLegacy = make(map[string]interface{})
+	for name, transform := range transforms {
+		ce.TransformsLegacy[name] = transform.Name()
+	}
 }
 
 // GetDomain implements the Extractor interface for FullExtractor
@@ -53,8 +119,8 @@ func (f *FullExtractor) GetDomain() string {
 	return f.Domain
 }
 
-// Extract implements the Extractor interface for FullExtractor
-func (f *FullExtractor) Extract(doc *goquery.Document) (interface{}, error) {
+// Extract implements the parser.Extractor interface for FullExtractor
+func (f *FullExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
 	// This will be implemented with the root extractor logic
 	return nil, fmt.Errorf("not implemented yet")
 }
@@ -124,8 +190,8 @@ func AddExtractor(extractor *FullExtractor) interface{} {
 	return result
 }
 
-// GetAPIExtractors returns a copy of all runtime-registered extractors
-func GetAPIExtractors() map[string]*FullExtractor {
+// GetAPIExtractorsImpl returns a copy of all runtime-registered extractors as FullExtractor
+func GetAPIExtractorsImpl() map[string]*FullExtractor {
 	apiExtractorsMutex.RLock()
 	defer apiExtractorsMutex.RUnlock()
 	

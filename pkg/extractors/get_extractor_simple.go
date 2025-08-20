@@ -14,7 +14,7 @@ import (
 // GetExtractorSimple returns the appropriate extractor for a given URL
 // Direct 1:1 port of JavaScript getExtractor function with identical behavior
 // Simplified version that works with existing type system
-func GetExtractorSimple(urlStr string, parsedURL *url.URL, doc *goquery.Document) (*Extractor, error) {
+func GetExtractorSimple(urlStr string, parsedURL *url.URL, doc *goquery.Document) (Extractor, error) {
 	// Validate URL upfront - JavaScript would just parse it
 	if urlStr == "" {
 		return nil, fmt.Errorf("empty URL provided")
@@ -40,38 +40,31 @@ func GetExtractorSimple(urlStr string, parsedURL *url.URL, doc *goquery.Document
 	
 	// Priority 1: API extractor by hostname
 	if extractor, found := apiExtractors[hostname]; found {
-		return &extractor, nil
+		return extractor, nil
 	}
 	
 	// Priority 2: API extractor by base domain
 	if extractor, found := apiExtractors[baseDomain]; found {
-		return &extractor, nil
+		return extractor, nil
 	}
 	
 	// Priority 3: Static extractor by hostname
 	if extractor, found := staticExtractors[hostname]; found {
-		return &extractor, nil
+		return extractor, nil
 	}
 	
 	// Priority 4: Static extractor by base domain
 	if extractor, found := staticExtractors[baseDomain]; found {
-		return &extractor, nil
+		return extractor, nil
 	}
 	
 	// Priority 5: HTML-based detection (placeholder - would use existing DetectByHTML)
 	// Skip for now to avoid conflicts
 	
 	// Priority 6: Generic extractor fallback
-	genericExtractor := createGenericExtractorSimple()
-	return &genericExtractor, nil
+	return GenericExtractor(), nil
 }
 
-// createGenericExtractorSimple creates a generic fallback extractor
-func createGenericExtractorSimple() Extractor {
-	return Extractor{
-		Domain: "*", // Matches JavaScript GenericExtractor domain
-	}
-}
 
 // extractURLComponentsSimple extracts hostname and base domain from URL string
 // Matches JavaScript URL.parse(url).hostname behavior exactly

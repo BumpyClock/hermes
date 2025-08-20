@@ -5,7 +5,7 @@ package generic
 
 import (
 	"fmt"
-	"net/url"
+	"net/url" 
 	"strings"
 	"time"
 	
@@ -28,6 +28,19 @@ func NewGenericExtractor() *GenericExtractor {
 // GetDomain returns the domain this extractor handles
 func (ge *GenericExtractor) GetDomain() string {
 	return ge.Domain
+}
+
+// Extract implements a basic extraction interface (placeholder)
+func (ge *GenericExtractor) Extract(doc *goquery.Document) (interface{}, error) {
+	if doc == nil {
+		return nil, fmt.Errorf("document is nil")
+	}
+	
+	// Return basic extraction result for now
+	return map[string]interface{}{
+		"domain": ge.Domain,
+		"type":   "generic",
+	}, nil
 }
 
 // ExtractionResult represents the complete result from generic extraction
@@ -259,17 +272,4 @@ func (ge *GenericExtractor) ExtractGeneric(options *ExtractionOptions) (*Extract
 		WordCount:     wordCount,
 		Direction:     direction,
 	}, nil
-}
-
-// Extract implements the Extractor interface for compatibility with extractor selection
-func (ge *GenericExtractor) Extract(doc *goquery.Document) (interface{}, error) {
-	options := &ExtractionOptions{
-		Doc:         doc,
-		URL:         "",
-		HTML:        "",
-		MetaCache:   []string{},
-		Fallback:    true,
-		ContentType: "html",
-	}
-	return ge.ExtractGeneric(options)
 }

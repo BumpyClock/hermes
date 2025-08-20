@@ -11,7 +11,11 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
 	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
+	"github.com/BumpyClock/parser-go/pkg/parser"
 )
+
+// DetectByHTMLFunc type for HTML-based extractor detection
+type DetectByHTMLFunc func(*goquery.Document) Extractor
 
 // Registry variables for extractor storage
 // These are now properly integrated with the custom extractor framework
@@ -30,14 +34,24 @@ func GenericExtractor() Extractor {
 	return generic.NewGenericExtractor()
 }
 
+// GetAPIExtractors returns all runtime-registered extractors as Extractor interface
+func GetAPIExtractors() map[string]Extractor {
+	impl := GetAPIExtractorsImpl()
+	result := make(map[string]Extractor)
+	for domain, extractor := range impl {
+		result[domain] = extractor
+	}
+	return result
+}
+
 // GetExtractor returns the appropriate extractor for a given URL
 // Direct 1:1 port of JavaScript getExtractor function with identical behavior
 // 
 // JavaScript signature: getExtractor(url, parsedUrl, $)
 // Go signature: GetExtractor(url, parsedUrl, doc) - $ becomes doc for goquery compatibility
-func GetExtractor(urlStr string, parsedURL *url.URL, doc *goquery.Document) (*Extractor, error) {
+func GetExtractor(urlStr string, parsedURL *url.URL, doc *goquery.Document) (Extractor, error) {
 	extractor := getExtractorWithRegistries(urlStr, parsedURL, doc, GetAPIExtractors(), All, DetectByHTML)
-	return &extractor, nil
+	return extractor, nil
 }
 
 // getExtractorWithRegistries allows dependency injection for testing

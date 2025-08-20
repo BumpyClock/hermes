@@ -82,7 +82,13 @@ func cleanDateString(dateString string) string {
 		assembled = TIME_MERIDIAN_SPACE_RE.ReplaceAllStringFunc(assembled, func(match string) string {
 			submatches := TIME_MERIDIAN_SPACE_RE.FindStringSubmatch(match)
 			if len(submatches) >= 4 {
-				return submatches[1] + " " + submatches[2] + " " + submatches[3]
+				var builder strings.Builder
+				builder.WriteString(submatches[1])
+				builder.WriteString(" ")
+				builder.WriteString(submatches[2])
+				builder.WriteString(" ")
+				builder.WriteString(submatches[3])
+				return builder.String()
 			}
 			return match
 		})

@@ -8,6 +8,7 @@ import (
 	
 	"github.com/PuerkitoBio/goquery"
 	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
+	"github.com/BumpyClock/parser-go/pkg/parser"
 )
 
 // CustomExtractorAdapter wraps a CustomExtractor to implement the main Extractor interface
@@ -30,16 +31,20 @@ func (c *CustomExtractorAdapter) GetDomain() string {
 }
 
 // Extract performs extraction using the custom extractor's configuration
-// Implements the Extractor interface
-func (c *CustomExtractorAdapter) Extract(doc *goquery.Document) (interface{}, error) {
+// Implements the parser.Extractor interface
+func (c *CustomExtractorAdapter) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
 	if doc == nil {
 		return nil, fmt.Errorf("document is nil")
 	}
 	
-	// For now, return the custom extractor itself
+	// For now, return a basic result with domain info
 	// In a full implementation, this would use the root extractor system
 	// to process the CustomExtractor's selectors and return extracted content
-	return c.customExtractor, nil
+	return &parser.Result{
+		URL:    url,
+		Domain: c.customExtractor.Domain,
+		Title:  fmt.Sprintf("Article from %s (custom extractor)", c.customExtractor.Domain),
+	}, nil
 }
 
 // GetCustomExtractor returns the underlying CustomExtractor

@@ -232,7 +232,13 @@ func markToKeepInSelection(selection *goquery.Selection, baseURL string) {
 	// If we have a base URL, also mark iframes from the same domain
 	if baseURL != "" {
 		if parsed, err := url.Parse(baseURL); err == nil {
-			domainSelector := "iframe[src^=\"" + parsed.Scheme + "://" + parsed.Host + "\"]"
+			var domainSelectorBuilder strings.Builder
+			domainSelectorBuilder.WriteString("iframe[src^=\"")
+			domainSelectorBuilder.WriteString(parsed.Scheme)
+			domainSelectorBuilder.WriteString("://")
+			domainSelectorBuilder.WriteString(parsed.Host)
+			domainSelectorBuilder.WriteString("\"]")
+			domainSelector := domainSelectorBuilder.String()
 			selection.Find(domainSelector).AddClass("mercury-parser-keep")
 		}
 	}
@@ -326,10 +332,12 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool)
 			}
 			
 			links := elem.Find("a")
-			linkText := ""
+			var linkTextBuilder strings.Builder
 			links.Each(func(j int, link *goquery.Selection) {
-				linkText += strings.TrimSpace(link.Text()) + " "
+				linkTextBuilder.WriteString(strings.TrimSpace(link.Text()))
+				linkTextBuilder.WriteString(" ")
 			})
+			linkText := linkTextBuilder.String()
 			
 			// If more than 50% of text is links, likely navigation/junk
 			if len(strings.TrimSpace(linkText)) > len(text)/2 {

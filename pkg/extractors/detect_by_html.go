@@ -5,14 +5,11 @@ package extractors
 
 import (
 	"github.com/PuerkitoBio/goquery"
+	"github.com/BumpyClock/parser-go/pkg/parser"
 )
 
-// Extractor interface for detected extractors
-// Simplified interface for basic extractor functionality
-type Extractor interface {
-	GetDomain() string
-	Extract(*goquery.Document) (interface{}, error)
-}
+// Use the standard parser.Extractor interface
+type Extractor = parser.Extractor
 
 // DetectByHTML identifies an appropriate extractor based on HTML meta tags
 // JavaScript equivalent: export default function detectByHtml($)
@@ -53,11 +50,12 @@ func (m *MediumExtractor) GetDomain() string {
 	return "medium.com"
 }
 
-func (m *MediumExtractor) Extract(doc *goquery.Document) (interface{}, error) {
+func (m *MediumExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
 	// Placeholder implementation - will be replaced with actual extraction logic
-	return map[string]string{
-		"domain": "medium.com",
-		"type":   "medium",
+	return &parser.Result{
+		URL:    url,
+		Domain: "medium.com",
+		Title:  "Medium Article (placeholder)",
 	}, nil
 }
 
@@ -68,10 +66,11 @@ func (b *BloggerExtractor) GetDomain() string {
 	return "blogspot.com"
 }
 
-func (b *BloggerExtractor) Extract(doc *goquery.Document) (interface{}, error) {
+func (b *BloggerExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
 	// Placeholder implementation - will be replaced with actual extraction logic
-	return map[string]string{
-		"domain": "blogspot.com",
-		"type":   "blogger",
+	return &parser.Result{
+		URL:    url,
+		Domain: "blogspot.com",
+		Title:  "Blogger Post (placeholder)",
 	}, nil
 }

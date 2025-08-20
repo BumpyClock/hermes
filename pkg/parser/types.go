@@ -76,7 +76,8 @@ type CustomExtractor struct {
 
 // FieldExtractor defines extraction rules for a specific field
 type FieldExtractor struct {
-	Selectors      []interface{} // CSS selectors or [selector, attribute] pairs
+	Selectors      SelectorList  // Type-safe CSS selectors (replaces []interface{})
+	SelectorsLegacy []interface{} `json:"selectors,omitempty"` // Deprecated: use Selectors instead
 	AllowMultiple  bool
 	DefaultCleaner bool
 }
