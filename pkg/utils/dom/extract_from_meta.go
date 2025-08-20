@@ -52,19 +52,23 @@ func ExtractFromMeta(doc *goquery.Document, metaNames []string, cachedNames []st
 
 	// Process each found name in order
 	for _, name := range foundNames {
-		// JavaScript hardcodes type="name" and value="value"
+		// JavaScript hardcodes type="name" and checks "value" attribute
+		// However, standard HTML meta tags use "content", so we check both
 		metaType := "name"
-		valueAttr := "value"
 
 		// Find meta tags with the specified name
 		selector := fmt.Sprintf("meta[%s=\"%s\"]", metaType, name)
 		nodes := doc.Find(selector)
 
-		// Get all non-empty values
+		// Get all non-empty values from both 'value' and 'content' attributes
 		var values []string
 		nodes.Each(func(index int, node *goquery.Selection) {
-			if val, exists := node.Attr(valueAttr); exists && val != "" {
+			// Check 'value' attribute first (matches JavaScript behavior)
+			if val, exists := node.Attr("value"); exists && val != "" {
 				values = append(values, val)
+			} else if content, exists := node.Attr("content"); exists && content != "" {
+				// Fallback to standard 'content' attribute
+				values = append(values, content)
 			}
 		})
 

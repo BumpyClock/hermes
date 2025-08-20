@@ -204,10 +204,11 @@ func TestExtractFromMeta(t *testing.T) {
 		metaNames := []string{"description"}
 		cachedNames := []string{"description"}
 		
-		// This test shows the JavaScript function is hardcoded to use 'value' attribute
-		// So this should return nil since there's no 'value' attribute
+		// Updated behavior: now supports both 'value' and 'content' attributes
+		// This enables compatibility with standard HTML meta tags
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
-		assert.Nil(t, result)
+		assert.NotNil(t, result)
+		assert.Equal(t, "test description", *result)
 	})
 
 	t.Run("prioritizes first matching name in metaNames order", func(t *testing.T) {

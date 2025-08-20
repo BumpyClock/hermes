@@ -1,11 +1,13 @@
+// ABOUTME: Main parser implementation integrating all extractors and cleaners into complete extraction pipeline
+// ABOUTME: Wires together resource layer, generic extractors, and content cleaners to create working end-to-end parser
+
 package parser
 
 import (
 	"fmt"
 	"net/url"
-	"strings"
 
-	"github.com/PuerkitoBio/goquery"
+	"github.com/postlight/parser-go/pkg/resource"
 )
 
 // Mercury is the main parser implementation
@@ -43,28 +45,18 @@ func (m *Mercury) Parse(targetURL string, opts ParserOptions) (*Result, error) {
 		}, nil
 	}
 
-	// TODO: Create resource (fetch or use provided HTML)
-	// doc, err := resource.Create(targetURL, opts.Headers, "")
-	// if err != nil {
-	//     return nil, fmt.Errorf("failed to create resource: %w", err)
-	// }
-
-	// TODO: Get appropriate extractor
-	// extractor := extractors.GetExtractor(targetURL, parsedURL, doc)
-
-	// For now, return a placeholder result
-	result := &Result{
-		URL:    targetURL,
-		Domain: parsedURL.Host,
-		Title:  "TODO: Implement extraction",
+	// Create resource from URL (with fetching)
+	r := resource.NewResource()
+	doc, err := r.Create(targetURL, "", parsedURL, opts.Headers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 
-	// TODO: Extract content
-	// result, err := extractor.Extract(doc, targetURL, ExtractorOptions{
-	//     URL:         targetURL,
-	//     Fallback:    opts.Fallback,
-	//     ContentType: opts.ContentType,
-	// })
+	// Extract all fields using generic extractors
+	result, err := m.extractAllFields(doc, targetURL, parsedURL, opts)
+	if err != nil {
+		return nil, fmt.Errorf("extraction failed: %w", err)
+	}
 
 	// TODO: Handle multi-page articles if needed
 	// if opts.FetchAllPages && result.NextPageURL != "" {
@@ -84,40 +76,22 @@ func (m *Mercury) ParseHTML(html string, targetURL string, opts ParserOptions) (
 		return nil, fmt.Errorf("invalid URL: %w", err)
 	}
 
-	// Create document from HTML
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if !validateURL(parsedURL) {
+		return nil, fmt.Errorf("the url parameter passed does not look like a valid URL: %s", targetURL)
+	}
+
+	// Create resource from provided HTML
+	r := resource.NewResource()
+	doc, err := r.Create(targetURL, html, parsedURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML: %w", err)
+		return nil, fmt.Errorf("failed to create resource from HTML: %w", err)
 	}
 
-	// For now, return basic extraction
-	result := &Result{
-		URL:    targetURL,
-		Domain: parsedURL.Host,
+	// Extract all fields using generic extractors
+	result, err := m.extractAllFields(doc, targetURL, parsedURL, opts)
+	if err != nil {
+		return nil, fmt.Errorf("extraction failed: %w", err)
 	}
-
-	// Basic title extraction for testing
-	title := doc.Find("title").First().Text()
-	if title == "" {
-		title = doc.Find("h1").First().Text()
-	}
-	result.Title = strings.TrimSpace(title)
-
-	// Basic content extraction for testing
-	content := doc.Find("article, .article, #article, .content, #content").First().Text()
-	if content == "" {
-		content = doc.Find("p").First().Text()
-	}
-	result.Content = strings.TrimSpace(content)
-
-	// TODO: Continue with full extraction implementation
-	// extractor := extractors.GetExtractor(targetURL, parsedURL, doc)
-	// return extractor.Extract(doc, targetURL, ExtractorOptions{
-	//     URL:         targetURL,
-	//     HTML:        html,
-	//     Fallback:    opts.Fallback,
-	//     ContentType: opts.ContentType,
-	// })
 
 	return result, nil
 }

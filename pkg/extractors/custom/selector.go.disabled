@@ -1,0 +1,384 @@
+// ABOUTME: CSS selector processing and field extraction with JavaScript compatibility
+// ABOUTME: Handles all JavaScript selector patterns: simple selectors, attribute extraction, transform functions, and fallback logic
+
+package custom
+
+import (
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/postlight/parser-go/pkg/cleaners"
+	"github.com/postlight/parser-go/pkg/utils/dom"
+)
+
+// SelectorProcessor handles the extraction of fields using various selector patterns
+// JavaScript equivalent: Core logic from select() function in root-extractor.js
+type SelectorProcessor struct {
+	doc *goquery.Document
+	url string
+}
+
+// NewSelectorProcessor creates a new selector processor
+func NewSelectorProcessor(doc *goquery.Document, url string) *SelectorProcessor {
+	return &SelectorProcessor{
+		doc: doc,
+		url: url,
+	}
+}
+
+// ExtractField extracts a field value using the provided extractor configuration
+// JavaScript equivalent: select() function in root-extractor.js
+func (sp *SelectorProcessor) ExtractField(fieldType string, extractor *FieldExtractor, opts ExtractorOptions) (interface{}, error) {
+	// Handle nil extractor (field not configured)
+	if extractor == nil {
+		return nil, nil
+	}
+
+	// Handle hardcoded string values (e.g., Wikipedia contributors)
+	// JavaScript: if (typeof extractionOpts === 'string') return extractionOpts;
+	if len(extractor.Selectors) == 1 {
+		if str, ok := extractor.Selectors[0].(string); ok && !strings.ContainsAny(str, ".[#:>+~*") {
+			// If it doesn't look like a CSS selector, treat as hardcoded value
+			return str, nil
+		}
+	}
+
+	// Parse and validate selectors
+	selectors, err := sp.parseSelectors(extractor.Selectors)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse selectors for field %s: %w", fieldType, err)
+	}
+
+	// Override allowMultiple for certain field types
+	// JavaScript: const overrideAllowMultiple = type === 'lead_image_url' || allowMultiple;
+	allowMultiple := fieldType == "lead_image_url" || extractor.AllowMultiple
+
+	// Find the first matching selector
+	// JavaScript: findMatchingSelector($, selectors, extractHtml, overrideAllowMultiple)
+	matchingSelector := sp.findMatchingSelector(selectors, opts.ExtractHtml, allowMultiple)
+	if matchingSelector == nil {
+		return nil, nil
+	}
+
+	// Extract the value based on selector type and extraction mode
+	if opts.ExtractHtml {
+		return sp.extractHTML(matchingSelector, extractor, opts)
+	}
+
+	return sp.extractText(matchingSelector, extractor, opts)
+}
+
+// parseSelectors converts JavaScript selector patterns to Go structures
+// JavaScript equivalent: Processing of selectors array in select() function
+func (sp *SelectorProcessor) parseSelectors(selectors []interface{}) ([]*SelectorEntry, error) {
+	var entries []*SelectorEntry
+
+	for i, selector := range selectors {
+		entry, err := sp.parseSingleSelector(selector)
+		if err != nil {
+			return nil, fmt.Errorf("selector %d: %w", i, err)
+		}
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}
+
+// parseSingleSelector parses a single selector into a SelectorEntry
+func (sp *SelectorProcessor) parseSingleSelector(selector interface{}) (*SelectorEntry, error) {
+	switch v := selector.(type) {
+	case string:
+		// Simple CSS selector: "h1", ".class", "#id"
+		return &SelectorEntry{
+			Type:     SimpleSelector,
+			Selector: v,
+		}, nil
+
+	case []interface{}:
+		// Array selector: ["meta[name='og:title']", "content"] or ["img", "src", transformFunc]
+		if len(v) < 2 {
+			return nil, fmt.Errorf("array selector must have at least 2 elements")
+		}
+
+		selector, ok := v[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("first element of array selector must be string")
+		}
+
+		attribute, ok := v[1].(string)
+		if !ok {
+			return nil, fmt.Errorf("second element of array selector must be string")
+		}
+
+		entry := &SelectorEntry{
+			Type:      AttributeSelector,
+			Selector:  selector,
+			Attribute: attribute,
+		}
+
+		// Check for transform function (third element)
+		if len(v) >= 3 {
+			if transform, ok := v[2].(func(string) string); ok {
+				entry.Type = TransformSelector
+				entry.Transform = transform
+			}
+		}
+
+		return entry, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported selector type: %v", reflect.TypeOf(selector))
+	}
+}
+
+// findMatchingSelector finds the first selector that has matching elements
+// JavaScript equivalent: findMatchingSelector function in root-extractor.js
+func (sp *SelectorProcessor) findMatchingSelector(selectors []*SelectorEntry, extractHtml, allowMultiple bool) *SelectorEntry {
+	for _, selector := range selectors {
+		if sp.selectorMatches(selector, extractHtml, allowMultiple) {
+			return selector
+		}
+	}
+	return nil
+}
+
+// selectorMatches checks if a selector has matching elements with the required criteria
+// JavaScript equivalent: Logic inside findMatchingSelector function
+func (sp *SelectorProcessor) selectorMatches(selector *SelectorEntry, extractHtml, allowMultiple bool) bool {
+	selection := sp.doc.Find(selector.Selector)
+	length := selection.Length()
+
+	// No matches found
+	if length == 0 {
+		return false
+	}
+
+	switch selector.Type {
+	case SimpleSelector:
+		// For simple selectors, check if we have content
+		// JavaScript: $(selector).text().trim() !== ''
+		if extractHtml {
+			// For HTML extraction, just need elements to exist
+			return true
+		}
+		
+		// For text extraction, need non-empty text
+		text := strings.TrimSpace(selection.Text())
+		if text == "" {
+			return false
+		}
+
+		// Check multiple constraint
+		// JavaScript: allowMultiple || (!allowMultiple && $(selector).length === 1)
+		return allowMultiple || length == 1
+
+	case AttributeSelector, TransformSelector:
+		// For attribute selectors, check if attribute exists and has value
+		// JavaScript: $(s).attr(attr) && $(s).attr(attr).trim() !== ''
+		for i := 0; i < length; i++ {
+			element := selection.Eq(i)
+			attrValue, exists := element.Attr(selector.Attribute)
+			if exists && strings.TrimSpace(attrValue) != "" {
+				// Check multiple constraint
+				return allowMultiple || length == 1
+			}
+		}
+		return false
+
+	default:
+		return false
+	}
+}
+
+// extractHTML extracts HTML content using the matching selector
+// JavaScript equivalent: selectHtml() function in root-extractor.js
+func (sp *SelectorProcessor) extractHTML(selector *SelectorEntry, extractor *FieldExtractor, opts ExtractorOptions) (interface{}, error) {
+	var content *goquery.Selection
+
+	// Handle array selectors (multi-match selection)
+	// JavaScript: if (Array.isArray(matchingSelector)) { ... }
+	if selector.Type == AttributeSelector && strings.Contains(selector.Selector, ",") {
+		// Split selector on comma for multi-match
+		selectors := strings.Split(selector.Selector, ",")
+		wrapper := sp.doc.Find("body").First()
+		wrapper.Empty()
+		
+		for _, sel := range selectors {
+			elements := sp.doc.Find(strings.TrimSpace(sel))
+			elements.Each(func(i int, element *goquery.Selection) {
+				wrapper.AppendSelection(element)
+			})
+		}
+		content = wrapper
+	} else {
+		content = sp.doc.Find(selector.Selector)
+	}
+
+	// Apply transformations and cleaning
+	// JavaScript: transformAndClean($content)
+	content = sp.transformAndClean(content, extractor, opts)
+
+	// Apply field-specific cleaner if enabled
+	// JavaScript: if (Cleaners[type]) { Cleaners[type]($content, { ...opts, defaultCleaner }); }
+	if extractor.DefaultCleaner {
+		content = sp.applyFieldCleaner(content, opts)
+	}
+
+	// Return result based on allowMultiple setting
+	if extractor.AllowMultiple {
+		// JavaScript: $content.children().toArray().map(el => $.html($(el)))
+		var results []string
+		content.Children().Each(func(i int, element *goquery.Selection) {
+			html, _ := element.Html()
+			results = append(results, html)
+		})
+		return results, nil
+	}
+
+	// Return single HTML result
+	html, err := content.Html()
+	return html, err
+}
+
+// extractText extracts text content using the matching selector
+// JavaScript equivalent: Text extraction logic in select() function
+func (sp *SelectorProcessor) extractText(selector *SelectorEntry, extractor *FieldExtractor, opts ExtractorOptions) (interface{}, error) {
+	selection := sp.doc.Find(selector.Selector)
+	selection = sp.transformAndClean(selection, extractor, opts)
+
+	var results []string
+
+	switch selector.Type {
+	case SimpleSelector:
+		// Extract text content
+		// JavaScript: $match.map((_, el) => $(el).text().trim())
+		selection.Each(func(i int, element *goquery.Selection) {
+			text := strings.TrimSpace(element.Text())
+			if text != "" {
+				results = append(results, text)
+			}
+		})
+
+	case AttributeSelector, TransformSelector:
+		// Extract attribute values
+		// JavaScript: $match.map((_, el) => $(el).attr(attr).trim())
+		selection.Each(func(i int, element *goquery.Selection) {
+			if attrValue, exists := element.Attr(selector.Attribute); exists {
+				value := strings.TrimSpace(attrValue)
+				
+				// Apply transform function if present
+				if selector.Transform != nil {
+					value = selector.Transform(value)
+				}
+				
+				if value != "" {
+					results = append(results, value)
+				}
+			}
+		})
+	}
+
+	// Apply field cleaner if enabled
+	if extractor.DefaultCleaner && len(results) > 0 {
+		cleanedResults := sp.applyFieldCleanerToStrings(results, opts)
+		results = cleanedResults
+	}
+
+	// Return result based on allowMultiple setting
+	// JavaScript: allowMultiple ? result.toArray() : result[0]
+	if extractor.AllowMultiple {
+		return results, nil
+	}
+
+	if len(results) > 0 {
+		return results[0], nil
+	}
+
+	return nil, nil
+}
+
+// transformAndClean applies transformations and cleaning to selected content
+// JavaScript equivalent: transformAndClean($content) function in root-extractor.js  
+func (sp *SelectorProcessor) transformAndClean(selection *goquery.Selection, extractor *FieldExtractor, opts ExtractorOptions) *goquery.Selection {
+	// Make links absolute
+	// JavaScript: makeLinksAbsolute($node, $, opts.url || '')
+	if opts.URL != "" {
+		dom.MakeLinksAbsolute(selection, sp.doc, opts.URL)
+	}
+
+	// Apply cleaning selectors for content extractors
+	if contentExtractor, ok := interface{}(extractor).(*ContentExtractor); ok {
+		sp.cleanBySelectors(selection, contentExtractor.Clean)
+		sp.transformElements(selection, contentExtractor.Transforms)
+	}
+
+	return selection
+}
+
+// cleanBySelectors removes elements matching the clean selectors
+// JavaScript equivalent: cleanBySelectors function in root-extractor.js
+func (sp *SelectorProcessor) cleanBySelectors(content *goquery.Selection, cleanSelectors []string) {
+	if len(cleanSelectors) == 0 {
+		return
+	}
+
+	// Join selectors and remove matching elements
+	// JavaScript: $(clean.join(','), $content).remove()
+	cleanSelector := strings.Join(cleanSelectors, ",")
+	content.Find(cleanSelector).Remove()
+}
+
+// transformElements applies transform functions to matching elements
+// JavaScript equivalent: transformElements function in root-extractor.js
+func (sp *SelectorProcessor) transformElements(content *goquery.Selection, transforms map[string]TransformFunction) {
+	if len(transforms) == 0 {
+		return
+	}
+
+	// Apply each transform to matching elements
+	// JavaScript: Reflect.ownKeys(transforms).forEach(key => { ... })
+	for selector, transform := range transforms {
+		matches := content.Find(selector)
+		matches.Each(func(i int, element *goquery.Selection) {
+			transform.Transform(element)
+		})
+	}
+}
+
+// applyFieldCleaner applies the appropriate field cleaner
+// JavaScript equivalent: Cleaners[type](result, { ...opts, ...extractionOpts })
+func (sp *SelectorProcessor) applyFieldCleaner(content *goquery.Selection, opts ExtractorOptions) *goquery.Selection {
+	// This would integrate with the existing cleaners package
+	// For now, return content as-is until cleaners are fully integrated
+	return content
+}
+
+// applyFieldCleanerToStrings applies field cleaner to string results
+func (sp *SelectorProcessor) applyFieldCleanerToStrings(results []string, opts ExtractorOptions) []string {
+	// Apply appropriate string cleaner based on field type
+	// This would integrate with existing cleaners package
+	cleaned := make([]string, len(results))
+	copy(cleaned, results)
+	return cleaned
+}
+
+// ExtractExtendedTypes extracts custom extended fields
+// JavaScript equivalent: selectExtendedTypes function in root-extractor.js
+func (sp *SelectorProcessor) ExtractExtendedTypes(extend map[string]*FieldExtractor, opts ExtractorOptions) map[string]interface{} {
+	results := make(map[string]interface{})
+
+	// Process each extended type
+	// JavaScript: Reflect.ownKeys(extend).forEach(t => { ... })
+	for fieldType, extractor := range extend {
+		if _, exists := results[fieldType]; !exists {
+			value, err := sp.ExtractField(fieldType, extractor, opts)
+			if err == nil && value != nil {
+				results[fieldType] = value
+			}
+		}
+	}
+
+	return results
+}

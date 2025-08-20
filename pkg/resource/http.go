@@ -85,7 +85,7 @@ func (c *HTTPClient) doRequest(url string) (*Response, error) {
 	// Set additional standard headers
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
-	req.Header.Set("Accept-Encoding", "gzip, deflate")
+	// Note: Accept-Encoding is handled automatically by Go's HTTP client when DisableCompression=false
 	req.Header.Set("DNT", "1")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Upgrade-Insecure-Requests", "1")

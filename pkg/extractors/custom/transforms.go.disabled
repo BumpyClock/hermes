@@ -1,0 +1,336 @@
+// ABOUTME: Transform function system for DOM element transformations with JavaScript compatibility
+// ABOUTME: Supports both string-based transforms (tag changes) and complex function-based transforms for content processing
+
+package custom
+
+import (
+	"fmt"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/postlight/parser-go/pkg/utils/dom"
+)
+
+// TransformRegistry manages common transform functions
+// JavaScript equivalent: Common transform patterns used across extractors
+type TransformRegistry struct {
+	transforms map[string]TransformFunction
+}
+
+// NewTransformRegistry creates a registry with built-in transforms
+func NewTransformRegistry() *TransformRegistry {
+	registry := &TransformRegistry{
+		transforms: make(map[string]TransformFunction),
+	}
+	
+	// Register built-in transforms
+	registry.registerBuiltinTransforms()
+	return registry
+}
+
+// registerBuiltinTransforms adds commonly used transform patterns
+func (tr *TransformRegistry) registerBuiltinTransforms() {
+	// String transforms for common tag conversions
+	tr.Register("noscript_to_div", &StringTransform{TargetTag: "div"})
+	tr.Register("span_to_p", &StringTransform{TargetTag: "p"})
+	tr.Register("h1_to_h2", &StringTransform{TargetTag: "h2"})
+	
+	// Common function transforms
+	tr.Register("remove_small_images", &FunctionTransform{
+		Fn: func(selection *goquery.Selection) error {
+			return RemoveSmallImages(selection, 100) // Remove images smaller than 100px
+		},
+	})
+	
+	tr.Register("clean_figures", &FunctionTransform{
+		Fn: CleanFigures,
+	})
+	
+	tr.Register("rewrite_lazy_youtube", &FunctionTransform{
+		Fn: RewriteLazyYoutube,
+	})
+	
+	tr.Register("allow_drop_cap", &FunctionTransform{
+		Fn: AllowDropCap,
+	})
+}
+
+// Register adds a transform to the registry
+func (tr *TransformRegistry) Register(name string, transform TransformFunction) {
+	tr.transforms[name] = transform
+}
+
+// Get retrieves a transform by name
+func (tr *TransformRegistry) Get(name string) (TransformFunction, bool) {
+	transform, exists := tr.transforms[name]
+	return transform, exists
+}
+
+// CreateStringTransform creates a string-based transform
+// JavaScript equivalent: 'noscript': 'div'
+func CreateStringTransform(targetTag string) TransformFunction {
+	return &StringTransform{TargetTag: targetTag}
+}
+
+// CreateFunctionTransform creates a function-based transform
+// JavaScript equivalent: 'selector': $node => { ... }
+func CreateFunctionTransform(fn func(*goquery.Selection) error) TransformFunction {
+	return &FunctionTransform{Fn: fn}
+}
+
+// Built-in transform functions that mirror common JavaScript patterns
+
+// RemoveSmallImages removes images below a specified width
+// JavaScript equivalent: Common pattern in Medium, etc.
+// img: $node => { const width = parseInt($node.attr('width'), 10); if (width < 100) $node.remove(); }
+func RemoveSmallImages(selection *goquery.Selection, minWidth int) error {
+	selection.Each(func(i int, element *goquery.Selection) {
+		if widthAttr, exists := element.Attr("width"); exists {
+			if width, err := strconv.Atoi(widthAttr); err == nil && width < minWidth {
+				element.Remove()
+			}
+		}
+	})
+	return nil
+}
+
+// CleanFigures extracts image and caption from figure elements
+// JavaScript equivalent: Medium extractor figure transform
+// figure: $node => { const $img = $node.find('img').slice(-1)[0]; const $caption = $node.find('figcaption'); $node.empty().append([$img, $caption]); }
+func CleanFigures(selection *goquery.Selection) error {
+	selection.Each(func(i int, figure *goquery.Selection) {
+		// Skip figures with iframes
+		if figure.Find("iframe").Length() > 0 {
+			return
+		}
+		
+		// Get the last image and figcaption
+		images := figure.Find("img")
+		var lastImage *goquery.Selection
+		if images.Length() > 0 {
+			lastImage = images.Last()
+		}
+		
+		caption := figure.Find("figcaption")
+		
+		// Clear figure and re-add only image and caption
+		figure.Empty()
+		if lastImage != nil {
+			figure.AppendSelection(lastImage.Clone())
+		}
+		if caption.Length() > 0 {
+			figure.AppendSelection(caption.Clone())
+		}
+	})
+	return nil
+}
+
+// RewriteLazyYoutube converts lazy-loaded YouTube videos to proper embeds
+// JavaScript equivalent: Medium extractor iframe transform
+// iframe: $node => { const ytRe = /https:\/\/i.embed.ly\/.+url=https:\/\/i\.ytimg\.com\/vi\/(\w+)\//; ... }
+func RewriteLazyYoutube(selection *goquery.Selection) error {
+	ytRegex := regexp.MustCompile(`https://i\.embed\.ly/.+url=https://i\.ytimg\.com/vi/(\w+)/`)
+	
+	selection.Each(func(i int, iframe *goquery.Selection) {
+		thumbnail, exists := iframe.Attr("data-thumbnail")
+		if !exists {
+			return
+		}
+		
+		// URL decode the thumbnail
+		decodedThumb, err := url.QueryUnescape(thumbnail)
+		if err != nil {
+			return
+		}
+		
+		// Extract YouTube ID
+		matches := ytRegex.FindStringSubmatch(decodedThumb)
+		if len(matches) < 2 {
+			// If we can't extract YouTube ID, remove the figure
+			parent := iframe.Parent()
+			if parent.Is("figure") {
+				parent.Remove()
+			}
+			return
+		}
+		
+		youtubeID := matches[1]
+		
+		// Set proper YouTube embed src
+		iframe.SetAttr("src", fmt.Sprintf("https://www.youtube.com/embed/%s", youtubeID))
+		
+		// Clean up the parent figure
+		parent := iframe.Parent()
+		if parent.Is("figure") {
+			caption := parent.Find("figcaption")
+			parent.Empty()
+			parent.AppendSelection(iframe.Clone())
+			if caption.Length() > 0 {
+				parent.AppendSelection(caption.Clone())
+			}
+		}
+	})
+	return nil
+}
+
+// AllowDropCap handles drop cap character logic
+// JavaScript equivalent: Medium extractor span transform
+// 'section span:first-of-type': $node => { const $text = $node.html(); if ($text.length === 1 && /^[a-zA-Z()]+$/.test($text)) { $node.replaceWith($text); } }
+func AllowDropCap(selection *goquery.Selection) error {
+	dropCapRegex := regexp.MustCompile(`^[a-zA-Z()]+$`)
+	
+	selection.Each(func(i int, span *goquery.Selection) {
+		html, err := span.Html()
+		if err != nil {
+			return
+		}
+		
+		// Check if it's a single character drop cap
+		if len(html) == 1 && dropCapRegex.MatchString(html) {
+			span.ReplaceWithHtml(html)
+		}
+	})
+	return nil
+}
+
+// RemoveEmptyElements removes elements with no meaningful content
+func RemoveEmptyElements(selection *goquery.Selection) error {
+	selection.Each(func(i int, element *goquery.Selection) {
+		text := strings.TrimSpace(element.Text())
+		if text == "" && element.Children().Length() == 0 {
+			element.Remove()
+		}
+	})
+	return nil
+}
+
+// ConvertToAbsolute converts relative URLs to absolute URLs
+func ConvertToAbsolute(selection *goquery.Selection, baseURL string) error {
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return fmt.Errorf("invalid base URL: %w", err)
+	}
+	
+	selection.Each(func(i int, element *goquery.Selection) {
+		// Convert href attributes
+		if href, exists := element.Attr("href"); exists {
+			if absURL := resolveURL(base, href); absURL != "" {
+				element.SetAttr("href", absURL)
+			}
+		}
+		
+		// Convert src attributes
+		if src, exists := element.Attr("src"); exists {
+			if absURL := resolveURL(base, src); absURL != "" {
+				element.SetAttr("src", absURL)
+			}
+		}
+		
+		// Convert srcset attributes
+		if srcset, exists := element.Attr("srcset"); exists {
+			if absSrcset := resolveURLsInSrcset(base, srcset); absSrcset != "" {
+				element.SetAttr("srcset", absSrcset)
+			}
+		}
+	})
+	return nil
+}
+
+// resolveURL resolves a relative URL against a base URL
+func resolveURL(base *url.URL, relative string) string {
+	rel, err := url.Parse(relative)
+	if err != nil {
+		return ""
+	}
+	
+	resolved := base.ResolveReference(rel)
+	return resolved.String()
+}
+
+// resolveURLsInSrcset resolves URLs in srcset attribute
+func resolveURLsInSrcset(base *url.URL, srcset string) string {
+	if srcset == "" {
+		return ""
+	}
+	
+	// Split srcset by comma and process each URL
+	parts := strings.Split(srcset, ",")
+	var resolvedParts []string
+	
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		
+		// Split by space to separate URL from descriptor
+		fields := strings.Fields(part)
+		if len(fields) == 0 {
+			continue
+		}
+		
+		// Resolve the URL (first field)
+		resolvedURL := resolveURL(base, fields[0])
+		if resolvedURL == "" {
+			continue
+		}
+		
+		// Reconstruct with descriptor if present
+		if len(fields) > 1 {
+			resolvedParts = append(resolvedParts, resolvedURL+" "+strings.Join(fields[1:], " "))
+		} else {
+			resolvedParts = append(resolvedParts, resolvedURL)
+		}
+	}
+	
+	return strings.Join(resolvedParts, ", ")
+}
+
+// ApplyTransforms applies a map of transforms to content
+// JavaScript equivalent: transformElements function in root-extractor.js
+func ApplyTransforms(content *goquery.Selection, transforms map[string]TransformFunction) error {
+	if len(transforms) == 0 {
+		return nil
+	}
+	
+	// Apply each transform to matching elements
+	for selector, transform := range transforms {
+		matches := content.Find(selector)
+		if matches.Length() > 0 {
+			if err := transform.Transform(matches); err != nil {
+				return fmt.Errorf("transform failed for selector '%s': %w", selector, err)
+			}
+		}
+	}
+	
+	return nil
+}
+
+// ParseTransformMap converts JavaScript-style transform definitions to Go functions
+// JavaScript equivalent: Processing transforms object in extractor definitions
+func ParseTransformMap(jsTransforms map[string]interface{}) (map[string]TransformFunction, error) {
+	goTransforms := make(map[string]TransformFunction)
+	
+	for selector, transform := range jsTransforms {
+		switch v := transform.(type) {
+		case string:
+			// String transform: 'noscript': 'div'
+			goTransforms[selector] = CreateStringTransform(v)
+			
+		case func(*goquery.Selection) error:
+			// Function transform: 'img': func(selection) { ... }
+			goTransforms[selector] = CreateFunctionTransform(v)
+			
+		default:
+			return nil, fmt.Errorf("unsupported transform type for selector '%s': %T", selector, transform)
+		}
+	}
+	
+	return goTransforms, nil
+}
+
+// Global transform registry instance
+var GlobalTransformRegistry = NewTransformRegistry()
