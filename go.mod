@@ -5,7 +5,6 @@ go 1.24.6
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/PuerkitoBio/goquery v1.10.3
-	github.com/agnivade/levenshtein v1.2.0
 	github.com/markusmobius/go-dateparser v1.2.4
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d
