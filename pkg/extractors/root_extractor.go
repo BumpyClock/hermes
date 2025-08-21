@@ -261,6 +261,13 @@ func Select(opts SelectOptions) interface{} {
 		return nil
 	}
 
+	// Check for hardcoded value in map
+	if hardcodedValue, exists := extractionOpts["hardcoded"]; exists {
+		if str, ok := hardcodedValue.(string); ok {
+			return str
+		}
+	}
+
 	// Get selectors
 	selectorsRaw, exists := extractionOpts["selectors"]
 	if !exists {
@@ -423,6 +430,8 @@ func extractResult(opts ExtractOptions, fieldType string, extractHTML bool, addi
 
 // callGenericExtractor calls the appropriate generic extractor
 func callGenericExtractor(fieldType string, opts ExtractOptions, additionalOpts map[string]interface{}) interface{} {
+	// TODO: Use additionalOpts for extended configuration in future implementation
+	_ = additionalOpts
 
 	// Build metaCache as []string of meta tag names (like in parser package)
 	var metaCache []string

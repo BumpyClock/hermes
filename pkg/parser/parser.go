@@ -98,15 +98,15 @@ func validateURL(u *url.URL) bool {
 	if err := security.ValidateURL(u.String()); err != nil {
 		return false
 	}
-	
+
 	// Additional basic checks
 	return security.IsValidWebURL(u)
 }
 
-func (m *Mercury) collectAllPages(result *Result, extractor Extractor, opts ParserOptions) (*Result, error) {
-	// Multi-page collection not implemented - would require:
-	// 1. Next page URL detection from content
-	// 2. Recursive fetching and content aggregation
-	// 3. Deduplication and proper content merging
-	return result, nil
-}
+// func (m *Mercury) collectAllPages(result *Result, extractor Extractor, opts ParserOptions) (*Result, error) {
+// 	// Multi-page collection not implemented - would require:
+// 	// 1. Next page URL detection from content
+// 	// 2. Recursive fetching and content aggregation
+// 	// 3. Deduplication and proper content merging
+// 	return result, nil
+// }

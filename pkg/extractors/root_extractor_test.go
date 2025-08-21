@@ -302,7 +302,9 @@ func TestSelect(t *testing.T) {
 		{
 			name: "hardcoded string",
 			html: testHTML,
-			extractionOpts: "Fixed Author Name",
+			extractionOpts: map[string]interface{}{
+				"hardcoded": "Fixed Author Name",
+			},
 			fieldType:     "author",
 			extractHtml:   false,
 			expectedResult: true,

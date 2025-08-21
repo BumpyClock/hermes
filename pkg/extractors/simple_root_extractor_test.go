@@ -94,7 +94,9 @@ func TestCleanBySelectorsList(t *testing.T) {
 
 			if tt.expected == -1 {
 				// No cleaning should occur
-				assert.Equal(t, content.Html(), result.Html())
+				contentHtml, _ := content.Html()
+				resultHtml, _ := result.Html()
+				assert.Equal(t, contentHtml, resultHtml)
 			} else {
 				// Elements should be removed
 				afterCount := result.Find(strings.Join(tt.clean, ",")).Length()

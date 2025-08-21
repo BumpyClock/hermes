@@ -12,6 +12,7 @@ import (
 	"github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/BumpyClock/parser-go/pkg/cleaners"
+	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
 	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
 	"github.com/BumpyClock/parser-go/pkg/utils/security"
 	"github.com/BumpyClock/parser-go/pkg/utils/text"
@@ -29,10 +30,16 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 		// Likely an empty ParserOptions{}, so enable fallback for better UX
 		opts.Fallback = true
 	}
+	
 	// Create base result
 	result := &Result{
 		URL:    targetURL,
 		Domain: parsedURL.Host,
+	}
+	
+	// Try to use custom extractor first if available
+	if customResult := m.tryCustomExtractor(doc, targetURL, parsedURL, opts); customResult != nil {
+		return customResult, nil
 	}
 
 	// Build meta cache by scanning all meta tags in the document
@@ -154,6 +161,178 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 	}
 
 	return result, nil
+}
+
+// tryCustomExtractor attempts to use a custom extractor for the given domain
+func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) *Result {
+	// Look for custom extractor for this domain
+	allExtractors := custom.GetAllCustomExtractors()
+	var customExtractor *custom.CustomExtractor
+	
+	// Find extractor by domain match
+	for _, extractor := range allExtractors {
+		if extractor.Domain == parsedURL.Host {
+			customExtractor = extractor
+			break
+		}
+	}
+	
+	if customExtractor == nil {
+		return nil // No custom extractor found
+	}
+	
+	// Create result with custom extractor info
+	result := &Result{
+		URL:           targetURL,
+		Domain:        parsedURL.Host,
+		ExtractorUsed: "custom:" + customExtractor.Domain,
+	}
+	
+	// Extract title using custom selectors
+	if customExtractor.Title != nil && len(customExtractor.Title.Selectors) > 0 {
+		for _, selector := range customExtractor.Title.Selectors {
+			if selectorStr, ok := selector.(string); ok {
+				if titleEl := doc.Find(selectorStr).First(); titleEl.Length() > 0 {
+					if title := strings.TrimSpace(titleEl.Text()); title != "" {
+						result.Title = cleaners.CleanTitle(title, targetURL, doc)
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	// Extract author using custom selectors
+	if customExtractor.Author != nil && len(customExtractor.Author.Selectors) > 0 {
+		for _, selector := range customExtractor.Author.Selectors {
+			if selectorStr, ok := selector.(string); ok {
+				if authorEl := doc.Find(selectorStr).First(); authorEl.Length() > 0 {
+					if author := strings.TrimSpace(authorEl.Text()); author != "" {
+						result.Author = cleaners.CleanAuthor(author)
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	// Extract content using custom selectors
+	if customExtractor.Content != nil && len(customExtractor.Content.Selectors) > 0 {
+		for _, selector := range customExtractor.Content.Selectors {
+			if selectorStr, ok := selector.(string); ok {
+				if contentEl := doc.Find(selectorStr).First(); contentEl.Length() > 0 {
+					if contentHTML, err := contentEl.Html(); err == nil && strings.TrimSpace(contentHTML) != "" {
+						// Apply content type conversion with security sanitization
+						switch strings.ToLower(opts.ContentType) {
+						case "text":
+							result.Content = text.NormalizeSpaces(stripHTMLTags(contentHTML))
+						case "markdown":
+							result.Content = convertToMarkdown(contentHTML)
+						default: // "html" or anything else
+							result.Content = security.SanitizeHTML(contentHTML)
+						}
+						
+						// Extract excerpt if content exists
+						if result.Content != "" {
+							result.Excerpt = text.ExcerptContent(result.Content, 160)
+						}
+						
+						// Calculate word count
+						result.WordCount = calculateWordCount(result.Content)
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	// Extract date using custom selectors
+	if customExtractor.DatePublished != nil && len(customExtractor.DatePublished.Selectors) > 0 {
+		for _, selector := range customExtractor.DatePublished.Selectors {
+			// Handle array selectors like [".dateblock time[datetime]", "datetime"]
+			if selectorArray, ok := selector.([]string); ok && len(selectorArray) >= 2 {
+				if dateEl := doc.Find(selectorArray[0]).First(); dateEl.Length() > 0 {
+					if dateStr := strings.TrimSpace(dateEl.AttrOr(selectorArray[1], "")); dateStr != "" {
+						if date, err := parseDate(dateStr); err == nil {
+							result.DatePublished = &date
+							break
+						}
+					}
+				}
+			} else if selectorStr, ok := selector.(string); ok {
+				if dateEl := doc.Find(selectorStr).First(); dateEl.Length() > 0 {
+					if dateStr := strings.TrimSpace(dateEl.Text()); dateStr != "" {
+						if date, err := parseDate(dateStr); err == nil {
+							result.DatePublished = &date
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	// Fall back to generic extractors for missing fields if fallback is enabled
+	if opts.Fallback {
+		metaCache := buildMetaCache(doc)
+		
+		// Fallback title extraction
+		if result.Title == "" {
+			if title := generic.GenericTitleExtractor.Extract(doc.Selection, targetURL, metaCache); title != "" {
+				result.Title = cleaners.CleanTitle(title, targetURL, doc)
+			}
+		}
+		
+		// Fallback author extraction
+		if result.Author == "" {
+			authorExtractor := &generic.GenericAuthorExtractor{}
+			if author := authorExtractor.Extract(doc.Selection, metaCache); author != nil && *author != "" {
+				result.Author = cleaners.CleanAuthor(*author)
+			}
+		}
+		
+		// Fallback date extraction
+		if result.DatePublished == nil {
+			if dateStr := generic.GenericDateExtractor.Extract(doc.Selection, targetURL, metaCache); dateStr != nil && *dateStr != "" {
+				if date, err := parseDate(*dateStr); err == nil {
+					result.DatePublished = &date
+				}
+			}
+		}
+		
+		// Fallback content extraction if no content was found
+		if result.Content == "" {
+			contentExtractor := generic.NewGenericContentExtractor()
+			contentParams := generic.ExtractorParams{
+				Doc:   doc,
+				HTML:  "",
+				Title: result.Title,
+				URL:   targetURL,
+			}
+			contentOpts := generic.ExtractorOptions{
+				StripUnlikelyCandidates: true,
+				WeightNodes:             true,
+				CleanConditionally:      true,
+			}
+			if content := contentExtractor.Extract(contentParams, contentOpts); content != "" {
+				switch strings.ToLower(opts.ContentType) {
+				case "text":
+					result.Content = text.NormalizeSpaces(stripHTMLTags(content))
+				case "markdown":
+					result.Content = convertToMarkdown(content)
+				default:
+					result.Content = security.SanitizeHTML(content)
+				}
+				
+				if result.Content != "" {
+					result.Excerpt = text.ExcerptContent(result.Content, 160)
+					result.WordCount = calculateWordCount(result.Content)
+				}
+			}
+		}
+	}
+	
+	return result
 }
 
 // parseDate parses a date string into a time.Time

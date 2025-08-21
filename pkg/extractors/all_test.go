@@ -51,8 +51,8 @@ func TestGetAllExtractors(t *testing.T) {
 				}
 				
 				// Should be an Extractor interface implementation
-				if _, ok := extractor.(Extractor); !ok {
-					t.Errorf("Registry entry for %s does not implement Extractor interface", domain)
+				if extractor.GetDomain() == "" {
+					t.Errorf("Registry entry for %s does not have a valid domain", domain)
 				}
 			}
 		})
@@ -86,12 +86,9 @@ func TestGetAllExtractorsJavaScriptCompatibility(t *testing.T) {
 			}
 			
 			// Verify extractor has proper domain information
-			if ext, ok := extractor.(Extractor); ok {
-				// The domain should match or be related to the extractor's domain
-				extractorDomain := ext.GetDomain()
-				if extractorDomain == "" {
-					t.Errorf("Extractor for domain %s has empty GetDomain()", domain)
-				}
+			extractorDomain := extractor.GetDomain()
+			if extractorDomain == "" {
+				t.Errorf("Extractor for domain %s has empty GetDomain()", domain)
 			}
 		}
 	})

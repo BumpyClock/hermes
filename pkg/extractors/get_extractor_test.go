@@ -4,12 +4,13 @@
 package extractors
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/BumpyClock/parser-go/pkg/parser"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"github.com/BumpyClock/parser-go/pkg/parser"
 )
 
 // TestMockExtractor implements the Extractor interface for testing
@@ -22,7 +23,7 @@ func (m *TestMockExtractor) GetDomain() string {
 	return m.domain
 }
 
-// Extract implements the Extractor interface  
+// Extract implements the Extractor interface
 func (m *TestMockExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
 	return &parser.Result{
 		URL:    url,
@@ -39,11 +40,11 @@ func CreateMockExtractor(domain string) Extractor {
 // Test hostname extraction matching JavaScript URL.parse(url).hostname
 func TestGetExtractorHostnameExtraction(t *testing.T) {
 	tests := []struct {
-		name      string
-		inputURL  string
-		expectHostname string
+		name             string
+		inputURL         string
+		expectHostname   string
 		expectBaseDomain string
-		expectError bool
+		expectError      bool
 	}{
 		{
 			name:             "Basic hostname",
@@ -53,7 +54,7 @@ func TestGetExtractorHostnameExtraction(t *testing.T) {
 			expectError:      false,
 		},
 		{
-			name:             "Subdomain hostname", 
+			name:             "Subdomain hostname",
 			inputURL:         "https://blog.example.com/post",
 			expectHostname:   "blog.example.com",
 			expectBaseDomain: "example.com",
@@ -102,12 +103,12 @@ func TestGetExtractorHostnameExtraction(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hostname, baseDomain, err := extractURLComponents(tt.inputURL)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				return
 			}
-			
+
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectHostname, hostname, "Hostname should match JavaScript URL.parse behavior")
 			assert.Equal(t, tt.expectBaseDomain, baseDomain, "Base domain should match JavaScript .split('.').slice(-2).join('.')")
@@ -179,7 +180,7 @@ func TestGetExtractorPriority(t *testing.T) {
 		"api.example.com": CreateMockExtractor("api.example.com"),
 		"example.com":     CreateMockExtractor("example.com"), // For Priority 2 test
 	}
-	
+
 	staticExtractors := map[string]Extractor{
 		"static.example.com": CreateMockExtractor("static.example.com"),
 		"test.com":           CreateMockExtractor("test.com"), // Different domain for clean testing
@@ -187,10 +188,10 @@ func TestGetExtractorPriority(t *testing.T) {
 	}
 
 	tests := []struct {
-		name             string
-		inputURL         string
+		name              string
+		inputURL          string
 		expectedExtractor string
-		description      string
+		description       string
 	}{
 		{
 			name:              "API extractor by hostname - Priority 1",
@@ -199,14 +200,14 @@ func TestGetExtractorPriority(t *testing.T) {
 			description:       "Should find API extractor by exact hostname match first",
 		},
 		{
-			name:              "API extractor by base domain - Priority 2", 
+			name:              "API extractor by base domain - Priority 2",
 			inputURL:          "https://subdomain.example.com/page",
 			expectedExtractor: "example.com",
 			description:       "Should find API extractor by base domain when hostname not found",
 		},
 		{
 			name:              "Static extractor by hostname - Priority 3",
-			inputURL:          "https://test.com/page", 
+			inputURL:          "https://test.com/page",
 			expectedExtractor: "test.com",
 			description:       "Should find static extractor by hostname when API extractors don't match",
 		},
@@ -230,11 +231,12 @@ func TestGetExtractorPriority(t *testing.T) {
 			mockDetectByHtml := func(*goquery.Document) Extractor {
 				return nil
 			}
-			
+
 			extractor := getExtractorWithRegistries(tt.inputURL, nil, nil, apiExtractors, staticExtractors, mockDetectByHtml)
-			
+
 			// Special case for NYTimes test - it won't match because blog.nytimes.com -> nytimes.com but we have www.nytimes.com
-			if tt.name == "Static extractor by base domain - Priority 4" {
+			switch tt.name {
+			case "Static extractor by base domain - Priority 4":
 				// This should actually fallback to generic since nytimes.com != www.nytimes.com
 				// Generic extractor returns nil, so we need to handle this case
 				if extractor == nil {
@@ -242,14 +244,14 @@ func TestGetExtractorPriority(t *testing.T) {
 				} else {
 					assert.Equal(t, "*", extractor.GetDomain(), "Should fallback to generic when base domain doesn't match exactly")
 				}
-			} else if tt.name == "Generic extractor fallback - Priority 6" {
+			case "Generic extractor fallback - Priority 6":
 				// Generic extractor returns nil in current implementation
 				if extractor == nil {
 					assert.Nil(t, extractor, "Generic extractor should return nil as fallback signal")
 				} else {
 					assert.Equal(t, tt.expectedExtractor, extractor.GetDomain(), tt.description)
 				}
-			} else {
+			default:
 				if extractor == nil {
 					assert.Nil(t, extractor, "Extractor should not be nil for "+tt.name)
 				} else {
@@ -266,7 +268,7 @@ func TestGetExtractorHtmlDetection(t *testing.T) {
 	htmlContent := `<html><body><div class="article">Content</div></body></html>`
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
 	require.NoError(t, err)
-	
+
 	// Mock HTML detector that returns an extractor
 	htmlDetectedExtractor := CreateMockExtractor("html-detected.com")
 	mockDetectByHtml := func(d *goquery.Document) Extractor {
@@ -274,7 +276,7 @@ func TestGetExtractorHtmlDetection(t *testing.T) {
 		assert.NotNil(t, d)
 		return htmlDetectedExtractor
 	}
-	
+
 	tests := []struct {
 		name              string
 		inputURL          string
@@ -292,8 +294,8 @@ func TestGetExtractorHtmlDetection(t *testing.T) {
 			description:       "Should use HTML detection when no registry matches",
 		},
 		{
-			name:      "Registry overrides HTML detection",
-			inputURL:  "https://example.com/page",
+			name:     "Registry overrides HTML detection",
+			inputURL: "https://example.com/page",
 			apiExtractors: map[string]Extractor{
 				"example.com": CreateMockExtractor("api.example.com"),
 			},
@@ -306,17 +308,17 @@ func TestGetExtractorHtmlDetection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			extractor := getExtractorWithRegistries(tt.inputURL, nil, doc, tt.apiExtractors, tt.staticExtractors, mockDetectByHtml)
-			
+
 			assert.Equal(t, tt.expectedExtractor, extractor.GetDomain(), tt.description)
 		})
 	}
 }
 
-// Test integration with actual GenericExtractor 
+// Test integration with actual GenericExtractor
 func TestGetExtractorGenericFallback(t *testing.T) {
 	// Test with real GetExtractor function (no registries should be empty in real usage)
 	extractor, err := GetExtractor("https://unknown-site.com/page", nil, nil)
-	
+
 	assert.NoError(t, err, "Should not error on unknown site")
 	assert.NotNil(t, extractor, "Should return GenericExtractor")
 	assert.Equal(t, "*", extractor.GetDomain(), "Should return GenericExtractor with * domain")
@@ -325,11 +327,11 @@ func TestGetExtractorGenericFallback(t *testing.T) {
 // Test JavaScript compatibility with actual URL patterns
 func TestGetExtractorJavaScriptCompatibility(t *testing.T) {
 	tests := []struct {
-		name        string
-		inputURL    string
+		name            string
+		inputURL        string
 		setupRegistries func() (map[string]Extractor, map[string]Extractor)
-		expectedDomain string
-		description string
+		expectedDomain  string
+		description     string
 	}{
 		{
 			name:     "NYTimes main site",
@@ -358,10 +360,10 @@ func TestGetExtractorJavaScriptCompatibility(t *testing.T) {
 			inputURL: "https://api.example.com/content",
 			setupRegistries: func() (map[string]Extractor, map[string]Extractor) {
 				return map[string]Extractor{
-					"api.example.com": CreateMockExtractor("api-priority"),
-				}, map[string]Extractor{
-					"api.example.com": CreateMockExtractor("static-priority"),
-				}
+						"api.example.com": CreateMockExtractor("api-priority"),
+					}, map[string]Extractor{
+						"api.example.com": CreateMockExtractor("static-priority"),
+					}
 			},
 			expectedDomain: "api-priority",
 			description:    "Should prefer API extractor over static extractor",
@@ -381,9 +383,9 @@ func TestGetExtractorJavaScriptCompatibility(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			apiExtractors, staticExtractors := tt.setupRegistries()
 			mockDetectByHtml := func(*goquery.Document) Extractor { return nil }
-			
+
 			extractor := getExtractorWithRegistries(tt.inputURL, nil, nil, apiExtractors, staticExtractors, mockDetectByHtml)
-			
+
 			assert.Equal(t, tt.expectedDomain, extractor.GetDomain(), tt.description)
 		})
 	}
@@ -397,7 +399,7 @@ func BenchmarkGetExtractor(b *testing.B) {
 		"https://unknown.site.com/page",
 		"https://api.service.com/endpoint",
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		url := testURLs[i%len(testURLs)]

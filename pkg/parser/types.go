@@ -38,6 +38,7 @@ type Result struct {
 	Direction      string                `json:"direction"`
 	TotalPages     int                   `json:"total_pages"`
 	RenderedPages  int                   `json:"rendered_pages"`
+	ExtractorUsed  string                `json:"extractor_used,omitempty"`
 	Extended       map[string]interface{} `json:"extended,omitempty"`
 	
 	// Error handling fields for JS compatibility

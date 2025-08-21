@@ -219,6 +219,11 @@ func checkExtractorsParallel(ctx context.Context, candidates []*ExtractorCandida
 
 // checkExtractorCapability determines if an extractor can handle the given document/URL
 func checkExtractorCapability(ctx context.Context, extractor Extractor, doc *goquery.Document, url string) (bool, error) {
+	// TODO: Use ctx for timeout control in future implementation
+	_ = ctx
+	// TODO: Use doc for content-based capability detection in future implementation  
+	_ = doc
+	
 	// For now, assume all extractors can handle their assigned domains
 	// In a full implementation, this could call extractor.CanHandle() or similar
 	

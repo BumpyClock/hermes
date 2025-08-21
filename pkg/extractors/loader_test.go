@@ -100,8 +100,8 @@ func TestExtractorLoaderBasicLoad(t *testing.T) {
 	// Create a test extractor
 	testExtractor := &custom.CustomExtractor{
 		Domain: "example.com",
-		Title: map[string]interface{}{
-			"selectors": []string{"h1", ".title"},
+		Title: &custom.FieldExtractor{
+			Selectors: []interface{}{"h1", ".title"},
 		},
 	}
 	
@@ -143,8 +143,8 @@ func TestExtractorLoaderCaching(t *testing.T) {
 	// Create test extractor
 	testExtractor := &custom.CustomExtractor{
 		Domain: "cache-test.com",
-		Title: map[string]interface{}{
-			"selectors": []string{"h1"},
+		Title: &custom.FieldExtractor{
+			Selectors: []interface{}{"h1"},
 		},
 	}
 	
@@ -200,8 +200,8 @@ func TestExtractorLoaderLRUEviction(t *testing.T) {
 		domain := fmt.Sprintf("test%d.com", i)
 		extractor := &custom.CustomExtractor{
 			Domain: domain,
-			Title: map[string]interface{}{
-				"selectors": []string{"h1"},
+			Title: &custom.FieldExtractor{
+				Selectors: []interface{}{"h1"},
 			},
 		}
 		registry.Register(extractor)
@@ -264,8 +264,8 @@ func TestExtractorLoaderCacheExpiration(t *testing.T) {
 	// Create test extractor
 	testExtractor := &custom.CustomExtractor{
 		Domain: "expire-test.com",
-		Title: map[string]interface{}{
-			"selectors": []string{"h1"},
+		Title: &custom.FieldExtractor{
+			Selectors: []interface{}{"h1"},
 		},
 	}
 	registry.Register(testExtractor)
@@ -300,8 +300,8 @@ func TestExtractorLoaderLoadExtractorByHTML(t *testing.T) {
 	// Create test extractor with HTML detector
 	testExtractor := &custom.CustomExtractor{
 		Domain: "html-test.com",
-		Title: map[string]interface{}{
-			"selectors": []string{"h1"},
+		Title: &custom.FieldExtractor{
+			Selectors: []interface{}{"h1"},
 		},
 	}
 	
@@ -361,8 +361,8 @@ func TestExtractorLoaderMetrics(t *testing.T) {
 	// Create test extractor
 	testExtractor := &custom.CustomExtractor{
 		Domain: "metrics-test.com",
-		Title: map[string]interface{}{
-			"selectors": []string{"h1"},
+		Title: &custom.FieldExtractor{
+			Selectors: []interface{}{"h1"},
 		},
 	}
 	registry.Register(testExtractor)
@@ -410,8 +410,8 @@ func TestExtractorLoaderClearCache(t *testing.T) {
 	// Create and register test extractor
 	testExtractor := &custom.CustomExtractor{
 		Domain: "clear-test.com",
-		Title: map[string]interface{}{
-			"selectors": []string{"h1"},
+		Title: &custom.FieldExtractor{
+			Selectors: []interface{}{"h1"},
 		},
 	}
 	registry.Register(testExtractor)
@@ -448,8 +448,8 @@ func TestExtractorLoaderWarmupCache(t *testing.T) {
 	for _, domain := range domains {
 		extractor := &custom.CustomExtractor{
 			Domain: domain,
-			Title: map[string]interface{}{
-				"selectors": []string{"h1"},
+			Title: &custom.FieldExtractor{
+				Selectors: []interface{}{"h1"},
 			},
 		}
 		registry.Register(extractor)
@@ -494,8 +494,8 @@ func TestExtractorLoaderCacheHitRate(t *testing.T) {
 	// Create test extractor
 	testExtractor := &custom.CustomExtractor{
 		Domain: "hitrate-test.com",
-		Title: map[string]interface{}{
-			"selectors": []string{"h1"},
+		Title: &custom.FieldExtractor{
+			Selectors: []interface{}{"h1"},
 		},
 	}
 	registry.Register(testExtractor)
@@ -526,8 +526,8 @@ func BenchmarkExtractorLoaderCacheHit(b *testing.B) {
 	// Create test extractor
 	testExtractor := &custom.CustomExtractor{
 		Domain: "benchmark.com",
-		Title: map[string]interface{}{
-			"selectors": []string{"h1"},
+		Title: &custom.FieldExtractor{
+			Selectors: []interface{}{"h1"},
 		},
 	}
 	registry.Register(testExtractor)
@@ -554,8 +554,8 @@ func BenchmarkExtractorLoaderCacheMiss(b *testing.B) {
 		domain := fmt.Sprintf("benchmark%d.com", i)
 		extractor := &custom.CustomExtractor{
 			Domain: domain,
-			Title: map[string]interface{}{
-				"selectors": []string{"h1"},
+			Title: &custom.FieldExtractor{
+				Selectors: []interface{}{"h1"},
 			},
 		}
 		registry.Register(extractor)

@@ -413,6 +413,9 @@ func extractFieldResult(opts ExtractOpts, fieldType string, extractHTML bool, ad
 
 // callGenericExtractorFor calls the appropriate generic extractor
 func callGenericExtractorFor(fieldType string, opts ExtractOpts, additionalOpts map[string]interface{}) interface{} {
+	// TODO: Use additionalOpts for extended configuration in future implementation
+	_ = additionalOpts
+	
 	// Create generic extractor instance
 	extractor := generic.NewGenericExtractor()
 	

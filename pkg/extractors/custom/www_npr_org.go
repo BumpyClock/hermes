@@ -7,41 +7,41 @@ package custom
 func GetNPRExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.npr.org",
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
 				"h1",
 				".storytitle",
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
 				"p.byline__name.byline__name--block",
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`.dateblock time[datetime]`, "datetime"},
 				[]string{`meta[name="date"]`, "value"},
 			},
 		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="og:image"]`, "value"},
 				[]string{`meta[name="twitter:image:src"]`, "value"},
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
 					".storytext",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				".bucketwrap.image": &StringTransform{
 					TargetTag: "figure",
@@ -50,7 +50,7 @@ func GetNPRExtractor() *CustomExtractor {
 					TargetTag: "figcaption",
 				},
 			},
-			
+
 			Clean: []string{
 				"div.enlarge_measure",
 			},

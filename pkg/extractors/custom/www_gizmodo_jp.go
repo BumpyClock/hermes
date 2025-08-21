@@ -13,40 +13,40 @@ import (
 // JavaScript equivalent: export const WwwGizmodoJpExtractor = { ... }
 var WwwGizmodoJpExtractor = &CustomExtractor{
 	Domain: "www.gizmodo.jp",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h1.p-post-title",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			"li.p-post-AssistAuthor",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"li.p-post-AssistTime time", "datetime"},
 		},
 	},
-	
+
 	Dek: nil,
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
 				"article.p-post",
 			},
 		},
-		
+
 		// Transform functions for Gizmodo Japan-specific content
 		Transforms: map[string]TransformFunction{
 			"img.p-post-thumbnailImage": &FunctionTransform{
@@ -58,16 +58,14 @@ var WwwGizmodoJpExtractor = &CustomExtractor{
 						if idx := strings.LastIndex(src, "='"); idx >= 0 {
 							src = src[idx+2:]
 						}
-						if strings.HasSuffix(src, "';") {
-							src = src[:len(src)-2]
-						}
+						src = strings.TrimSuffix(src, "';")
 						selection.SetAttr("src", src)
 					}
 					return nil
 				},
 			},
 		},
-		
+
 		// Clean selectors
 		Clean: []string{
 			"h1.p-post-title",
