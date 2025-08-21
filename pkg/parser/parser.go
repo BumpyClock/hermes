@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/BumpyClock/parser-go/pkg/resource"
-	"github.com/BumpyClock/parser-go/pkg/utils/security"
+	"github.com/BumpyClock/hermes/pkg/resource"
+	"github.com/BumpyClock/hermes/pkg/utils/security"
 )
 
 // Mercury is the main parser implementation with built-in optimizations

@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
-	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
-	"github.com/BumpyClock/parser-go/pkg/parser"
+	"github.com/BumpyClock/hermes/pkg/extractors/custom"
+	"github.com/BumpyClock/hermes/pkg/extractors/generic"
+	"github.com/BumpyClock/hermes/pkg/parser"
 )
 
 // DetectByHTMLFunc type for HTML-based extractor detection

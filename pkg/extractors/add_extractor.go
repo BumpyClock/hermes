@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/parser"
+	"github.com/BumpyClock/hermes/pkg/parser"
 )
 
 // FullExtractor represents a complete custom extractor with all field definitions

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/BumpyClock/parser-go/pkg/parser"
+	"github.com/BumpyClock/hermes/pkg/parser"
 )
 
 var (

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/hermes/pkg/utils/dom"
 )
 
 // ContentCleanOptions represents configuration options for content cleaning

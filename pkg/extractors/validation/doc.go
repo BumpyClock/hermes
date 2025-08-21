@@ -20,7 +20,7 @@ The validation framework offers:
 
 Basic validation example:
 
-	import "github.com/BumpyClock/parser-go/pkg/extractors/validation"
+	import "github.com/BumpyClock/hermes/pkg/extractors/validation"
 	
 	// Create a string validator
 	validator := validation.NewStringValidator(validation.StringOptions{
@@ -73,7 +73,7 @@ Register custom field definitions dynamically:
 
 Work with specialized field types:
 
-	import "github.com/BumpyClock/parser-go/pkg/extractors/fields"
+	import "github.com/BumpyClock/hermes/pkg/extractors/fields"
 	
 	// Extract categories
 	categoryExtractor := fields.NewCategoryExtractor()
@@ -191,7 +191,7 @@ Custom profiles can be registered:
 
 The validation framework integrates seamlessly with the parser:
 
-	import "github.com/BumpyClock/parser-go/pkg/parser"
+	import "github.com/BumpyClock/hermes/pkg/parser"
 	
 	// Validation is automatically applied during field extraction
 	// Configure validation behavior as needed

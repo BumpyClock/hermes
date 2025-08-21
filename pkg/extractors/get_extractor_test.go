@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/BumpyClock/parser-go/pkg/parser"
+	"github.com/BumpyClock/hermes/pkg/parser"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

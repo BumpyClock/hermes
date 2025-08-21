@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/utils"
+	"github.com/BumpyClock/hermes/pkg/utils"
 )
 
 func TestFullExtractorSystemIntegration(t *testing.T) {

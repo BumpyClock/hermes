@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/utils/dom"
-	"github.com/BumpyClock/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/hermes/pkg/utils/dom"
+	"github.com/BumpyClock/hermes/pkg/utils/text"
 )
 
 // DATE_PUBLISHED_META_TAGS - Ordered list of meta tag names that denote likely date published dates

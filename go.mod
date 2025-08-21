@@ -1,4 +1,4 @@
-module github.com/BumpyClock/parser-go
+module github.com/BumpyClock/hermes
 
 go 1.24.6
 

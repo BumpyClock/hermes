@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/pools"
+	"github.com/BumpyClock/hermes/pkg/pools"
 )
 
 // StreamingConfig contains configuration for streaming operations

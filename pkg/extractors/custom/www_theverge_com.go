@@ -20,7 +20,9 @@ var WwwThevergeComExtractor = &CustomExtractor{
 	
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
+			[]string{"meta[name=\"author\"]", "content"},
+			[]string{"meta[name=\"parsely-author\"]", "content"},
+			[]string{"meta[name=\"cse-authors\"]", "content"},
 		},
 	},
 	
@@ -38,20 +40,28 @@ var WwwThevergeComExtractor = &CustomExtractor{
 	
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+			[]string{"meta[property=\"og:image\"]", "content"},
+			[]string{"meta[name=\"og:image\"]", "content"},
 		},
 	},
 	
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
-				// feature template multi-match
+				// Modern Verge layout - article body components + follow topics section
+				[]interface{}{".duet--article--article-body-component", ".tly2fw0"},
+				// Backup selectors for content divs + follow section
+				[]interface{}{"div[id*='zephr-anchor']", ".tly2fw0"},
+				// Just main content as fallback
+				".duet--article--article-body-component",
+				"div[id*='zephr-anchor']",
+				// Generic content fallbacks
+				"article",
+				".article-content",
+				// Legacy selectors as final fallback
 				[]interface{}{".c-entry-hero .e-image", ".c-entry-intro", ".c-entry-content"},
-				// regular post multi-match
 				[]interface{}{".e-image--hero", ".c-entry-content"},
-				// feature template fallback
 				".l-wrapper .l-feature",
-				// regular post fallback
 				"div.c-entry-content",
 			},
 		},
@@ -79,6 +89,12 @@ var WwwThevergeComExtractor = &CustomExtractor{
 		Clean: []string{
 			".aside",
 			"img.c-dynamic-image", // images come from noscript transform
+			// Remove excessive image galleries to reduce character count
+			".duet--article--image-gallery-two-up .kqz8fh5 .kqz8fh8 .kqz8fh7",
+			".duet--article--image-gallery-two-up .kqz8fha .kqz8fh9", 
+			"div[class*='image-gallery'] img[srcset]", // Remove srcset attributes
+			".duet--media--content-warning", // Remove content warnings
+			"._1etxtj1", // Remove image gallery navigation
 		},
 	},
 }

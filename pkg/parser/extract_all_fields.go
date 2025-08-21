@@ -11,11 +11,11 @@ import (
 
 	"github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/cleaners"
-	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
-	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
-	"github.com/BumpyClock/parser-go/pkg/utils/security"
-	"github.com/BumpyClock/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/hermes/pkg/cleaners"
+	"github.com/BumpyClock/hermes/pkg/extractors/custom"
+	"github.com/BumpyClock/hermes/pkg/extractors/generic"
+	"github.com/BumpyClock/hermes/pkg/utils/security"
+	"github.com/BumpyClock/hermes/pkg/utils/text"
 )
 
 // extractAllFields orchestrates the complete extraction pipeline
@@ -201,8 +201,8 @@ func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, pa
 		return nil // No custom extractor found
 	}
 	
-	// Log successful custom extractor selection
-	fmt.Printf("DEBUG: Using custom extractor for domain: %s (matched: %s)\n", parsedURL.Host, usedDomain)
+	// Log successful custom extractor selection (optional debug)
+	_ = usedDomain // Suppress unused variable warning
 	
 	// Create result with custom extractor info
 	result := &Result{
@@ -235,6 +235,14 @@ func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, pa
 						break
 					}
 				}
+			} else if selectorArray, ok := selector.([]string); ok && len(selectorArray) >= 2 {
+				// Handle array selectors like ["meta[name='author']", "content"]
+				if authorEl := doc.Find(selectorArray[0]).First(); authorEl.Length() > 0 {
+					if author := strings.TrimSpace(authorEl.AttrOr(selectorArray[1], "")); author != "" {
+						result.Author = cleaners.CleanAuthor(author)
+						break
+					}
+				}
 			}
 		}
 	}
@@ -242,29 +250,60 @@ func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, pa
 	// Extract content using custom selectors
 	if customExtractor.Content != nil && len(customExtractor.Content.Selectors) > 0 {
 		for _, selector := range customExtractor.Content.Selectors {
-			if selectorStr, ok := selector.(string); ok {
-				if contentEl := doc.Find(selectorStr).First(); contentEl.Length() > 0 {
-					if contentHTML, err := contentEl.Html(); err == nil && strings.TrimSpace(contentHTML) != "" {
-						// Apply content type conversion with security sanitization
-						switch strings.ToLower(opts.ContentType) {
-						case "text":
-							result.Content = text.NormalizeSpaces(stripHTMLTags(contentHTML))
-						case "markdown":
-							result.Content = convertToMarkdown(contentHTML)
-						default: // "html" or anything else
-							result.Content = security.SanitizeHTML(contentHTML)
+			var contentHTML string
+			
+			// Handle array selectors (multi-match like [".c-entry-hero .e-image", ".c-entry-intro", ".c-entry-content"])
+			if selectorArray, ok := selector.([]interface{}); ok {
+				var combinedContent strings.Builder
+				for _, selectorItem := range selectorArray {
+					if selectorStr, ok := selectorItem.(string); ok {
+						contentElements := doc.Find(selectorStr)
+						if contentElements.Length() > 0 {
+							contentElements.Each(func(i int, el *goquery.Selection) {
+								if html, err := el.Html(); err == nil && strings.TrimSpace(html) != "" {
+									combinedContent.WriteString(html)
+									combinedContent.WriteString("\n")
+								}
+							})
 						}
-						
-						// Extract excerpt if content exists
-						if result.Content != "" {
-							result.Excerpt = text.ExcerptContent(result.Content, 160)
-						}
-						
-						// Calculate word count
-						result.WordCount = calculateWordCount(result.Content)
-						break
 					}
 				}
+				contentHTML = strings.TrimSpace(combinedContent.String())
+			} else if selectorStr, ok := selector.(string); ok {
+				// Handle single string selectors - get ALL matching elements
+				contentElements := doc.Find(selectorStr)
+				if contentElements.Length() > 0 {
+					var combinedContent strings.Builder
+					contentElements.Each(func(i int, el *goquery.Selection) {
+						if html, err := el.Html(); err == nil && strings.TrimSpace(html) != "" {
+							combinedContent.WriteString(html)
+							combinedContent.WriteString("\n")
+						}
+					})
+					contentHTML = strings.TrimSpace(combinedContent.String())
+				}
+			}
+			
+			// If we found content, process it and break
+			if contentHTML != "" && strings.TrimSpace(contentHTML) != "" {
+				// Apply content type conversion with security sanitization
+				switch strings.ToLower(opts.ContentType) {
+				case "text":
+					result.Content = text.NormalizeSpaces(stripHTMLTags(contentHTML))
+				case "markdown":
+					result.Content = convertToMarkdown(contentHTML)
+				default: // "html" or anything else
+					result.Content = security.SanitizeHTML(contentHTML)
+				}
+				
+				// Extract excerpt if content exists
+				if result.Content != "" {
+					result.Excerpt = text.ExcerptContent(result.Content, 160)
+				}
+				
+				// Calculate word count
+				result.WordCount = calculateWordCount(result.Content)
+				break
 			}
 		}
 	}
@@ -289,6 +328,28 @@ func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, pa
 							result.DatePublished = &date
 							break
 						}
+					}
+				}
+			}
+		}
+	}
+	
+	// Extract lead image URL using custom selectors
+	if customExtractor.LeadImageURL != nil && len(customExtractor.LeadImageURL.Selectors) > 0 {
+		for _, selector := range customExtractor.LeadImageURL.Selectors {
+			if selectorStr, ok := selector.(string); ok {
+				if imageEl := doc.Find(selectorStr).First(); imageEl.Length() > 0 {
+					if imageURL := strings.TrimSpace(imageEl.Text()); imageURL != "" {
+						result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, targetURL)
+						break
+					}
+				}
+			} else if selectorArray, ok := selector.([]string); ok && len(selectorArray) >= 2 {
+				// Handle array selectors like ["meta[property='og:image']", "content"]
+				if imageEl := doc.Find(selectorArray[0]).First(); imageEl.Length() > 0 {
+					if imageURL := strings.TrimSpace(imageEl.AttrOr(selectorArray[1], "")); imageURL != "" {
+						result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, targetURL)
+						break
 					}
 				}
 			}

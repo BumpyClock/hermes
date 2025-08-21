@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/BumpyClock/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/hermes/pkg/utils/dom"
 )
 
 func TestCleanAttributes(t *testing.T) {

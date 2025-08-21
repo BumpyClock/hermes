@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/hermes/pkg/utils/dom"
 )
 
 // EXCERPT_META_SELECTORS defines the meta tag names to search for excerpt content

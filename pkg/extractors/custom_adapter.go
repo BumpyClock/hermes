@@ -7,8 +7,8 @@ import (
 	"fmt"
 	
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
-	"github.com/BumpyClock/parser-go/pkg/parser"
+	"github.com/BumpyClock/hermes/pkg/extractors/custom"
+	"github.com/BumpyClock/hermes/pkg/parser"
 )
 
 // CustomExtractorAdapter wraps a CustomExtractor to implement the main Extractor interface

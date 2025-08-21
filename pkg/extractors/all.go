@@ -4,7 +4,7 @@
 package extractors
 
 import (
-	"github.com/BumpyClock/parser-go/pkg/utils"
+	"github.com/BumpyClock/hermes/pkg/utils"
 )
 
 // GetAllExtractors returns a map of all custom extractors keyed by domain

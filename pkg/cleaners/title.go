@@ -9,8 +9,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/BumpyClock/parser-go/pkg/utils/dom"
-	"github.com/BumpyClock/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/hermes/pkg/utils/dom"
+	"github.com/BumpyClock/hermes/pkg/utils/text"
 )
 
 // Title cleaning constants are now provided in constants.go

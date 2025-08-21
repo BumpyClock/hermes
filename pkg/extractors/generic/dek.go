@@ -9,7 +9,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/BumpyClock/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/hermes/pkg/utils/text"
 )
 
 var (

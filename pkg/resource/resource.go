@@ -9,7 +9,7 @@ import (
 	"io"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/pools"
+	"github.com/BumpyClock/hermes/pkg/pools"
 )
 
 // Resource provides functionality for fetching and preparing HTML documents

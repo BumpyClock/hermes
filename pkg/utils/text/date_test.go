@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/BumpyClock/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/hermes/pkg/utils/text"
 )
 
 func TestParseDate(t *testing.T) {

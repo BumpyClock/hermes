@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/cache"
-	"github.com/BumpyClock/parser-go/pkg/pools"
+	"github.com/BumpyClock/hermes/pkg/cache"
+	"github.com/BumpyClock/hermes/pkg/pools"
 )
 
 // LinkDensity calculates the density of links in an element

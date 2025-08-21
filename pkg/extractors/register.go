@@ -4,7 +4,7 @@
 package extractors
 
 import (
-	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
+	"github.com/BumpyClock/hermes/pkg/extractors/custom"
 )
 
 // RegisterAllCustomExtractors registers all available custom extractors with the global registry

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
+	"github.com/BumpyClock/hermes/pkg/extractors/custom"
 )
 
 // LoaderConfig contains configuration for the extractor loader

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/BumpyClock/parser-go/pkg/pools"
+	"github.com/BumpyClock/hermes/pkg/pools"
 )
 
 // HTTPClient provides a configured HTTP client for fetching resources

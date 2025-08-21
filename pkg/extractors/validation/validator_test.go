@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 	
-	"github.com/BumpyClock/parser-go/pkg/extractors/fields"
+	"github.com/BumpyClock/hermes/pkg/extractors/fields"
 )
 
 func TestValidatorInterface(t *testing.T) {

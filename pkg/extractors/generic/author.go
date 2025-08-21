@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/utils/dom"
-	"github.com/BumpyClock/parser-go/pkg/utils/text"
+	"github.com/BumpyClock/hermes/pkg/utils/dom"
+	"github.com/BumpyClock/hermes/pkg/utils/text"
 )
 
 // Author extraction constants - exact ports from JavaScript

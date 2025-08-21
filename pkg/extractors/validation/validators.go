@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 	
-	"github.com/BumpyClock/parser-go/pkg/utils/security"
+	"github.com/BumpyClock/hermes/pkg/utils/security"
 )
 
 // StringValidator validates string fields

@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/cleaners"
-	"github.com/BumpyClock/parser-go/pkg/extractors/generic"
-	"github.com/BumpyClock/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/hermes/pkg/cleaners"
+	"github.com/BumpyClock/hermes/pkg/extractors/generic"
+	"github.com/BumpyClock/hermes/pkg/utils/dom"
 )
 
 // SelectOpts contains parameters for the select function

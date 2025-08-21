@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/parser-go/pkg/utils/dom"
+	"github.com/BumpyClock/hermes/pkg/utils/dom"
 )
 
 // NormalizeMetaTags normalizes meta tags for easier extraction
