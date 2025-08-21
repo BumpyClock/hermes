@@ -31,16 +31,14 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "mcp__sequentialthinking__sequentialthinking",
-      "mcp__fetch__fetch"
+      "mcp__fetch__fetch",
+      "Bash(comm:*)",
+      "Bash(go tool compile:*)",
+      "Bash(/tmp/registry_check:*)",
+      "Bash(/tmp/concurrency_check:*)"
     ],
     "deny": [],
     "ask": [],
-    "additionalDirectories": [
-      "C:\\Users\\adity\\Projects",
-      "C:\\mnt\\c\\Users\\adity\\Projects\\parser",
-      "C:\\Users\\adity\\.claude",
-      "C:\\c\\Users\\adity\\Projects\\parser\\parser-go",
-      "C:\\c\\Users\\adity\\Projects\\parser"
-    ]
+    "additionalDirectories": []
   }
 }

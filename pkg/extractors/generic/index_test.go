@@ -162,16 +162,23 @@ func TestGenericExtractor_Extract(t *testing.T) {
 		t.Fatalf("Failed to parse test HTML: %v", err)
 	}
 	
-	// Test interface method
-	result, err := extractor.Extract(doc)
+	// Test interface method using ExtractGeneric
+	options := &ExtractionOptions{
+		URL:         "https://example.com/test",
+		Doc:         doc,
+		MetaCache:   []string{},
+		Fallback:    true,
+		ContentType: "text/html",
+	}
+	
+	extractionResult, err := extractor.ExtractGeneric(options)
 	if err != nil {
 		t.Fatalf("Interface extraction failed: %v", err)
 	}
 	
 	// Result should be of type *ExtractionResult
-	extractionResult, ok := result.(*ExtractionResult)
-	if !ok {
-		t.Fatalf("Expected *ExtractionResult, got %T", result)
+	if extractionResult == nil {
+		t.Fatalf("Expected *ExtractionResult, got nil")
 	}
 	
 	// Basic validation

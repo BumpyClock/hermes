@@ -31,6 +31,8 @@ type CollectAllPagesOptions struct {
 	URL           string
 	Resource      ResourceInterface
 	RootExtractor *RootExtractorInterface
+	
+	// Placeholder for future enhancements
 }
 
 // CollectAllPages collects and merges content from multiple pages of an article
@@ -41,6 +43,8 @@ type CollectAllPagesOptions struct {
 // - Progressive content concatenation with <hr><h4>Page N</h4> separators
 // - Final word count calculation for combined content
 func CollectAllPages(opts CollectAllPagesOptions) map[string]interface{} {
+	
+	// Otherwise, use the original JavaScript-compatible implementation
 	// At this point, we've fetched just the first page
 	pages := 1
 	
@@ -175,3 +179,4 @@ func CollectAllPages(opts CollectAllPagesOptions) map[string]interface{} {
 		"word_count":     wordCount,
 	}
 }
+

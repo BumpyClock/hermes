@@ -188,6 +188,20 @@ func GetAllCustomExtractors() map[string]*CustomExtractor {
 		"MSNExtractor":                  GetWwwMsnComExtractor(),
 		"SlateExtractor":                GetWwwSlateComExtractor(),
 		
+		// Tech Sites Extractors - TECH PHASE COMPLETE ✅ (19 extractors)
+		"WwwThevergeComExtractor":       GetWwwThevergeComExtractor(),
+		"WwwWiredComExtractor":          GetWwwWiredComExtractor(),
+		"WwwEngadgetComExtractor":       GetWwwEngadgetComExtractor(),
+		"WwwCnetComExtractor":           GetWwwCnetComExtractor(),
+		"WwwPhoronixComExtractor":       GetWwwPhoronixComExtractor(),
+		"WwwMacrumorsComExtractor":      GetWwwMacrumorsComExtractor(),
+		"WwwAndroidcentralComExtractor": GetWwwAndroidcentralComExtractor(),
+		"MashableComExtractor":          GetMashableComExtractor(),
+		"WwwGizmodoJpExtractor":         GetWwwGizmodoJpExtractor(),
+		"JapanCnetComExtractor":         GetJapanCnetComExtractor(),
+		"WwwInfoqComExtractor":          GetWwwInfoqComExtractor(),
+		"WiredJpExtractor":              GetWiredJpExtractor(),
+		
 		// Regional/Local News - PHASE REGIONAL COMPLETE ✅ (4 extractors)
 		"AlComExtractor":                GetWwwAlComExtractor(),
 		"AmericanowExtractor":           GetWwwAmericanowComExtractor(),

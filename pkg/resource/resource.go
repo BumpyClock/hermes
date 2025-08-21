@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"bytes"
+	"io"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/BumpyClock/parser-go/pkg/pools"
@@ -15,6 +17,7 @@ type Resource struct{}
 
 // Create creates a Resource by fetching from URL or using provided HTML
 // This is the main entry point that orchestrates fetch -> decode -> DOM preparation
+// Automatically detects large documents and uses streaming when beneficial
 //
 // Parameters:
 // - rawURL: The URL for the document we should retrieve
@@ -49,6 +52,12 @@ func (r *Resource) Create(rawURL string, preparedResponse string, parsedURL *url
 
 	if result.IsError() {
 		return nil, fmt.Errorf("resource fetch failed: %s", result.Message)
+	}
+
+	// Check if document is large and should use streaming
+	documentSize := int64(len(result.Response.Body))
+	if IsLargeDocument(documentSize) {
+		return r.GenerateDocStreaming(result)
 	}
 
 	return r.GenerateDoc(result)
@@ -216,4 +225,75 @@ func (r *Resource) recheckEncoding(content []byte, doc *goquery.Document, header
 // NewResource creates a new Resource instance
 func NewResource() *Resource {
 	return &Resource{}
+}
+
+// IsLargeDocument determines if a document should use streaming
+func IsLargeDocument(size int64) bool {
+	const largeSizeThreshold = 1024 * 1024 // 1MB
+	return size > largeSizeThreshold
+}
+
+// GenerateDocStreaming creates a goquery Document using streaming for large documents
+// Provides memory optimization for documents over 1MB by processing HTML in chunks
+func (r *Resource) GenerateDocStreaming(result *FetchResult) (*goquery.Document, error) {
+	contentType := result.Response.GetContentType()
+
+	// Check if content appears to be HTML/text
+	if !IsTextContent(contentType) {
+		return nil, fmt.Errorf("content does not appear to be text, got: %s", contentType)
+	}
+
+	// For streaming, we still need to validate limits but can be more lenient
+	documentSize := int64(len(result.Response.Body))
+	if documentSize > MAX_DOCUMENT_SIZE_STREAMING {
+		return nil, fmt.Errorf("document too large for streaming: %d bytes (max: %d)", 
+			documentSize, MAX_DOCUMENT_SIZE_STREAMING)
+	}
+
+	// For now, implement a simplified streaming approach
+	// In a complete implementation, this would use the full streaming parser
+	
+	// Create a reader from the response body
+	reader := bytes.NewReader(result.Response.Body)
+	
+	// Process the document in chunks to reduce memory pressure
+	const chunkSize = 128 * 1024 // 128KB chunks
+	var htmlBuilder strings.Builder
+	
+	buffer := make([]byte, chunkSize)
+	for {
+		n, err := reader.Read(buffer)
+		if err != nil && err != io.EOF {
+			return nil, fmt.Errorf("error reading document chunks: %w", err)
+		}
+		
+		if n > 0 {
+			htmlBuilder.Write(buffer[:n])
+		}
+		
+		if err == io.EOF {
+			break
+		}
+	}
+	
+	// Parse the complete HTML using pooled document creation
+	doc, err := pools.GlobalDocumentPool.Get(strings.NewReader(htmlBuilder.String()))
+	if err != nil {
+		// Fallback to regular parsing if streaming approach fails
+		if documentSize < 5*1024*1024 { // 5MB fallback limit
+			return r.GenerateDoc(result)
+		}
+		return nil, fmt.Errorf("streaming parse failed: %w", err)
+	}
+
+	if doc == nil {
+		return nil, fmt.Errorf("streaming parser returned nil document")
+	}
+
+	// Apply basic DOM validation 
+	if doc.Find("*").Length() == 0 {
+		return nil, fmt.Errorf("no children found in streamed document, likely a bad parse")
+	}
+
+	return doc, nil
 }

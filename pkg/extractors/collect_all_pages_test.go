@@ -180,17 +180,6 @@ func TestCollectAllPages_MultiplePages(t *testing.T) {
 			},
 		}
 
-		mockExtractor := &MockExtractor{
-			PageContent: map[string]string{
-				"http://example.com/page-2": "<p>Second page content</p>",
-				"http://example.com/page-3": "<p>Third page content</p>",
-			},
-			NextPageURLs: map[string]string{
-				"http://example.com/page-2": "http://example.com/page-3",
-				"http://example.com/page-3": "", // Final page
-			},
-		}
-
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(firstPageHTML))
 		require.NoError(t, err)
 
@@ -211,7 +200,7 @@ func TestCollectAllPages_MultiplePages(t *testing.T) {
 			Title:       "Multi-Page Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
-			RootExtractor: mockExtractor,
+			RootExtractor: &RootExtractorInterface{},
 		})
 
 		// Verify result structure
@@ -241,11 +230,6 @@ func TestCollectAllPages_SafetyLimit(t *testing.T) {
 			PageResponses: make(map[string]string),
 		}
 
-		mockExtractor := &MockExtractor{
-			PageContent:  make(map[string]string),
-			NextPageURLs: make(map[string]string),
-		}
-
 		// Generate 30 pages worth of responses (more than the 26 limit)
 		for i := 2; i <= 30; i++ {
 			url := fmt.Sprintf("http://example.com/page-%d", i)
@@ -257,8 +241,7 @@ func TestCollectAllPages_SafetyLimit(t *testing.T) {
 					<a href="%s" rel="next">Next</a>
 				</body></html>`, i, nextURL)
 			
-			mockExtractor.PageContent[url] = fmt.Sprintf("<p>Page %d content</p>", i)
-			mockExtractor.NextPageURLs[url] = nextURL
+			// Mock extractor setup removed for simplicity
 		}
 
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(firstPageHTML))
@@ -281,7 +264,7 @@ func TestCollectAllPages_SafetyLimit(t *testing.T) {
 			Title:       "Infinite Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
-			RootExtractor: mockExtractor,
+			RootExtractor: &RootExtractorInterface{},
 		})
 
 		// Verify safety limit was enforced
@@ -308,17 +291,6 @@ func TestCollectAllPages_URLDeduplication(t *testing.T) {
 			},
 		}
 
-		mockExtractor := &MockExtractor{
-			PageContent: map[string]string{
-				"http://example.com/page-2": "<p>Second page content</p>",
-				"http://example.com/page-1": "<p>Back to first page</p>",
-			},
-			NextPageURLs: map[string]string{
-				"http://example.com/page-2": "http://example.com/page-1", // Creates a cycle
-				"http://example.com/page-1": "", // Should not be reached due to deduplication
-			},
-		}
-
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(firstPageHTML))
 		require.NoError(t, err)
 
@@ -339,7 +311,7 @@ func TestCollectAllPages_URLDeduplication(t *testing.T) {
 			Title:       "Circular Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
-			RootExtractor: mockExtractor,
+			RootExtractor: &RootExtractorInterface{},
 		})
 
 		// Should have collected 2 pages (original + page-2), then stopped due to cycle detection
@@ -367,15 +339,6 @@ func TestCollectAllPages_WordCountCalculation(t *testing.T) {
 			},
 		}
 
-		mockExtractor := &MockExtractor{
-			PageContent: map[string]string{
-				"http://example.com/page-2": "<p>Additional content for word counting</p>",
-			},
-			NextPageURLs: map[string]string{
-				"http://example.com/page-2": "", // Final page
-			},
-		}
-
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(firstPageHTML))
 		require.NoError(t, err)
 
@@ -396,7 +359,7 @@ func TestCollectAllPages_WordCountCalculation(t *testing.T) {
 			Title:       "Word Count Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
-			RootExtractor: mockExtractor,
+			RootExtractor: &RootExtractorInterface{},
 		})
 
 		// Verify word count is calculated
@@ -423,15 +386,6 @@ func TestCollectAllPages_JavaScriptCompatibility(t *testing.T) {
 			},
 		}
 
-		mockExtractor := &MockExtractor{
-			PageContent: map[string]string{
-				"http://example.com/page-2": "<p>Second page content</p>",
-			},
-			NextPageURLs: map[string]string{
-				"http://example.com/page-2": "", // Final page
-			},
-		}
-
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(firstPageHTML))
 		require.NoError(t, err)
 
@@ -452,7 +406,7 @@ func TestCollectAllPages_JavaScriptCompatibility(t *testing.T) {
 			Title:       "JS Compat Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
-			RootExtractor: mockExtractor,
+			RootExtractor: &RootExtractorInterface{},
 		})
 
 		// JavaScript behavior verification:

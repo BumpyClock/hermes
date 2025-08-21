@@ -40,6 +40,10 @@ const MAX_CONTENT_LENGTH = 5242880
 // Maximum document size for processing (10 MB)
 const MAX_DOCUMENT_SIZE = 10485760
 
+// Maximum document size for streaming processing (50 MB)
+// Streaming can handle larger documents efficiently
+const MAX_DOCUMENT_SIZE_STREAMING = 52428800
+
 // Maximum processing time for extraction (30 seconds)
 const MAX_PROCESSING_TIME = 30 * time.Second
 

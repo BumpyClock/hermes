@@ -12,13 +12,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GenericExtractor orchestrates all individual field extractors
-// Direct port of JavaScript src/extractors/generic/index.js
+// GenericExtractor coordinates individual field extractors
+// This is NOT an implementation of parser.Extractor interface
+// It's used internally by the parser package for generic extraction
 type GenericExtractor struct {
 	Domain string
 }
 
-// NewGenericExtractor creates a new generic extractor instance
+// NewGenericExtractor creates a new generic extractor instance  
 func NewGenericExtractor() *GenericExtractor {
 	return &GenericExtractor{
 		Domain: "*", // Matches JavaScript GenericExtractor domain
@@ -28,19 +29,6 @@ func NewGenericExtractor() *GenericExtractor {
 // GetDomain returns the domain this extractor handles
 func (ge *GenericExtractor) GetDomain() string {
 	return ge.Domain
-}
-
-// Extract implements a basic extraction interface (placeholder)
-func (ge *GenericExtractor) Extract(doc *goquery.Document) (interface{}, error) {
-	if doc == nil {
-		return nil, fmt.Errorf("document is nil")
-	}
-	
-	// Return basic extraction result for now
-	return map[string]interface{}{
-		"domain": ge.Domain,
-		"type":   "generic",
-	}, nil
 }
 
 // ExtractionResult represents the complete result from generic extraction

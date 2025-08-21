@@ -52,3 +52,6 @@ coverage.html
 # Debug files
 debug
 *.pprof
+.claude/cclsp.json
+
+test-output/

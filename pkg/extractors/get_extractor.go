@@ -29,9 +29,57 @@ var (
 )
 
 // GenericExtractor creates a generic fallback extractor
+// Returns a basic implementation that satisfies the Extractor interface
 func GenericExtractor() Extractor {
-	// Import and use the full GenericExtractor from generic package
-	return generic.NewGenericExtractor()
+	return &BasicGenericExtractor{domain: "*"}
+}
+
+// BasicGenericExtractor implements the Extractor interface for generic extraction
+type BasicGenericExtractor struct {
+	domain string
+}
+
+// GetDomain returns the domain this extractor handles
+func (bge *BasicGenericExtractor) GetDomain() string {
+	return bge.domain
+}
+
+// Extract performs generic extraction by delegating to the generic package
+func (bge *BasicGenericExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
+	// Create generic extractor from the generic package
+	genericExtractor := generic.NewGenericExtractor()
+	
+	// Convert to generic extraction options
+	genericOpts := &generic.ExtractionOptions{
+		URL:      url,
+		Doc:      doc,
+		HTML:     opts.HTML,
+		Fallback: opts.Fallback,
+	}
+	
+	// Perform generic extraction
+	result, err := genericExtractor.ExtractGeneric(genericOpts)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert to parser.Result
+	parserResult := &parser.Result{
+		URL:           result.URL,
+		Domain:        result.Domain,
+		Title:         result.Title,
+		Author:        result.Author,
+		Content:       result.Content,
+		DatePublished: result.DatePublished,
+		LeadImageURL:  result.LeadImageURL,
+		Dek:           result.Dek,
+		NextPageURL:   result.NextPageURL,
+		Excerpt:       result.Excerpt,
+		WordCount:     result.WordCount,
+		Direction:     result.Direction,
+	}
+	
+	return parserResult, nil
 }
 
 // GetAPIExtractors returns all runtime-registered extractors as Extractor interface
@@ -110,7 +158,7 @@ func getExtractorWithRegistries(
 	// Priority 5: HTML-based detection
 	if doc != nil && detectByHtml != nil {
 		if extractor := detectByHtml(doc); extractor != nil {
-			return *extractor
+			return extractor
 		}
 	}
 	

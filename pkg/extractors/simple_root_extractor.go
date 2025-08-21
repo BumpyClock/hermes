@@ -130,7 +130,7 @@ func FindMatchingSelectorFromList(doc *goquery.Document, selectors []interface{}
 func transformAndCleanContent(content *goquery.Selection, doc *goquery.Document, url string, extractionOpts map[string]interface{}) *goquery.Selection {
 	// Make links absolute
 	if url != "" {
-		dom.MakeLinksAbsolute(content, doc, url)
+		dom.MakeLinksAbsolute(doc, url)
 	}
 
 	// Apply cleaning selectors
@@ -152,16 +152,14 @@ func getCleanerForFieldType(fieldType string) func(*goquery.Selection, *goquery.
 	case "content":
 		return func(content *goquery.Selection, doc *goquery.Document) *goquery.Selection {
 			// Use existing content cleaner
-			return cleaners.ExtractCleanNodeFunc(content, cleaners.ContentCleanOptions{
-				StripUnlikelyCandidates: false,
-				WeightNodes:             false,
-				CleanConditionally:      true,
+			return cleaners.ExtractCleanNode(content, doc, cleaners.ContentCleanOptions{
+				CleanConditionally: true,
 			})
 		}
 	case "title":
 		return func(content *goquery.Selection, doc *goquery.Document) *goquery.Selection {
 			// Use existing title cleaner
-			cleanText := cleaners.CleanTitle(content.Text())
+			cleanText := cleaners.CleanTitle(content.Text(), "", doc)
 			content.SetText(cleanText)
 			return content
 		}
@@ -415,62 +413,50 @@ func extractFieldResult(opts ExtractOpts, fieldType string, extractHTML bool, ad
 
 // callGenericExtractorFor calls the appropriate generic extractor
 func callGenericExtractorFor(fieldType string, opts ExtractOpts, additionalOpts map[string]interface{}) interface{} {
-	// Create options for generic extractors
-	genericOpts := generic.ExtractorOptions{
-		URL: opts.URL,
+	// Create generic extractor instance
+	extractor := generic.NewGenericExtractor()
+	
+	// Build extraction options
+	extractionOpts := &generic.ExtractionOptions{
+		URL:         opts.URL,
+		Doc:         opts.Doc,
+		MetaCache:   []string{},
+		Fallback:    true,
+		ContentType: "text/html",
 	}
 
+	// Perform generic extraction to get all fields
+	result, err := extractor.ExtractGeneric(extractionOpts)
+	if err != nil {
+		return nil
+	}
+
+	// Return the specific field requested
 	switch fieldType {
 	case "title":
-		if result, err := generic.ExtractTitle(opts.Doc, genericOpts); err == nil {
-			return result
-		}
+		return result.Title
 	case "author":
-		if result, err := generic.ExtractAuthor(opts.Doc, genericOpts); err == nil {
-			return result
-		}
+		return result.Author
 	case "date_published":
-		if result, err := generic.ExtractDate(opts.Doc, genericOpts); err == nil {
-			return result
-		}
+		return result.DatePublished
 	case "content":
-		if result, err := generic.ExtractContent(opts.Doc, genericOpts); err == nil {
-			return result
-		}
+		return result.Content
 	case "lead_image_url":
-		if result, err := generic.ExtractImage(opts.Doc, genericOpts); err == nil {
-			return result
-		}
+		return result.LeadImageURL
 	case "dek":
-		if result, err := generic.ExtractDek(opts.Doc, genericOpts); err == nil {
-			return result
-		}
+		return result.Dek
 	case "excerpt":
-		if content, ok := additionalOpts["content"].(string); ok {
-			if result, err := generic.ExtractExcerpt(opts.Doc, generic.ExtractorOptions{Content: content}); err == nil {
-				return result
-			}
-		}
+		return result.Excerpt
 	case "word_count":
-		if content, ok := additionalOpts["content"].(string); ok {
-			if result, err := generic.ExtractWordCount(opts.Doc, generic.ExtractorOptions{Content: content}); err == nil {
-				return result
-			}
-		}
+		return result.WordCount
 	case "direction":
-		if title, ok := additionalOpts["title"].(string); ok {
-			if result, err := generic.ExtractDirection(opts.Doc, generic.ExtractorOptions{Title: title}); err == nil {
-				return result
-			}
-		}
+		return result.Direction
 	case "next_page_url":
-		if result, err := generic.ExtractNextPageURL(opts.Doc, genericOpts); err == nil {
-			return result
-		}
-	case "url_and_domain":
-		if urlResult, err := generic.ExtractURL(opts.Doc, genericOpts); err == nil {
-			return urlResult
-		}
+		return result.NextPageURL
+	case "url":
+		return result.URL
+	case "domain":
+		return result.Domain
 	}
 
 	return nil
@@ -590,64 +576,66 @@ func (r *SimpleRootExtractor) Extract(extractor interface{}, opts ExtractOpts) i
 
 // callAllGenericExtractorsFor handles full generic extraction
 func callAllGenericExtractorsFor(opts ExtractOpts) interface{} {
-	genericOpts := generic.ExtractorOptions{
-		URL: opts.URL,
+	// Create generic extractor instance
+	extractor := generic.NewGenericExtractor()
+	
+	// Build extraction options
+	extractionOpts := &generic.ExtractionOptions{
+		URL:         opts.URL,
+		Doc:         opts.Doc,
+		MetaCache:   []string{},
+		Fallback:    true,
+		ContentType: "text/html",
 	}
 
-	result := make(map[string]interface{})
-
-	// Extract all standard fields using generic extractors
-	if title, err := generic.ExtractTitle(opts.Doc, genericOpts); err == nil {
-		result["title"] = title
-	}
-	
-	if author, err := generic.ExtractAuthor(opts.Doc, genericOpts); err == nil {
-		result["author"] = author
-	}
-	
-	if date, err := generic.ExtractDate(opts.Doc, genericOpts); err == nil {
-		result["date_published"] = date
-	}
-	
-	if content, err := generic.ExtractContent(opts.Doc, genericOpts); err == nil {
-		result["content"] = content
-		
-		// Content-dependent extractions
-		if leadImage, err := generic.ExtractImage(opts.Doc, genericOpts); err == nil {
-			result["lead_image_url"] = leadImage
-		}
-		
-		if excerpt, err := generic.ExtractExcerpt(opts.Doc, generic.ExtractorOptions{Content: content}); err == nil {
-			result["excerpt"] = excerpt
-		}
-		
-		if wordCount, err := generic.ExtractWordCount(opts.Doc, generic.ExtractorOptions{Content: content}); err == nil {
-			result["word_count"] = wordCount
-		}
-	}
-	
-	if dek, err := generic.ExtractDek(opts.Doc, genericOpts); err == nil {
-		result["dek"] = dek
-	}
-	
-	if nextPage, err := generic.ExtractNextPageURL(opts.Doc, genericOpts); err == nil {
-		result["next_page_url"] = nextPage
-	}
-	
-	if urlResult, err := generic.ExtractURL(opts.Doc, genericOpts); err == nil {
-		if urlMap, ok := urlResult.(map[string]interface{}); ok {
-			result["url"] = urlMap["url"]
-			result["domain"] = urlMap["domain"]
-		}
-	}
-	
-	if title, ok := result["title"].(string); ok {
-		if direction, err := generic.ExtractDirection(opts.Doc, generic.ExtractorOptions{Title: title}); err == nil {
-			result["direction"] = direction
-		}
+	// Perform generic extraction
+	result, err := extractor.ExtractGeneric(extractionOpts)
+	if err != nil {
+		// Return empty result on error
+		return make(map[string]interface{})
 	}
 
-	return result
+	// Convert result to map[string]interface{} for compatibility
+	resultMap := make(map[string]interface{})
+	
+	if result.Title != "" {
+		resultMap["title"] = result.Title
+	}
+	if result.Author != "" {
+		resultMap["author"] = result.Author
+	}
+	if result.DatePublished != nil {
+		resultMap["date_published"] = result.DatePublished
+	}
+	if result.Content != "" {
+		resultMap["content"] = result.Content
+	}
+	if result.LeadImageURL != "" {
+		resultMap["lead_image_url"] = result.LeadImageURL
+	}
+	if result.Dek != "" {
+		resultMap["dek"] = result.Dek
+	}
+	if result.Excerpt != "" {
+		resultMap["excerpt"] = result.Excerpt
+	}
+	if result.WordCount > 0 {
+		resultMap["word_count"] = result.WordCount
+	}
+	if result.NextPageURL != "" {
+		resultMap["next_page_url"] = result.NextPageURL
+	}
+	if result.URL != "" {
+		resultMap["url"] = result.URL
+	}
+	if result.Domain != "" {
+		resultMap["domain"] = result.Domain
+	}
+	if result.Direction != "" {
+		resultMap["direction"] = result.Direction
+	}
+	
+	return resultMap
 }
 
 // NewSimpleRootExtractor creates a new simple root extractor instance

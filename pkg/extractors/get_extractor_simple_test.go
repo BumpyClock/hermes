@@ -133,7 +133,7 @@ func TestGetExtractorSimpleWithParsedURL(t *testing.T) {
 	
 	require.NoError(t, err)
 	assert.NotNil(t, extractor)
-	assert.Equal(t, "*", extractor.Domain, "Should return generic extractor when no matches")
+	assert.Equal(t, "*", extractor.GetDomain(), "Should return generic extractor when no matches")
 }
 
 // Test error handling
@@ -170,7 +170,7 @@ func TestGetExtractorSimpleErrorHandling(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, extractor)
-				assert.Equal(t, "*", extractor.Domain) // Should fallback to generic
+				assert.Equal(t, "*", extractor.GetDomain()) // Should fallback to generic
 			}
 		})
 	}
@@ -190,7 +190,7 @@ func TestGetExtractorSimpleBasicFunctionality(t *testing.T) {
 			
 			assert.NoError(t, err, "Should not error on valid URL")
 			assert.NotNil(t, extractor, "Should return an extractor")
-			assert.Equal(t, "*", extractor.Domain, "Should return generic extractor when no custom extractors exist")
+			assert.Equal(t, "*", extractor.GetDomain(), "Should return generic extractor when no custom extractors exist")
 		})
 	}
 }

@@ -193,7 +193,7 @@ func TestDetectByHTML(t *testing.T) {
 				// Expect specific extractor
 				if extractor == nil {
 					t.Errorf("DetectByHTML() = nil, want %s", tt.expected)
-				} else if extractorName := getExtractorName(extractor); extractorName != tt.expected {
+				} else if extractorName := getExtractorNameForTest(extractor); extractorName != tt.expected {
 					t.Errorf("DetectByHTML() = %s, want %s", extractorName, tt.expected)
 				}
 			}
@@ -301,7 +301,7 @@ func BenchmarkDetectByHTML(b *testing.B) {
 
 // Helper function to get extractor name for testing
 // This will need to be implemented based on the actual extractor interface
-func getExtractorName(extractor interface{}) string {
+func getExtractorNameForTest(extractor interface{}) string {
 	// For now, return placeholder names
 	// In real implementation, this would inspect the actual extractor type
 	switch extractor.(type) {
