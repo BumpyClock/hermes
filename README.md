@@ -1,6 +1,6 @@
-# Postlight Parser Go
+# Hermes
 
-A Go port of the [Postlight Parser](https://github.com/postlight/parser) that transforms web pages into clean text. This implementation maintains 100% compatibility with the original JavaScript version while providing significant performance improvements.
+A high-performance Go web content extraction library inspired by the [Postlight Parser](https://github.com/postlight/parser). Hermes transforms web pages into clean, structured text with 100% compatibility with the original JavaScript version while providing significant performance improvements.
 
 ## Features
 
@@ -14,13 +14,13 @@ A Go port of the [Postlight Parser](https://github.com/postlight/parser) that tr
 ## Installation
 
 ```bash
-go install github.com/postlight/parser-go/cmd/parser@latest
+go install github.com/BumpyClock/parser-go/cmd/parser@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/postlight/parser-go
+git clone https://github.com/BumpyClock/parser-go
 cd parser-go
 make build
 ```
@@ -52,7 +52,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/postlight/parser-go/pkg/parser"
+    "github.com/BumpyClock/parser-go/pkg/parser"
 )
 
 func main() {
@@ -88,7 +88,7 @@ func main() {
 
 ```bash
 # Clone and setup
-git clone https://github.com/postlight/parser-go
+git clone https://github.com/BumpyClock/parser-go
 cd parser-go
 make dev-setup
 

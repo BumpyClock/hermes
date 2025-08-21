@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Postlight Parser is a web content extraction library that transforms web pages into clean, structured data. It extracts article content, titles, authors, dates, images, and more from any URL using site-specific custom parsers and generic fallback extraction.
+Hermes is a high-performance web content extraction library inspired by Postlight Parser that transforms web pages into clean, structured data. It extracts article content, titles, authors, dates, images, and more from any URL using site-specific custom parsers and generic fallback extraction.
 
 ## Development Commands
 

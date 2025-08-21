@@ -198,8 +198,8 @@ The validation framework integrates seamlessly with the parser:
 	validation.SetValidationProfile("production")
 	
 	// Parse content - validation will be applied to extracted fields
-	mercury := parser.NewMercury()
-	result, err := mercury.Parse("https://example.com", parser.ParserOptions{})
+	p := parser.NewParser()
+	result, err := p.Parse("https://example.com", parser.ParserOptions{})
 
 # Error Handling
 

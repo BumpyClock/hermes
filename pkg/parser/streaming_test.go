@@ -384,9 +384,9 @@ func TestStreamingExtractor(t *testing.T) {
 }
 
 func TestStreamingExtractorExtractFromStream(t *testing.T) {
-	// Skip this test for now as it requires full Mercury integration
+	// Skip this test for now as it requires full parser integration
 	// which is complex to set up in unit tests
-	t.Skip("Skipping integration test - requires full Mercury setup")
+	t.Skip("Skipping integration test - requires full parser setup")
 }
 
 func TestStreamingParserStats(t *testing.T) {

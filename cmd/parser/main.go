@@ -19,8 +19,8 @@ var (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "parser",
-		Short: "Postlight Parser - Web content extraction tool",
-		Long:  "Extract clean, structured content from any web page",
+		Short: "Hermes - High-performance web content extraction tool",
+		Long:  "Hermes extracts clean, structured content from any web page with lightning speed",
 	}
 
 	parseCmd := &cobra.Command{
@@ -39,7 +39,7 @@ func main() {
 		Use:   "version",
 		Short: "Print version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Postlight Parser Go v0.1.0")
+			fmt.Println("Hermes v0.1.0")
 			fmt.Println("Go version: 1.24.6")
 		},
 	}
