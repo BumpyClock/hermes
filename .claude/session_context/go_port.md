@@ -1,9 +1,11 @@
 # Postlight Parser to Go - Complete Porting Plan
 
 ## Project Overview
+
 This document outlines the comprehensive plan for porting the Postlight Parser from JavaScript/Node.js to Go, maintaining 100% compatibility with the existing implementation while leveraging Go's performance advantages.
 
 ## Success Criteria
+
 - [ ] 100% feature parity with JavaScript implementation
 - [ ] All 150+ custom extractors ported and functional
 - [ ] Support for all output formats (HTML, Markdown, Text)
@@ -17,6 +19,7 @@ This document outlines the comprehensive plan for porting the Postlight Parser f
 ## Phase 1: Foundation & Core Infrastructure (Week 1-2)
 
 ### 1.1 Project Setup
+
 - [x] Initialize Go module: `go mod init github.com/postlight/parser-go`
 - [x] Create directory structure matching JS organization
 - [x] Set up GitHub repository with CI/CD
@@ -26,6 +29,7 @@ This document outlines the comprehensive plan for porting the Postlight Parser f
 - [x] Set up benchmarking framework
 
 ### 1.2 Core Dependencies Installation
+
 ```bash
 go get github.com/PuerkitoBio/goquery@latest
 go get golang.org/x/net/html@latest
@@ -40,6 +44,7 @@ go get github.com/andybalholm/cascadia@latest
 ```
 
 ### 1.3 Core Types & Interfaces
+
 ```go
 // pkg/parser/types.go
 type Parser interface {
@@ -82,6 +87,7 @@ type Extractor interface {
 ```
 
 ### 1.4 Project Structure Implementation
+
 - [x] Create cmd/parser/main.go for CLI entry point
 - [x] Create pkg/parser/parser.go with main Parser struct
 - [x] Create pkg/resource/resource.go for HTTP/HTML handling
@@ -94,6 +100,7 @@ type Extractor interface {
 ## Phase 2: Resource Layer Implementation (Week 2) ✅ COMPLETED
 
 ### 2.1 HTTP Client & Fetching ✅
+
 - [x] Implement fetchResource() with custom headers support
 - [x] Add retry logic with exponential backoff
 - [x] Implement timeout handling (default 10s, configurable)
@@ -104,6 +111,7 @@ type Extractor interface {
 - [x] Add request/response logging for debugging
 
 ### 2.2 Encoding Detection & Conversion ✅
+
 - [x] Port getEncoding() for charset detection
 - [x] Implement encoding conversion using golang.org/x/text
 - [x] Handle meta charset tags
@@ -112,6 +120,7 @@ type Extractor interface {
 - [x] Test with various international encodings (UTF-8, ISO-8859-1, Windows-1251, etc.)
 
 ### 2.3 DOM Preparation ✅
+
 - [x] Port normalizeMetaTags() function
 - [x] Port convertLazyLoadedImages() for lazy-loaded images
 - [x] Implement clean() for initial DOM cleanup
@@ -121,6 +130,7 @@ type Extractor interface {
 - [x] Remove script and style tags early
 
 ### 2.4 Resource Tests ✅
+
 - [x] Test HTTP fetching with various status codes
 - [x] Test encoding detection with multiple charsets
 - [x] Test DOM preparation with complex HTML
@@ -128,6 +138,7 @@ type Extractor interface {
 - [x] Benchmark resource creation performance
 
 ### 2.5 Additional Achievements ✅
+
 - [x] Created comprehensive test suite with 96% coverage
 - [x] International content support with UTF-8, ISO-8859-1, Windows-1251
 - [x] Performance benchmarks: ~13.6μs per resource creation
@@ -135,7 +146,9 @@ type Extractor interface {
 - [x] Full compatibility with JavaScript version behavior
 
 ### 2.6 Phase 2 Verification ✅ **COMPLETED 100%**
+
 **JavaScript Source Files:**
+
 - ✅ `src/utils/text/normalize-spaces.js` **[COMPLETED]**
 - ✅ `src/utils/text/excerpt-content.js` **[COMPLETED]**
 - ✅ `src/utils/text/has-sentence-end.js` **[COMPLETED]**
@@ -151,6 +164,7 @@ type Extractor interface {
 ## Phase 3: DOM Utilities & Manipulation (Week 3) ✅ COMPLETED
 
 ### 3.1 Core DOM Functions ✅
+
 - [x] Port stripUnlikelyCandidates() with regex patterns
 - [x] Port convertToParagraphs() for div/span conversion
 - [x] Port brsToPs() for BR tag handling
@@ -161,6 +175,7 @@ type Extractor interface {
 - [x] Port removeEmpty() for empty element removal
 
 ### 3.2 Link & URL Handling ✅
+
 - [x] Port makeLinksAbsolute() for URL resolution
 - [x] Port articleBaseUrl() extraction
 - [x] Port removeAnchor() for URL cleaning
@@ -169,6 +184,7 @@ type Extractor interface {
 - [x] Support for protocol-relative URLs
 
 ### 3.3 Content Analysis Functions ✅
+
 - [x] Port linkDensity() calculation
 - [x] Port nodeIsSufficient() validation
 - [x] Port withinComment() detection
@@ -177,6 +193,7 @@ type Extractor interface {
 - [x] Implement text direction detection
 
 ### 3.4 Special Element Handling ✅
+
 - [x] Port markToKeep() for important elements
 - [x] Port stripJunkTags() for unwanted elements
 - [x] Port cleanImages() for image filtering
@@ -185,6 +202,7 @@ type Extractor interface {
 - [x] Handle tables appropriately
 
 ### 3.5 DOM Utility Tests ✅
+
 - [x] Test each DOM manipulation function
 - [x] Test with malformed HTML
 - [x] Test with nested structures
@@ -192,6 +210,7 @@ type Extractor interface {
 - [x] Test memory usage with large DOMs
 
 ### 3.6 Additional Achievements ✅
+
 - [x] Created comprehensive DOM utilities package with 7 core modules
 - [x] Ported all JavaScript regex patterns to Go with proper syntax
 - [x] Implemented full test coverage with 90+ test cases
@@ -201,7 +220,9 @@ type Extractor interface {
 - [x] Optimized DOM traversal algorithms for Go performance
 
 ### 3.7 Phase 3 Verification ✅ **COMPLETED 100%**
+
 **JavaScript Source Files:**
+
 - ✅ `src/utils/dom/brs-to-ps.js` **[COMPLETED]**
 - ✅ `src/utils/dom/clean-attributes.js` **[COMPLETED]**
 - ✅ `src/utils/dom/clean-headers.js` **[COMPLETED]**
@@ -234,6 +255,7 @@ type Extractor interface {
 ## Phase 4: Content Scoring Algorithm (Week 3-4)
 
 ### 4.1 Scoring Infrastructure
+
 ```go
 type NodeScore struct {
     Node     *goquery.Selection
@@ -253,6 +275,7 @@ type ScoringConfig struct {
 ```
 
 ### 4.2 Core Scoring Functions
+
 - [ ] Port scoreContent() main orchestrator
 - [ ] Port scoreNode() for individual nodes
 - [ ] Port scoreParagraph() for text blocks
@@ -263,6 +286,7 @@ type ScoringConfig struct {
 - [ ] Port setScore() for score assignment
 
 ### 4.3 Weight Calculations
+
 - [ ] Port getWeight() with class/ID patterns
 - [ ] Implement POSITIVE_SCORE_RE patterns
 - [ ] Implement NEGATIVE_SCORE_RE patterns
@@ -271,6 +295,7 @@ type ScoringConfig struct {
 - [ ] Port score boosting for special selectors
 
 ### 4.4 Sibling & Parent Scoring
+
 - [ ] Port addToParent() for parent scoring
 - [ ] Port mergeSiblings() for related content
 - [ ] Implement sibling score threshold (0.2)
@@ -278,6 +303,7 @@ type ScoringConfig struct {
 - [ ] Score grandparents appropriately
 
 ### 4.5 Candidate Selection
+
 - [ ] Port findTopCandidate() selection
 - [ ] Implement minimum score threshold
 - [ ] Handle multiple top candidates
@@ -285,6 +311,7 @@ type ScoringConfig struct {
 - [ ] Consider element position in document
 
 ### 4.6 Scoring Tests
+
 - [ ] Test scoring with known article HTML
 - [ ] Test with edge cases (single paragraph, lists)
 - [ ] Verify score calculations match JS version
@@ -292,7 +319,9 @@ type ScoringConfig struct {
 - [ ] Test with various article structures
 
 ### 4.7 Phase 4 Verification ✅ **COMPLETED 100%**
+
 **JavaScript Source Files Verified:**
+
 - ✅ `src/extractors/generic/content/scoring/score-commas.js` **[COMPLETED]**
 - ✅ `src/extractors/generic/content/scoring/score-length.js` **[COMPLETED]**
 - ✅ `src/extractors/generic/content/scoring/score-paragraph.js` **[COMPLETED]**
@@ -309,6 +338,7 @@ type ScoringConfig struct {
 - ✅ `src/extractors/generic/content/scoring/constants.js` **[COMPLETED]**
 
 **Verification Results:**
+
 - ✅ All scoring algorithms match JavaScript behavior exactly
 - ✅ All constants and thresholds identical
 - ✅ Edge cases handled identically
@@ -318,6 +348,7 @@ type ScoringConfig struct {
 ## Phase 5: Generic Extractor Implementation ✅ **100% COMPLETE - FULL ORCHESTRATION WORKING**
 
 ### ✅ **COMPLETED EXTRACTORS (15 of 15):**
+
 - ✅ `src/extractors/generic/content/extract-best-node.js` → `extract_best_node.go` - **COMPLETED: Main extraction orchestrator**
 - ✅ `src/extractors/generic/content/extractor.js` → `content.go` - **COMPLETED: Content extraction**
 - ✅ `src/extractors/generic/title/extractor.js` → `title.go` - **COMPLETED: Title extraction**
@@ -332,6 +363,7 @@ type ScoringConfig struct {
 - ✅ Direction extractor → `direction.go` - **COMPLETED: Text direction detection**
 
 ### ✅ **ORCHESTRATION INFRASTRUCTURE - COMPLETED:**
+
 - ✅ `src/extractors/generic/index.js` → `pkg/extractors/generic/index.go` - **COMPLETED: Complete orchestration system**
 - ✅ **GenericExtractor struct** with JavaScript-compatible field extraction order
 - ✅ **Proper field dependencies**: content→title, excerpt/wordcount/dek→content, direction→title
@@ -342,6 +374,7 @@ type ScoringConfig struct {
 ## Phase 5: Generic Extractor Implementation (Week 4-5)
 
 ### 5.1 Generic Extractor Core
+
 - [ ] Port GenericExtractor main structure
 - [ ] Port extract() method with retry logic
 - [ ] Port getContentNode() selection
@@ -350,6 +383,7 @@ type ScoringConfig struct {
 - [ ] Handle extraction failures gracefully
 
 ### 5.2 Field Extractors
+
 - [ ] Port title extractor with fallback chain
 - [ ] Port author extractor with meta tag support
 - [ ] Port date extractor with multiple formats
@@ -360,6 +394,7 @@ type ScoringConfig struct {
 - [ ] Implement custom field extractors
 
 ### 5.3 Extraction Strategies
+
 - [ ] Implement selector-based extraction
 - [ ] Implement meta tag extraction
 - [ ] Implement OpenGraph extraction
@@ -368,6 +403,7 @@ type ScoringConfig struct {
 - [ ] Fallback to content analysis
 
 ### 5.4 Content Cleaning Pipeline
+
 - [ ] Port content cleaner main logic
 - [ ] Implement conditional cleaning
 - [ ] Port default cleaner behavior
@@ -375,6 +411,7 @@ type ScoringConfig struct {
 - [ ] Preserve important formatting
 
 ### 5.5 Generic Extractor Tests
+
 - [ ] Test with various article types
 - [ ] Test fallback mechanisms
 - [ ] Test with minimal HTML
@@ -382,8 +419,10 @@ type ScoringConfig struct {
 - [ ] Compare results with JS version
 
 ### 5.6 Phase 5 Verification Task
+
 **Verify Faithful Port: Compare all Go generic extractor implementations against JavaScript sources**
 **JavaScript Source Files to Verify:**
+
 - [ ] `src/extractors/generic/content/extractor.js`
 - [ ] `src/extractors/generic/content/extract-best-node.js`
 - [ ] `src/extractors/generic/author/extractor.js`
@@ -396,6 +435,7 @@ type ScoringConfig struct {
 - [ ] `src/extractors/generic/url/extractor.js`
 
 **Verification Checklist:**
+
 - [ ] All extraction logic matches JavaScript behavior exactly
 - [ ] All selector patterns identical
 - [ ] All fallback mechanisms preserved
@@ -405,10 +445,12 @@ type ScoringConfig struct {
 ## Phase 6: Cleaner Functions Implementation ⚠️ **30% COMPLETE - MAJOR GAPS**
 
 ### ✅ **COMPLETED CLEANERS (2 of 7):**
+
 - ✅ `src/cleaners/content.js` - **COMPLETED: Main content cleaning pipeline**
 - ✅ `src/cleaners/title.js` - **COMPLETED: Title cleaning and normalization**
 
 ### 🚨 **MISSING CRITICAL CLEANERS (5 of 7):**
+
 - ❌ `src/cleaners/author.js` - **MISSING: Author name cleaning**
 - ❌ `src/cleaners/date-published.js` - **MISSING: Date parsing and validation**
 - ❌ `src/cleaners/dek.js` - **MISSING: Dek/subtitle cleaning**
@@ -416,12 +458,14 @@ type ScoringConfig struct {
 - ❌ `src/cleaners/resolve-split-title.js` - **MISSING: Split title resolution**
 
 **Supporting Infrastructure:**
+
 - ❌ `src/cleaners/constants.js` - **MISSING: Cleaner constants**
 - ❌ `src/cleaners/index.js` - **MISSING: Cleaner orchestration**
 
 ## Phase 7: Custom Extractor System (Week 5-6)
 
 ### 6.1 Custom Extractor Framework
+
 ```go
 type CustomExtractor struct {
     Domain        string
@@ -450,6 +494,7 @@ type ContentExtractor struct {
 ```
 
 ### 6.2 Extractor Selection Logic
+
 - [ ] Port getExtractor() with domain matching
 - [ ] Port detectByHtml() for HTML-based detection
 - [ ] Implement extractor registry pattern
@@ -458,6 +503,7 @@ type ContentExtractor struct {
 - [ ] Handle API-provided extractors
 
 ### 6.3 Selector Processing
+
 - [ ] Port select() function for field extraction
 - [ ] Support CSS selectors via goquery
 - [ ] Support attribute extraction [selector, attr]
@@ -466,6 +512,7 @@ type ContentExtractor struct {
 - [ ] Support cleaning lists
 
 ### 6.4 Transform Functions
+
 - [ ] Implement string transformations
 - [ ] Implement function-based transforms
 - [ ] Port common transform patterns
@@ -473,6 +520,7 @@ type ContentExtractor struct {
 - [ ] Support attribute modification
 
 ### 6.5 Custom Extractor Registry
+
 - [ ] Create registry for all custom extractors
 - [ ] Implement lazy loading of extractors
 - [ ] Support dynamic extractor addition
@@ -484,6 +532,7 @@ type ContentExtractor struct {
 ### 7.1 Custom Extractor Framework ✅ **COMPLETED**
 
 **CUSTOM EXTRACTOR SYSTEM STATUS:**
+
 - ✅ Custom extractor framework and interfaces
 - ✅ Extractor selection logic and registry
 - ⚠️ 15+ domain-specific extractors (tech sites completed)
@@ -493,208 +542,218 @@ type ContentExtractor struct {
 - ✅ Comprehensive test coverage
 
 ### 7.2 High-Priority Extractors (Top 20 by usage)
-- [ ] www.nytimes.com
-- [ ] www.washingtonpost.com
-- [ ] www.cnn.com
-- [ ] www.bbc.com
-- [ ] www.theguardian.com
+
+- [ ] <www.nytimes.com>
+- [ ] <www.washingtonpost.com>
+- [ ] <www.cnn.com>
+- [ ] <www.bbc.com>
+- [ ] <www.theguardian.com>
 - [ ] medium.com
-- [ ] www.bloomberg.com
-- [ ] www.reuters.com
-- [ ] www.wsj.com
-- [ ] www.forbes.com
-- [ ] www.businessinsider.com
-- [ ] www.techcrunch.com
-- [ ] www.theatlantic.com
-- [x] www.wired.com ✅ **COMPLETED**
-- [ ] www.vox.com
-- [ ] www.politico.com
-- [ ] www.npr.org
-- [ ] www.buzzfeed.com
-- [ ] www.vice.com
-- [ ] www.huffingtonpost.com
+- [ ] <www.bloomberg.com>
+- [ ] <www.reuters.com>
+- [ ] <www.wsj.com>
+- [ ] <www.forbes.com>
+- [ ] <www.businessinsider.com>
+- [ ] <www.techcrunch.com>
+- [ ] <www.theatlantic.com>
+- [x] <www.wired.com> ✅ **COMPLETED**
+- [ ] <www.vox.com>
+- [ ] <www.politico.com>
+- [ ] <www.npr.org>
+- [ ] <www.buzzfeed.com>
+- [ ] <www.vice.com>
+- [ ] <www.huffingtonpost.com>
 
 ### 7.2 Domain Group: News Sites (30 extractors)
+
 - [ ] abcnews.go.com
-- [ ] www.nbcnews.com
-- [ ] www.cbsnews.com
-- [ ] www.foxnews.com
-- [ ] www.usatoday.com
-- [ ] www.latimes.com
-- [ ] www.chicagotribune.com
-- [ ] www.nydailynews.com
-- [ ] www.nypost.com
-- [ ] www.boston.com
-- [ ] www.miamiherald.com
-- [ ] www.denverpost.com
-- [ ] www.seattletimes.com
-- [ ] www.sfgate.com
-- [ ] www.oregonlive.com
-- [ ] www.cleveland.com
-- [ ] www.nj.com
-- [ ] www.philly.com
-- [ ] www.dallasnews.com
-- [ ] www.startribune.com
-- [ ] www.tampabay.com
-- [ ] www.sandiegouniontribune.com
-- [ ] www.baltimoresun.com
-- [ ] www.orlandosentinel.com
-- [ ] www.sun-sentinel.com
-- [ ] www.mcall.com
-- [ ] www.courant.com
-- [ ] www.dailynews.com
-- [ ] www.newsday.com
-- [ ] www.amny.com
+- [ ] <www.nbcnews.com>
+- [ ] <www.cbsnews.com>
+- [ ] <www.foxnews.com>
+- [ ] <www.usatoday.com>
+- [ ] <www.latimes.com>
+- [ ] <www.chicagotribune.com>
+- [ ] <www.nydailynews.com>
+- [ ] <www.nypost.com>
+- [ ] <www.boston.com>
+- [ ] <www.miamiherald.com>
+- [ ] <www.denverpost.com>
+- [ ] <www.seattletimes.com>
+- [ ] <www.sfgate.com>
+- [ ] <www.oregonlive.com>
+- [ ] <www.cleveland.com>
+- [ ] <www.nj.com>
+- [ ] <www.philly.com>
+- [ ] <www.dallasnews.com>
+- [ ] <www.startribune.com>
+- [ ] <www.tampabay.com>
+- [ ] <www.sandiegouniontribune.com>
+- [ ] <www.baltimoresun.com>
+- [ ] <www.orlandosentinel.com>
+- [ ] <www.sun-sentinel.com>
+- [ ] <www.mcall.com>
+- [ ] <www.courant.com>
+- [ ] <www.dailynews.com>
+- [ ] <www.newsday.com>
+- [ ] <www.amny.com>
 
 ### 7.3 Domain Group: Tech Sites (33 extractors) ✅ **15/33 COMPLETE**
+
 - [x] arstechnica.com ✅ **COMPLETED**
-- [x] www.theverge.com ✅ **COMPLETED** 
-- [x] www.engadget.com ✅ **COMPLETED**
-- [x] www.cnet.com ✅ **COMPLETED**
-- [x] www.gizmodo.jp ✅ **COMPLETED**
-- [x] www.androidcentral.com ✅ **COMPLETED**
-- [x] www.macrumors.com ✅ **COMPLETED**
+- [x] <www.theverge.com> ✅ **COMPLETED**
+- [x] <www.engadget.com> ✅ **COMPLETED**
+- [x] <www.cnet.com> ✅ **COMPLETED**
+- [x] <www.gizmodo.jp> ✅ **COMPLETED**
+- [x] <www.androidcentral.com> ✅ **COMPLETED**
+- [x] <www.macrumors.com> ✅ **COMPLETED**
 - [ ] 9to5mac.com
-- [ ] www.macworld.com
-- [ ] www.pcworld.com
-- [ ] www.techradar.com
-- [ ] www.tomsguide.com
-- [ ] www.tomshardware.com
-- [ ] www.anandtech.com
-- [ ] www.digitaltrends.com
-- [ ] www.zdnet.com
-- [ ] www.infoworld.com
-- [ ] www.computerworld.com
-- [ ] www.networkworld.com
-- [ ] www.theregister.com
+- [ ] <www.macworld.com>
+- [ ] <www.pcworld.com>
+- [ ] <www.techradar.com>
+- [ ] <www.tomsguide.com>
+- [ ] <www.tomshardware.com>
+- [ ] <www.anandtech.com>
+- [ ] <www.digitaltrends.com>
+- [ ] <www.zdnet.com>
+- [ ] <www.infoworld.com>
+- [ ] <www.computerworld.com>
+- [ ] <www.networkworld.com>
+- [ ] <www.theregister.com>
 - [ ] slashdot.org
-- [ ] www.hackernews.com
-- [ ] www.bleepingcomputer.com
-- [ ] www.howtogeek.com
+- [ ] <www.hackernews.com>
+- [ ] <www.bleepingcomputer.com>
+- [ ] <www.howtogeek.com>
 - [ ] lifehacker.com
 - [x] mashable.com ✅ **COMPLETED** (added)
-- [x] www.phoronix.com ✅ **COMPLETED** (added)
+- [x] <www.phoronix.com> ✅ **COMPLETED** (added)
 - [x] github.com ✅ **COMPLETED** (added)
-- [x] www.infoq.com ✅ **COMPLETED** (added)
+- [x] <www.infoq.com> ✅ **COMPLETED** (added)
 - [x] wired.jp ✅ **COMPLETED** (added)
 - [x] japan.cnet.com ✅ **COMPLETED** (added)
 - [x] japan.zdnet.com ✅ **COMPLETED** (added)
 
 ### 7.4 Domain Group: Entertainment (20 extractors)
-- [ ] www.eonline.com
-- [ ] www.tmz.com
-- [ ] www.people.com
-- [ ] www.usmagazine.com
-- [ ] www.ew.com
-- [ ] www.hollywoodreporter.com
+
+- [ ] <www.eonline.com>
+- [ ] <www.tmz.com>
+- [ ] <www.people.com>
+- [ ] <www.usmagazine.com>
+- [ ] <www.ew.com>
+- [ ] <www.hollywoodreporter.com>
 - [ ] variety.com
 - [ ] deadline.com
-- [ ] www.vulture.com
-- [ ] www.avclub.com
+- [ ] <www.vulture.com>
+- [ ] <www.avclub.com>
 - [ ] pitchfork.com
-- [ ] www.rollingstone.com
-- [ ] www.billboard.com
+- [ ] <www.rollingstone.com>
+- [ ] <www.billboard.com>
 - [ ] consequenceofsound.net
-- [ ] www.stereogum.com
-- [ ] www.spin.com
-- [ ] www.nme.com
-- [ ] www.complex.com
+- [ ] <www.stereogum.com>
+- [ ] <www.spin.com>
+- [ ] <www.nme.com>
+- [ ] <www.complex.com>
 - [ ] uproxx.com
-- [ ] www.indiewire.com
+- [ ] <www.indiewire.com>
 
 ### 7.5 Domain Group: Sports (15 extractors)
-- [ ] www.espn.com
-- [ ] www.si.com
-- [ ] www.cbssports.com
-- [ ] www.nbcsports.com
-- [ ] www.foxsports.com
+
+- [ ] <www.espn.com>
+- [ ] <www.si.com>
+- [ ] <www.cbssports.com>
+- [ ] <www.nbcsports.com>
+- [ ] <www.foxsports.com>
 - [ ] bleacherreport.com
-- [ ] www.sbnation.com
+- [ ] <www.sbnation.com>
 - [ ] deadspin.com
-- [ ] www.theringer.com
+- [ ] <www.theringer.com>
 - [ ] theathletic.com
-- [ ] www.mlb.com
-- [ ] www.nba.com
-- [ ] www.nfl.com
-- [ ] www.nhl.com
-- [ ] www.uefa.com
+- [ ] <www.mlb.com>
+- [ ] <www.nba.com>
+- [ ] <www.nfl.com>
+- [ ] <www.nhl.com>
+- [ ] <www.uefa.com>
 
 ### 7.6 Domain Group: Business & Finance (15 extractors)
-- [ ] www.wsj.com
-- [ ] www.ft.com
-- [ ] www.economist.com
-- [ ] www.marketwatch.com
-- [ ] www.cnbc.com
+
+- [ ] <www.wsj.com>
+- [ ] <www.ft.com>
+- [ ] <www.economist.com>
+- [ ] <www.marketwatch.com>
+- [ ] <www.cnbc.com>
 - [ ] money.cnn.com
-- [ ] www.fool.com
+- [ ] <www.fool.com>
 - [ ] seekingalpha.com
-- [ ] www.investopedia.com
-- [ ] www.barrons.com
+- [ ] <www.investopedia.com>
+- [ ] <www.barrons.com>
 - [ ] qz.com
-- [ ] www.fastcompany.com
-- [ ] www.inc.com
-- [ ] www.entrepreneur.com
+- [ ] <www.fastcompany.com>
+- [ ] <www.inc.com>
+- [ ] <www.entrepreneur.com>
 - [ ] fortune.com
 
 ### 7.7 Domain Group: Science & Education (15 extractors)
-- [ ] www.nature.com
-- [ ] www.sciencemag.org
-- [ ] www.scientificamerican.com
-- [ ] www.newscientist.com
-- [ ] www.popularmechanics.com
-- [ ] www.populascience.com
-- [ ] www.discovermagazine.com
-- [ ] www.smithsonianmag.com
-- [ ] www.nationalgeographic.com
-- [ ] www.livescience.com
-- [ ] www.space.com
-- [ ] www.astronomy.com
-- [ ] www.physicsworld.com
-- [ ] www.chemistryworld.com
-- [ ] www.the-scientist.com
+
+- [ ] <www.nature.com>
+- [ ] <www.sciencemag.org>
+- [ ] <www.scientificamerican.com>
+- [ ] <www.newscientist.com>
+- [ ] <www.popularmechanics.com>
+- [ ] <www.populascience.com>
+- [ ] <www.discovermagazine.com>
+- [ ] <www.smithsonianmag.com>
+- [ ] <www.nationalgeographic.com>
+- [ ] <www.livescience.com>
+- [ ] <www.space.com>
+- [ ] <www.astronomy.com>
+- [ ] <www.physicsworld.com>
+- [ ] <www.chemistryworld.com>
+- [ ] <www.the-scientist.com>
 
 ### 7.8 Domain Group: Lifestyle & Culture (20 extractors)
-- [ ] www.newyorker.com
-- [ ] www.vanityfair.com
-- [ ] www.gq.com
-- [ ] www.esquire.com
-- [ ] www.menshealth.com
-- [ ] www.womenshealthmag.com
-- [ ] www.cosmopolitan.com
-- [ ] www.elle.com
-- [ ] www.marieclaire.com
-- [ ] www.glamour.com
-- [ ] www.allure.com
-- [ ] www.instyle.com
-- [ ] www.refinery29.com
-- [ ] www.bustle.com
-- [ ] www.popsugar.com
-- [ ] www.self.com
-- [ ] www.bonappetit.com
-- [ ] www.epicurious.com
-- [ ] www.foodandwine.com
-- [ ] www.eater.com
+
+- [ ] <www.newyorker.com>
+- [ ] <www.vanityfair.com>
+- [ ] <www.gq.com>
+- [ ] <www.esquire.com>
+- [ ] <www.menshealth.com>
+- [ ] <www.womenshealthmag.com>
+- [ ] <www.cosmopolitan.com>
+- [ ] <www.elle.com>
+- [ ] <www.marieclaire.com>
+- [ ] <www.glamour.com>
+- [ ] <www.allure.com>
+- [ ] <www.instyle.com>
+- [ ] <www.refinery29.com>
+- [ ] <www.bustle.com>
+- [ ] <www.popsugar.com>
+- [ ] <www.self.com>
+- [ ] <www.bonappetit.com>
+- [ ] <www.epicurious.com>
+- [ ] <www.foodandwine.com>
+- [ ] <www.eater.com>
 
 ### 7.9 Domain Group: International (15 extractors) ✅ **COMPLETED**
 
 **COMPLETED INTERNATIONAL EXTRACTORS (15/15):**
-- [x] www.lemonde.fr ✅ **COMPLETED** - French news site with meta-based extraction
-- [x] www.spektrum.de ✅ **COMPLETED** - German science magazine with timezone support
-- [x] www.abendblatt.de ✅ **COMPLETED** - German newspaper with obfuscated text transforms
+
+- [x] <www.lemonde.fr> ✅ **COMPLETED** - French news site with meta-based extraction
+- [x] <www.spektrum.de> ✅ **COMPLETED** - German science magazine with timezone support
+- [x] <www.abendblatt.de> ✅ **COMPLETED** - German newspaper with obfuscated text transforms
 - [x] epaper.zeit.de ✅ **COMPLETED** - German newspaper with string transforms
-- [x] www.gruene.de ✅ **COMPLETED** - German political party with multi-selector patterns
+- [x] <www.gruene.de> ✅ **COMPLETED** - German political party with multi-selector patterns
 - [x] ici.radio-canada.ca ✅ **COMPLETED** - French Canadian news with date formatting
-- [x] www.cbc.ca ✅ **COMPLETED** - Canadian broadcaster
+- [x] <www.cbc.ca> ✅ **COMPLETED** - Canadian broadcaster
 - [x] timesofindia.indiatimes.com ✅ **COMPLETED** - Indian news with extend field
-- [x] www.prospectmagazine.co.uk ✅ **COMPLETED** - UK magazine with timezone support
-- [x] www.asahi.com ✅ **COMPLETED** - Japanese newspaper (already existed)
-- [x] www.yomiuri.co.jp ✅ **COMPLETED** - Japanese newspaper (already existed) 
-- [x] www.itmedia.co.jp ✅ **COMPLETED** - Japanese tech news (already existed)
+- [x] <www.prospectmagazine.co.uk> ✅ **COMPLETED** - UK magazine with timezone support
+- [x] <www.asahi.com> ✅ **COMPLETED** - Japanese newspaper (already existed)
+- [x] <www.yomiuri.co.jp> ✅ **COMPLETED** - Japanese newspaper (already existed)
+- [x] <www.itmedia.co.jp> ✅ **COMPLETED** - Japanese tech news (already existed)
 - [x] news.mynavi.jp ✅ **COMPLETED** - Japanese tech news (already existed)
-- [x] www.publickey1.jp ✅ **COMPLETED** - Japanese tech blog with date format
+- [x] <www.publickey1.jp> ✅ **COMPLETED** - Japanese tech blog with date format
 - [x] ma.ttias.be ✅ **COMPLETED** - Belgian tech blog with complex transforms
 
 **International Content Features Successfully Implemented:**
+
 - ✅ Multi-Language Support: French, German, Japanese, Dutch, English
 - ✅ European Date Formats: DD/MM/YYYY, DD.MM.YYYY, custom Japanese formats
 - ✅ Timezone Support: Europe/Berlin, Europe/London, Asia/Tokyo, America/New_York, Asia/Kolkata
@@ -704,7 +763,9 @@ type ContentExtractor struct {
 - ✅ Extended Fields: Custom field extraction for specialized content
 
 ### 7.10 Testing Each Custom Extractor
+
 For each extractor:
+
 - [ ] Port selector definitions
 - [ ] Port transform functions
 - [ ] Port clean lists
@@ -717,6 +778,7 @@ For each extractor:
 ## Phase 8: Parser Integration ⚠️ **40% COMPLETE - MISSING CORE ORCHESTRATION**
 
 ### ✅ **COMPLETED INTEGRATION:**
+
 - ✅ `pkg/parser/parser.go` - **COMPLETED: Basic parser structure with Parse() and ParseHTML() methods**
 - ✅ `pkg/parser/extract_all_fields.go` - **COMPLETED: Field extraction orchestration**  
 - ✅ Resource layer integration for HTML fetching and DOM creation
@@ -725,6 +787,7 @@ For each extractor:
 - ✅ Basic fallback extraction logic
 
 ### 🚨 **MISSING CORE ORCHESTRATION (JavaScript Mercury.js equivalents):**
+
 - ❌ **Root Extractor System** - Complex selector processing, transforms, extended types
 - ❌ **Extractor Selection Logic** - URL-to-extractor mapping (get-extractor.js)
 - ❌ **Custom Extractor Framework** - No support for 150+ domain-specific extractors
@@ -736,6 +799,7 @@ For each extractor:
 ## Phase 9: CLI and Output Formats (Week 7)
 
 ### 8.1 Title Cleaner
+
 - [ ] Port title cleaning logic
 - [ ] Handle split titles (site name removal)
 - [ ] Remove special characters
@@ -744,6 +808,7 @@ For each extractor:
 - [ ] Test with various title formats
 
 ### 8.2 Author Cleaner
+
 - [ ] Port author extraction patterns
 - [ ] Handle "By" prefix removal
 - [ ] Handle multiple authors
@@ -752,6 +817,7 @@ For each extractor:
 - [ ] Test with various byline formats
 
 ### 8.3 Date Cleaner
+
 - [ ] Port date parsing logic
 - [ ] Support multiple date formats
 - [ ] Handle timezone conversion
@@ -760,6 +826,7 @@ For each extractor:
 - [ ] Test with international formats
 
 ### 8.4 Content Cleaner
+
 - [ ] Port main content cleaning
 - [ ] Remove ads and promotional content
 - [ ] Clean navigation elements
@@ -768,6 +835,7 @@ For each extractor:
 - [ ] Test with complex articles
 
 ### 8.5 Lead Image Cleaner
+
 - [ ] Port image URL resolution
 - [ ] Handle srcset selection
 - [ ] Score images by size/position
@@ -776,6 +844,7 @@ For each extractor:
 - [ ] Test with various image formats
 
 ### 8.6 Dek/Excerpt Cleaner
+
 - [ ] Port excerpt extraction
 - [ ] Handle max length truncation
 - [ ] Preserve sentence boundaries
@@ -784,8 +853,10 @@ For each extractor:
 - [ ] Test with various article types
 
 ### 8.7 Phase 8 Verification Task
+
 **Verify Faithful Port: Compare all Go cleaner implementations against JavaScript sources**
 **JavaScript Source Files to Verify:**
+
 - [ ] `src/cleaners/content.js`
 - [ ] `src/cleaners/title.js`
 - [ ] `src/cleaners/author.js`
@@ -796,6 +867,7 @@ For each extractor:
 - [ ] `src/cleaners/constants.js`
 
 **Verification Checklist:**
+
 - [ ] All cleaning logic matches JavaScript behavior exactly
 - [ ] All regex patterns and constants identical
 - [ ] All edge cases handled identically
@@ -805,6 +877,7 @@ For each extractor:
 ## Phase 10: Multi-Page Support (Week 8)
 
 ### 9.1 Next Page Detection
+
 - [ ] Port next page URL extractor
 - [ ] Port scoring algorithms for links
 - [ ] Implement URL similarity checking
@@ -813,6 +886,7 @@ For each extractor:
 - [ ] Test with various pagination styles
 
 ### 9.2 Page Collection
+
 - [ ] Port collectAllPages() function
 - [ ] Implement recursive page fetching
 - [ ] Add page limit controls (max 25)
@@ -821,6 +895,7 @@ For each extractor:
 - [ ] Merge content appropriately
 
 ### 9.3 Content Merging
+
 - [ ] Implement content concatenation
 - [ ] Remove duplicate paragraphs
 - [ ] Preserve page boundaries
@@ -831,6 +906,7 @@ For each extractor:
 ## Phase 11: Output Format Support (Week 8)
 
 ### 10.1 HTML Output
+
 - [ ] Preserve cleaned HTML structure
 - [ ] Maintain semantic markup
 - [ ] Include preserved elements
@@ -838,6 +914,7 @@ For each extractor:
 - [ ] Test HTML validity
 
 ### 10.2 Markdown Conversion
+
 - [ ] Integrate html-to-markdown library
 - [ ] Configure conversion options
 - [ ] Preserve links and images
@@ -846,6 +923,7 @@ For each extractor:
 - [ ] Test markdown rendering
 
 ### 10.3 Plain Text Output
+
 - [ ] Strip all HTML tags
 - [ ] Preserve paragraph breaks
 - [ ] Handle special characters
@@ -853,6 +931,7 @@ For each extractor:
 - [ ] Test text extraction
 
 ### 10.4 JSON Output
+
 - [ ] Implement JSON serialization
 - [ ] Handle null values
 - [ ] Format dates properly
@@ -860,14 +939,17 @@ For each extractor:
 - [ ] Test JSON validity
 
 ### 10.5 Phase 10 Verification Task
+
 **Verify Faithful Port: Compare all Go output format implementations against JavaScript sources**
 **JavaScript Source Files to Verify:**
+
 - [ ] HTML output formatting in main parser
 - [ ] Markdown conversion logic
 - [ ] Text extraction logic
 - [ ] JSON serialization format
 
 **Verification Checklist:**
+
 - [ ] All output formats match JavaScript exactly
 - [ ] All formatting rules preserved
 - [ ] All edge cases handled identically
@@ -877,6 +959,7 @@ For each extractor:
 ## Phase 12: CLI Tool Implementation (Week 9)
 
 ### 11.1 Basic Commands
+
 ```bash
 # Parse command
 parser parse <url> [flags]
@@ -899,6 +982,7 @@ parser version
 ```
 
 ### 11.2 CLI Features
+
 - [ ] Implement parse command
 - [ ] Implement generate command
 - [ ] Implement preview command
@@ -909,6 +993,7 @@ parser version
 - [ ] Support batch processing
 
 ### 11.3 Configuration
+
 - [ ] Support config file
 - [ ] Environment variables
 - [ ] Default settings
@@ -918,6 +1003,7 @@ parser version
 ## Phase 13: Testing Infrastructure (Week 9-10)
 
 ### 12.1 Unit Tests
+
 - [ ] Test each function in isolation
 - [ ] Mock external dependencies
 - [ ] Test error conditions
@@ -925,6 +1011,7 @@ parser version
 - [ ] Achieve 80% coverage
 
 ### 12.2 Integration Tests
+
 - [ ] Test full extraction pipeline
 - [ ] Test with real HTML fixtures
 - [ ] Test custom extractors
@@ -932,6 +1019,7 @@ parser version
 - [ ] Test all output formats
 
 ### 12.3 Fixture Management
+
 - [ ] Port all HTML fixtures from JS
 - [ ] Organize fixtures by domain
 - [ ] Create fixture loader utility
@@ -939,6 +1027,7 @@ parser version
 - [ ] Version fixture format
 
 ### 12.4 Comparison Tests
+
 - [ ] Create JS/Go comparison framework
 - [ ] Run both parsers on same input
 - [ ] Compare extraction results
@@ -946,6 +1035,7 @@ parser version
 - [ ] Generate difference reports
 
 ### 12.5 Performance Tests
+
 - [ ] Benchmark extraction speed
 - [ ] Measure memory usage
 - [ ] Test with large documents
@@ -953,6 +1043,7 @@ parser version
 - [ ] Profile hot spots
 
 ### 12.6 E2E Tests
+
 - [ ] Test CLI commands
 - [ ] Test with live URLs
 - [ ] Test error handling
@@ -960,8 +1051,10 @@ parser version
 - [ ] Test concurrent extraction
 
 ### 12.7 Phase 12 Verification Task
+
 **Verify Faithful Port: Complete compatibility verification against JavaScript implementation**
 **Final Verification Checklist:**
+
 - [ ] All 150+ custom extractors produce identical results
 - [ ] All test fixtures pass with <1% acceptable difference
 - [ ] All CLI commands produce identical output
@@ -970,6 +1063,7 @@ parser version
 - [ ] No regressions in extraction accuracy
 
 **Acceptable Differences Documentation:**
+
 - [ ] Document any intentional deviations from JavaScript
 - [ ] Document performance improvements that affect behavior
 - [ ] Document Go-specific optimizations
@@ -978,6 +1072,7 @@ parser version
 ## Phase 14: Performance Optimization (Week 10)
 
 ### 13.1 Profiling & Analysis
+
 - [ ] Profile CPU usage
 - [ ] Profile memory allocation
 - [ ] Identify bottlenecks
@@ -985,6 +1080,7 @@ parser version
 - [ ] Review algorithm complexity
 
 ### 13.2 DOM Optimization
+
 - [ ] Cache selector results
 - [ ] Optimize traversal algorithms
 - [ ] Reduce DOM mutations
@@ -992,6 +1088,7 @@ parser version
 - [ ] Minimize regex compilation
 
 ### 13.3 Concurrency
+
 - [ ] Implement concurrent extraction
 - [ ] Use goroutine pools
 - [ ] Add request parallelization
@@ -999,6 +1096,7 @@ parser version
 - [ ] Handle synchronization
 
 ### 13.4 Memory Optimization
+
 - [ ] Reduce string allocations
 - [ ] Use object pools
 - [ ] Stream large content
@@ -1006,6 +1104,7 @@ parser version
 - [ ] Implement lazy evaluation
 
 ### 13.5 Caching
+
 - [ ] Implement selector cache
 - [ ] Cache compiled regexes
 - [ ] Cache extraction results
@@ -1015,6 +1114,7 @@ parser version
 ## Phase 15: Documentation & Release (Week 10)
 
 ### 14.1 Code Documentation
+
 - [ ] Document all public APIs
 - [ ] Add package documentation
 - [ ] Include usage examples
@@ -1022,6 +1122,7 @@ parser version
 - [ ] Add inline comments
 
 ### 14.2 User Documentation
+
 - [ ] Create README.md
 - [ ] Write installation guide
 - [ ] Create usage examples
@@ -1029,6 +1130,7 @@ parser version
 - [ ] Add troubleshooting guide
 
 ### 14.3 Migration Guide
+
 - [ ] Document differences from JS
 - [ ] Provide migration examples
 - [ ] List breaking changes
@@ -1036,6 +1138,7 @@ parser version
 - [ ] Add upgrade path
 
 ### 14.4 API Documentation
+
 - [ ] Generate godoc
 - [ ] Create API reference
 - [ ] Include code examples
@@ -1043,6 +1146,7 @@ parser version
 - [ ] Add error descriptions
 
 ### 14.5 Release Preparation
+
 - [ ] Set up semantic versioning
 - [ ] Create changelog
 - [ ] Prepare release notes
@@ -1052,6 +1156,7 @@ parser version
 ## Quality Assurance Checklist
 
 ### Compatibility Verification
+
 - [ ] All 150+ custom extractors working
 - [ ] All test fixtures passing
 - [ ] Output matches JS version (with acceptable differences)
@@ -1059,6 +1164,7 @@ parser version
 - [ ] API compatibility maintained
 
 ### Performance Targets
+
 - [ ] 2-3x faster than JS version
 - [ ] 50% less memory usage
 - [ ] Sub-second extraction for typical articles
@@ -1066,6 +1172,7 @@ parser version
 - [ ] Concurrent extraction support
 
 ### Code Quality
+
 - [ ] 80%+ test coverage
 - [ ] All linting checks pass
 - [ ] No race conditions
@@ -1073,6 +1180,7 @@ parser version
 - [ ] Clean architecture
 
 ### Documentation Complete
+
 - [ ] API fully documented
 - [ ] README comprehensive
 - [ ] Examples provided
@@ -1082,43 +1190,48 @@ parser version
 ## Risk Mitigation
 
 ### Technical Risks
+
 1. **DOM Library Differences**: goquery may not support all jQuery features
    - Mitigation: Create adapter layer for missing features
-   
+
 2. **Regex Compatibility**: Go regex differs from JavaScript
    - Mitigation: Test and adjust all regex patterns
-   
+
 3. **Date Parsing**: Go's time parsing is stricter
    - Mitigation: Use dateparse library for flexibility
-   
+
 4. **Encoding Issues**: Character encoding edge cases
    - Mitigation: Extensive testing with international content
 
 ### Schedule Risks
+
 1. **Custom Extractor Volume**: 150+ extractors to port
    - Mitigation: Automate conversion where possible
-   
+
 2. **Testing Complexity**: Ensuring 100% compatibility
    - Mitigation: Automated comparison framework
-   
+
 3. **Performance Tuning**: Meeting performance targets
    - Mitigation: Early profiling and optimization
 
 ## Success Metrics
 
 ### Functional Metrics
+
 - All test fixtures pass: 100%
 - Custom extractors ported: 150/150
 - CLI command parity: 100%
 - Output format support: 4/4 (HTML, Markdown, Text, JSON)
 
 ### Performance Metrics
+
 - Extraction speed improvement: >2x
 - Memory usage reduction: >50%
 - Concurrent extraction support: Yes
 - Large document handling: >10MB
 
 ### Quality Metrics
+
 - Test coverage: >80%
 - Documentation coverage: 100%
 - Linting score: 100%
@@ -1127,18 +1240,21 @@ parser version
 ## Maintenance Plan
 
 ### Regular Updates
+
 - [ ] Monitor JS version for updates
 - [ ] Port new custom extractors
 - [ ] Update dependencies monthly
 - [ ] Security patch schedule
 
 ### Community Support
+
 - [ ] Set up issue templates
 - [ ] Create contribution guide
 - [ ] Establish code review process
 - [ ] Plan for community PRs
 
 ### Long-term Roadmap
+
 - [ ] WebAssembly support
 - [ ] Browser extension
 - [ ] API service version
@@ -1152,16 +1268,19 @@ parser version
 Based on exhaustive comparison with JavaScript source code, the actual completion status is:
 
 ### ✅ **COMPLETED PHASES (100%):**
+
 - **Phase 2: Text Utilities** - 100% ✅ All 9 JavaScript functions ported with full compatibility
 - **Phase 3: DOM Utilities** - 100% ✅ All 25+ DOM functions ported with JavaScript behavior matching  
 - **Phase 4: Scoring System** - 100% ✅ Complete scoring algorithms with exact JavaScript logic
 
 ### ⚠️ **PARTIALLY COMPLETED PHASES:**
+
 - **Phase 5: Generic Extractors** - 100% ✅ (15 of 15 extractors complete)
 - **Phase 6: Cleaners** - 30% ⚠️ (2 of 7 cleaners complete)  
 - **Phase 8: Parser Integration** - 40% ⚠️ (basic integration, missing core orchestration)
 
 ### ✅ **MAJOR SYSTEMS COMPLETED:**
+
 - **Phase 7: Custom Extractor System** - 100% ✅ (Framework complete, 15+ tech extractors functional)
 - **Root Extractor System** - 100% ✅ (Complex selector processing, transforms, extended types)
 - **Extractor Selection Logic** - 100% ✅ (URL-to-extractor mapping)
@@ -1176,6 +1295,7 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
 **MAJOR BREAKTHROUGH:** The Go implementation now has ALL core orchestration systems working PLUS 15 critical tech site extractors:
 
 **Core Systems:**
+
 - ✅ Complex custom extractors with selector processing
 - ✅ Multi-page article collection
 - ✅ Extended field extraction
@@ -1183,6 +1303,7 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
 - ✅ Complete field cleaning pipeline
 
 **NEW: Tech Site Extractors (15/150+ Complete):**
+
 - ✅ Ars Technica - Complex h2 transforms
 - ✅ The Verge - Multi-match selectors, noscript transforms
 - ✅ Wired.com - Article content patterns
@@ -1208,6 +1329,7 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
 **OVERALL ASSESSMENT: PRODUCTION-READY WITH MINOR STRUCTURAL FIXES**
 
 **Comprehensive Review Statistics:**
+
 - **Total Extractors Analyzed**: 29 (14 News + 15 Tech Sites)
 - **Fully Reviewed for JavaScript Compatibility**: 12 extractors
 - **Perfect JavaScript Parity**: 100% of reviewed extractors
@@ -1240,6 +1362,7 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
 ### **CRITICAL FINDINGS:**
 
 #### ✅ **EXCEPTIONAL JAVASCRIPT COMPATIBILITY - 99.5%**
+
 - All CSS selectors match JavaScript versions exactly
 - Complex transform functions working perfectly (image manipulation, DOM restructuring)
 - Multi-match selector arrays correctly implemented
@@ -1248,6 +1371,7 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
 - Multi-template support (Bloomberg) fully functional
 
 #### 🚨 **STRUCTURAL ISSUES IDENTIFIED (BLOCKING TESTS):**
+
 1. **StringTransform Field Issue**: `unknown field TagName in struct literal`
    - **Impact**: Prevents compilation of several extractors
    - **Files Affected**: `gothamist_com.go`, `www_fool_com.go`
@@ -1259,6 +1383,7 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
    - **Fix**: Update method calls to match goquery API
 
 #### 📊 **IMPLEMENTATION STATISTICS:**
+
 - **Perfect Transform Function Ports**: 100% of complex transforms working
   - NYTimes `{{size}}` replacement: ✅ PERFECT
   - Washington Post DOM manipulation: ✅ PERFECT
@@ -1274,12 +1399,14 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
 **Time to Production Ready: 1-2 Days**
 
 **Prerequisites**:
+
 1. Fix StringTransform field structure (2-3 hours)
 2. Fix method signature issues (1-2 hours)  
 3. Verify test suite execution (1-2 hours)
 4. Basic performance validation (2-4 hours)
 
 **Performance Predictions**:
+
 - **Extraction Speed**: 2-5x faster than JavaScript
 - **Memory Usage**: 40-60% reduction vs Node.js
 - **Concurrency**: Ready for parallel extraction
@@ -1287,6 +1414,7 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
 ### **ARCHITECTURAL QUALITY:**
 
 #### **DRY/KISS Principles: EXCELLENT**
+
 - Transform functions properly abstracted into reusable `TransformFunction` interface
 - Registry system eliminates domain lookup duplication
 - Clear, readable Go idioms throughout
@@ -1294,6 +1422,7 @@ Based on exhaustive comparison with JavaScript source code, the actual completio
 - Comprehensive documentation with JavaScript equivalents
 
 #### **CODE QUALITY METRICS:**
+
 - **JavaScript Compatibility**: 99.5%
 - **Transform Function Accuracy**: 100%
 - **Selector Pattern Fidelity**: 100%
@@ -1309,6 +1438,7 @@ The Postlight Parser Go port represents an **outstanding engineering achievement
 ## Phase 7: Content Platform Extractors - COMPLETED ✅
 
 ### **IMPLEMENTATION STATUS:**
+
 - **15 Critical Platform Extractors**: 100% complete ✅
 - **JavaScript Compatibility**: 100% verified ✅  
 - **Registry Integration**: Complete ✅
@@ -1316,6 +1446,7 @@ The Postlight Parser Go port represents an **outstanding engineering achievement
 - **Transform Functions**: All platform-specific features working ✅
 
 ### **TEST RESULTS:**
+
 ```
 ✅ All 15 extractors compile and register correctly
 ✅ Domain lookup working for all platforms
@@ -1325,6 +1456,7 @@ The Postlight Parser Go port represents an **outstanding engineering achievement
 ```
 
 ### **KEY ACHIEVEMENTS:**
+
 1. **Complex Transform Functions** - Medium iframe handling, Vox noscript images, Reddit background-image extraction
 2. **Multi-Platform Support** - BuzzFeed + BuzzFeedNews domains working
 3. **Social Media Integration** - Twitter timeline processing, Reddit thread structure preserved
@@ -1336,6 +1468,7 @@ The Postlight Parser Go port represents an **outstanding engineering achievement
 ## Phase A Orchestration Systems - COMPLETED ✅
 
 ### **CRITICAL SYSTEMS NOW WORKING:**
+
 1. **Root Extractor System** - Complete JavaScript mercury.js equivalent functionality
 2. **Extractor Selection Logic** - URL-to-extractor mapping for 144+ sites  
 3. **All.js Registry + HTML Detection** - Complete extractor registry infrastructure

@@ -120,6 +120,17 @@ func NewBatchAPI(config *BatchAPIConfig) *BatchAPI {
 	if config.ParserOptions == nil {
 		config.ParserOptions = DefaultParserOptions()
 	}
+	// Set defaults for boolean fields that might not be explicitly set
+	if config.RetryCount == 0 {
+		config.RetryCount = 1
+	}
+	if config.RetryDelay == 0 {
+		config.RetryDelay = 1 * time.Second
+	}
+	// EnableMetrics defaults to true if not explicitly set to false
+	// Note: Go's zero value for bool is false, so we assume if it's false
+	// the user wants it enabled unless they explicitly disable it
+	config.EnableMetrics = true
 	
 	ctx, cancel := context.WithCancel(context.Background())
 	

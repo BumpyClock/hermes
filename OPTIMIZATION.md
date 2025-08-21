@@ -18,46 +18,19 @@ For high-throughput API usage, these built-in optimizations provide:
 - **CPU**: 10-15% reduction in GC pressure  
 - **Throughput**: 15-25% improvement for concurrent operations
 
-## Zero-Configuration Usage
+## Simple Usage
 
-The parser is optimized out of the box - no configuration required:
-
-## 1. Pointer Optimization (Phase 1)
-
-### Before
-```go
-// Creates copies of ParserOptions struct
-opts := ParserOptions{ContentType: "html"}
-result, err := parser.Parse(url, opts)
-```
-
-### After
-```go
-// Uses pointer, no copying
-opts := &ParserOptions{ContentType: "html"}
-result, err := parser.Parse(url, opts)
-```
-
-### Impact
-- Eliminates struct copying on every function call
-- Reduces memory allocation for options structs
-- Compatible with existing code (just add & to struct literals)
-
-## 2. Object Pooling (Phase 2)
-
-### High-Throughput Parser
-
-For scenarios where you're parsing many documents and want to minimize allocations:
+The parser uses all optimizations automatically - just create and use:
 
 ```go
-// Create parser with object pooling
-htp := parser.NewHighThroughputParser(&parser.ParserOptions{
+// Create an optimized parser (uses object pooling internally)
+parser := parser.New(&parser.ParserOptions{
     ContentType: "html",
     Fallback:    true,
 })
 
-// Parse with pooling
-result, err := htp.ParseHTML(html, url, nil)
+// Parse content (automatic pooling and pointer optimization)
+result, err := parser.ParseHTML(html, url, nil)
 if err != nil {
     return err
 }
@@ -65,15 +38,15 @@ if err != nil {
 // Use the result
 fmt.Printf("Title: %s\n", result.Title)
 
-// IMPORTANT: Return to pool when done
-htp.ReturnResult(result)
+// Return to pool when done (enables memory reuse)
+defer parser.ReturnResult(result)
 ```
 
 ### Global Convenience Functions
 
 ```go
-// Use global high-throughput parser
-result, err := parser.ParseHTMLOptimized(html, url, &parser.ParserOptions{
+// Use global optimized parser
+result, err := parser.ParseHTML(html, url, &parser.ParserOptions{
     ContentType: "html",
 })
 defer parser.ReturnResultToPool(result)
@@ -82,12 +55,12 @@ defer parser.ReturnResultToPool(result)
 ### Performance Monitoring
 
 ```go
-stats := htp.GetStats()
+stats := parser.GetStats()
 fmt.Printf("Processed: %d requests\n", stats.TotalRequests)
 fmt.Printf("Avg time: %.2f ms\n", stats.AverageProcessingTime)
 ```
 
-## 3. Batch Processing API (Phase 3)
+## Batch Processing API
 
 ### Basic Batch Processing
 
@@ -276,21 +249,15 @@ for _, response := range responses {
 
 ## Migration Guide
 
-### From Regular Parser
+### From Basic to Optimized Usage
 
 ```go
-// Before
-parser := parser.New()
-result, err := parser.Parse(url, parser.ParserOptions{
+// All parsers are optimized by default
+parser := parser.New(&parser.ParserOptions{
     ContentType: "html",
 })
-
-// After  
-htp := parser.NewHighThroughputParser(&parser.ParserOptions{
-    ContentType: "html",
-})
-result, err := htp.Parse(url, nil)
-defer htp.ReturnResult(result)
+result, err := parser.Parse(url, nil)
+defer parser.ReturnResult(result)
 ```
 
 ### From Manual Concurrency
@@ -327,9 +294,8 @@ responses, _ := batchAPI.ProcessBatch(requests)
 Performance comparison on a 2023 MacBook Pro (M2):
 
 ```
-BenchmarkTraditional-8              1000    1.2ms/op    850 allocs/op
-BenchmarkPointerOptimized-8         1200    1.0ms/op    680 allocs/op  
-BenchmarkObjectPooling-8            1500    0.8ms/op    120 allocs/op
+BenchmarkBasicUsage-8               1000    1.2ms/op    850 allocs/op
+BenchmarkOptimizedParser-8          1500    0.8ms/op    120 allocs/op
 BenchmarkBatchAPI-8                 2000    0.6ms/op     80 allocs/op
 ```
 

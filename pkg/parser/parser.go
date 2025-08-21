@@ -13,8 +13,8 @@ import (
 
 // Mercury is the main parser implementation with built-in optimizations
 type Mercury struct {
-	options   ParserOptions
-	htParser  *HighThroughputParser
+	options  ParserOptions
+	htParser *HighThroughputParser
 }
 
 // New creates a new optimized Mercury parser instance
@@ -25,7 +25,7 @@ func New(opts ...*ParserOptions) *Mercury {
 	} else {
 		options = *DefaultParserOptions()
 	}
-	
+
 	return &Mercury{
 		options:  options,
 		htParser: NewHighThroughputParser(&options),
@@ -38,7 +38,7 @@ func (m *Mercury) Parse(targetURL string, opts *ParserOptions) (*Result, error) 
 	if opts == nil {
 		opts = &m.options
 	}
-	
+
 	// Use the high-throughput parser for optimized performance
 	return m.htParser.Parse(targetURL, opts)
 }
@@ -49,7 +49,7 @@ func (m *Mercury) ParseHTML(html string, targetURL string, opts *ParserOptions) 
 	if opts == nil {
 		opts = &m.options
 	}
-	
+
 	// Use the high-throughput parser for optimized performance
 	return m.htParser.ParseHTML(html, targetURL, opts)
 }
@@ -68,6 +68,49 @@ func (m *Mercury) GetStats() *PoolStats {
 // ResetStats resets performance statistics
 func (m *Mercury) ResetStats() {
 	m.htParser.ResetStats()
+}
+
+// parseWithoutOptimization performs basic parsing without optimization layers
+// Used internally by the optimization framework to avoid circular dependencies
+func (m *Mercury) parseWithoutOptimization(targetURL string, opts *ParserOptions) (*Result, error) {
+	// Validate URL
+	parsedURL, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, err
+	}
+	
+	if !validateURL(parsedURL) {
+		return nil, fmt.Errorf("URL not allowed: %s", targetURL)
+	}
+	
+	// Create resource instance and fetch content
+	r := resource.NewResource()
+	doc, err := r.Create(targetURL, "", parsedURL, opts.Headers)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Use the real extraction logic
+	return m.extractAllFields(doc, targetURL, parsedURL, *opts)
+}
+
+// parseHTMLWithoutOptimization performs basic HTML parsing without optimization layers
+func (m *Mercury) parseHTMLWithoutOptimization(html, targetURL string, opts *ParserOptions) (*Result, error) {
+	// Validate URL
+	parsedURL, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Create resource instance and parse HTML
+	r := resource.NewResource()
+	doc, err := r.Create(targetURL, html, parsedURL, opts.Headers)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Use the real extraction logic
+	return m.extractAllFields(doc, targetURL, parsedURL, *opts)
 }
 
 func validateURL(u *url.URL) bool {

@@ -8,6 +8,44 @@ import (
 	"time"
 )
 
+// CoreParser interface for basic parsing without circular dependencies
+type CoreParser interface {
+	Parse(url string, opts *ParserOptions) (*Result, error)
+	ParseHTML(html, url string, opts *ParserOptions) (*Result, error)
+}
+
+// coreParserImpl implements CoreParser using a simple approach
+type coreParserImpl struct {
+	defaultOpts *ParserOptions
+}
+
+// NewCoreParser creates a basic parser implementation
+func NewCoreParser(opts *ParserOptions) CoreParser {
+	if opts == nil {
+		opts = DefaultParserOptions()
+	}
+	return &coreParserImpl{defaultOpts: opts}
+}
+
+func (cp *coreParserImpl) Parse(url string, opts *ParserOptions) (*Result, error) {
+	// For now, create a temporary Mercury instance to handle the parsing
+	// This avoids the circular dependency while keeping the optimization framework
+	tempParser := &Mercury{options: *cp.defaultOpts}
+	if opts == nil {
+		opts = cp.defaultOpts
+	}
+	return tempParser.parseWithoutOptimization(url, opts)
+}
+
+func (cp *coreParserImpl) ParseHTML(html, url string, opts *ParserOptions) (*Result, error) {
+	// For now, create a temporary Mercury instance to handle the parsing
+	tempParser := &Mercury{options: *cp.defaultOpts}
+	if opts == nil {
+		opts = cp.defaultOpts
+	}
+	return tempParser.parseHTMLWithoutOptimization(html, url, opts)
+}
+
 // ResultPool manages a pool of Result structs to reduce allocations
 type ResultPool struct {
 	pool sync.Pool
@@ -67,39 +105,6 @@ func (rp *ResultPool) resetResult(result *Result) {
 	}
 }
 
-// ParserPool manages a pool of Mercury parser instances
-type ParserPool struct {
-	pool        sync.Pool
-	defaultOpts *ParserOptions
-}
-
-// NewParserPool creates a new parser pool with default options
-func NewParserPool(defaultOpts *ParserOptions) *ParserPool {
-	if defaultOpts == nil {
-		defaultOpts = DefaultParserOptions()
-	}
-	
-	return &ParserPool{
-		defaultOpts: defaultOpts,
-		pool: sync.Pool{
-			New: func() interface{} {
-				return New(defaultOpts)
-			},
-		},
-	}
-}
-
-// Get retrieves a parser from the pool
-func (pp *ParserPool) Get() *Mercury {
-	return pp.pool.Get().(*Mercury)
-}
-
-// Put returns a parser to the pool
-func (pp *ParserPool) Put(parser *Mercury) {
-	if parser != nil {
-		pp.pool.Put(parser)
-	}
-}
 
 // BufferPool manages byte slices for content processing
 type BufferPool struct {
@@ -133,11 +138,11 @@ func (bp *BufferPool) Put(buf []byte) {
 
 // HighThroughputParser combines object pooling for maximum performance
 type HighThroughputParser struct {
-	resultPool *ResultPool
-	parserPool *ParserPool
-	bufferPool *BufferPool
+	resultPool  *ResultPool
+	bufferPool  *BufferPool
 	defaultOpts *ParserOptions
-	stats      *PoolStats
+	stats       *PoolStats
+	coreParser  CoreParser
 }
 
 // PoolStats tracks pool performance metrics
@@ -158,17 +163,17 @@ func NewHighThroughputParser(opts *ParserOptions) *HighThroughputParser {
 	
 	return &HighThroughputParser{
 		resultPool:  NewResultPool(),
-		parserPool:  NewParserPool(opts),
 		bufferPool:  NewBufferPool(64 * 1024), // 64KB initial buffer size
 		defaultOpts: opts,
 		stats: &PoolStats{
 			LastReset: time.Now(),
 		},
+		coreParser: NewCoreParser(opts),
 	}
 }
 
 // Parse extracts content using object pooling for optimal performance
-func (htp *HighThroughputParser) Parse(url string, opts *ParserOptions) (*Result, error) {
+func (htp *HighThroughputParser) Parse(targetURL string, opts *ParserOptions) (*Result, error) {
 	start := time.Now()
 	defer func() {
 		htp.updateStats(time.Since(start))
@@ -179,28 +184,21 @@ func (htp *HighThroughputParser) Parse(url string, opts *ParserOptions) (*Result
 		opts = htp.defaultOpts
 	}
 	
-	// Get parser from pool
-	parser := htp.parserPool.Get()
-	defer htp.parserPool.Put(parser)
-	
-	// Get result from pool
-	result := htp.resultPool.Get()
-	
-	// Parse using pooled parser
-	parsedResult, err := parser.Parse(url, opts)
+	// Parse using core parser
+	parsedResult, err := htp.coreParser.Parse(targetURL, opts)
 	if err != nil {
-		htp.resultPool.Put(result) // Return unused result to pool
 		return nil, err
 	}
 	
-	// Copy parsed result to pooled result to maintain pool benefits
+	// Get result from pool and copy data
+	result := htp.resultPool.Get()
 	htp.copyResult(parsedResult, result)
 	
 	return result, nil
 }
 
 // ParseHTML extracts content from HTML using object pooling
-func (htp *HighThroughputParser) ParseHTML(html, url string, opts *ParserOptions) (*Result, error) {
+func (htp *HighThroughputParser) ParseHTML(html, targetURL string, opts *ParserOptions) (*Result, error) {
 	start := time.Now()
 	defer func() {
 		htp.updateStats(time.Since(start))
@@ -211,21 +209,14 @@ func (htp *HighThroughputParser) ParseHTML(html, url string, opts *ParserOptions
 		opts = htp.defaultOpts
 	}
 	
-	// Get parser from pool
-	parser := htp.parserPool.Get()
-	defer htp.parserPool.Put(parser)
-	
-	// Get result from pool
-	result := htp.resultPool.Get()
-	
-	// Parse using pooled parser
-	parsedResult, err := parser.ParseHTML(html, url, opts)
+	// Parse using core parser
+	parsedResult, err := htp.coreParser.ParseHTML(html, targetURL, opts)
 	if err != nil {
-		htp.resultPool.Put(result) // Return unused result to pool
 		return nil, err
 	}
 	
-	// Copy parsed result to pooled result
+	// Get result from pool and copy data
+	result := htp.resultPool.Get()
 	htp.copyResult(parsedResult, result)
 	
 	return result, nil
@@ -338,26 +329,30 @@ func (htp *HighThroughputParser) updateStats(duration time.Duration) {
 	}
 }
 
-// Global parser instance for convenience
-var GlobalParser = New()
+// Global high-throughput parser instance for convenience
+var GlobalHTParser = NewHighThroughputParser(nil)
 
 // Convenience functions for global parser
 func Parse(url string, opts *ParserOptions) (*Result, error) {
-	return GlobalParser.Parse(url, opts)
+	return GlobalHTParser.Parse(url, opts)
 }
 
 func ParseHTML(html, url string, opts *ParserOptions) (*Result, error) {
-	return GlobalParser.ParseHTML(html, url, opts)
+	return GlobalHTParser.ParseHTML(html, url, opts)
 }
 
 func ParseBatch(urls []string, opts *ParserOptions) ([]*Result, []error) {
-	return GlobalParser.htParser.ParseBatch(urls, opts)
+	return GlobalHTParser.ParseBatch(urls, opts)
+}
+
+func ReturnResultToPool(result *Result) {
+	GlobalHTParser.ReturnResult(result)
 }
 
 func ReturnResult(result *Result) {
-	GlobalParser.ReturnResult(result)
+	GlobalHTParser.ReturnResult(result)
 }
 
 func GetGlobalStats() *PoolStats {
-	return GlobalParser.GetStats()
+	return GlobalHTParser.GetStats()
 }

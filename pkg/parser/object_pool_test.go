@@ -35,28 +35,11 @@ func TestResultPool(t *testing.T) {
 	}
 }
 
-func TestParserPool(t *testing.T) {
-	opts := &ParserOptions{
-		ContentType: "html",
-		Fallback:    true,
-	}
-	
-	pool := NewParserPool(opts)
-	
-	// Test getting a parser from pool
-	parser1 := pool.Get()
-	if parser1 == nil {
-		t.Fatal("Expected non-nil parser from pool")
-	}
-	
-	// Test putting parser back to pool
-	pool.Put(parser1)
-	
-	// Test getting another parser
-	parser2 := pool.Get()
-	if parser2 == nil {
-		t.Fatal("Expected non-nil parser from pool")
-	}
+// ParserPool was removed - object pooling now handled internally by HighThroughputParser
+func TestParserPoolRemoved(t *testing.T) {
+	// This test is now redundant since ParserPool was removed in favor of
+	// internal pooling within HighThroughputParser
+	t.Skip("ParserPool functionality moved to HighThroughputParser")
 }
 
 func TestBufferPool(t *testing.T) {
@@ -159,7 +142,7 @@ func TestHighThroughputParserBatch(t *testing.T) {
 	}
 }
 
-func TestGlobalOptimizedFunctions(t *testing.T) {
+func TestGlobalFunctions(t *testing.T) {
 	html := `
 	<!DOCTYPE html>
 	<html>

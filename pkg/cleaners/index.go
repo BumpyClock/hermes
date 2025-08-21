@@ -41,9 +41,41 @@ func (c *ContentCleaner) CleanSelection(selection *goquery.Selection, doc *goque
 	return ExtractCleanNode(selection, doc, contentOpts)
 }
 
+// LeadImageURLCleaner implements FieldCleaner for lead image URL fields
+type LeadImageURLCleaner struct{}
+
+func (c *LeadImageURLCleaner) Clean(value interface{}, opts CleanerOptions) interface{} {
+	if imageURL, ok := value.(string); ok {
+		return CleanLeadImageURLValidated(imageURL)
+	}
+	return nil
+}
+
+func (c *LeadImageURLCleaner) CleanSelection(selection *goquery.Selection, doc *goquery.Document, opts CleanerOptions) *goquery.Selection {
+	// Lead image URL cleaning doesn't operate on selections
+	return selection
+}
+
+// ResolveSplitTitleCleaner implements FieldCleaner for title fields with split resolution
+type ResolveSplitTitleCleaner struct{}
+
+func (c *ResolveSplitTitleCleaner) Clean(value interface{}, opts CleanerOptions) interface{} {
+	if title, ok := value.(string); ok {
+		return ResolveSplitTitle(title, opts.URL)
+	}
+	return value
+}
+
+func (c *ResolveSplitTitleCleaner) CleanSelection(selection *goquery.Selection, doc *goquery.Document, opts CleanerOptions) *goquery.Selection {
+	// Title cleaning doesn't operate on selections
+	return selection
+}
+
 // Registry of all available cleaners
 var cleanerRegistry = map[string]FieldCleaner{
-	"content": &ContentCleaner{},
+	"content":          &ContentCleaner{},
+	"lead_image_url":   &LeadImageURLCleaner{},
+	"resolve_title":    &ResolveSplitTitleCleaner{},
 	// Additional cleaners will be added here as they're implemented
 }
 

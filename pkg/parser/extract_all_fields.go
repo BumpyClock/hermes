@@ -47,7 +47,10 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 
 	// Extract title
 	if title := generic.GenericTitleExtractor.Extract(doc.Selection, targetURL, metaCache); title != "" {
+		// First apply basic title cleaning
 		result.Title = cleaners.CleanTitle(title, targetURL, doc)
+		// Then apply split title resolution to remove breadcrumbs and site names
+		result.Title = cleaners.ResolveSplitTitle(result.Title, targetURL)
 	}
 
 	// Extract author
@@ -72,7 +75,10 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 		HTML:      "", // Could enhance with original HTML
 	}
 	if imageURL := imageExtractor.Extract(imageParams); imageURL != nil && *imageURL != "" {
-		result.LeadImageURL = cleaners.CleanLeadImageURL(*imageURL, targetURL)
+		// Use the new cleaner that properly validates URLs
+		if cleaned := cleaners.CleanLeadImageURLValidated(*imageURL); cleaned != nil {
+			result.LeadImageURL = *cleaned
+		}
 	}
 
 	// Extract dek (description/subtitle)
