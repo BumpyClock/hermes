@@ -26,7 +26,7 @@ type WorkerPoolConfig struct {
 type BatchJob struct {
 	ID       string         // Unique job identifier
 	URL      string         // URL to parse
-	Options  ParserOptions  // Parser configuration
+	Options  *ParserOptions // Parser configuration
 	Priority int            // Job priority (lower = higher priority)
 	Context  context.Context // Job-specific context
 	Retries  int            // Current retry count
@@ -215,7 +215,7 @@ func (wp *WorkerPool) SubmitBatch(jobs []*BatchJob) []error {
 }
 
 // SubmitURLs is a convenience method to submit multiple URLs with default options
-func (wp *WorkerPool) SubmitURLs(urls []string, options ParserOptions) []error {
+func (wp *WorkerPool) SubmitURLs(urls []string, options *ParserOptions) []error {
 	jobs := make([]*BatchJob, len(urls))
 	
 	for i, url := range urls {
@@ -433,7 +433,7 @@ func NewBatchProcessor(parser Parser, config *WorkerPoolConfig) *BatchProcessor 
 }
 
 // ProcessURLs processes a list of URLs and returns all results
-func (bp *BatchProcessor) ProcessURLs(urls []string, options ParserOptions) ([]BatchResult, error) {
+func (bp *BatchProcessor) ProcessURLs(urls []string, options *ParserOptions) ([]BatchResult, error) {
 	// Start worker pool
 	if err := bp.pool.Start(); err != nil {
 		return nil, err
@@ -465,7 +465,7 @@ func (bp *BatchProcessor) ProcessURLs(urls []string, options ParserOptions) ([]B
 }
 
 // ProcessURLsConcurrent processes URLs and calls a callback for each result as it completes
-func (bp *BatchProcessor) ProcessURLsConcurrent(urls []string, options ParserOptions, callback func(*BatchResult)) error {
+func (bp *BatchProcessor) ProcessURLsConcurrent(urls []string, options *ParserOptions, callback func(*BatchResult)) error {
 	// Start worker pool
 	if err := bp.pool.Start(); err != nil {
 		return err

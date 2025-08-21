@@ -33,7 +33,7 @@ func TestIntegrationContentDebug(t *testing.T) {
 	// Let me trace through the extraction
 	t.Logf("Testing with ContentType: %s", opts.ContentType)
 	
-	result, err := parser.ParseHTML(html, "https://example.com/article", opts)
+	result, err := parser.ParseHTML(html, "https://example.com/article", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestIntegrationContentDebug(t *testing.T) {
 
 	// Test with text content type
 	opts.ContentType = "text"
-	result2, err := parser.ParseHTML(html, "https://example.com/article", opts)
+	result2, err := parser.ParseHTML(html, "https://example.com/article", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}

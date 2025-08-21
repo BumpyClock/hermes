@@ -17,22 +17,26 @@ type Mercury struct {
 }
 
 // New creates a new Mercury parser instance
-func New(opts ...ParserOptions) *Mercury {
+func New(opts ...*ParserOptions) *Mercury {
 	parser := &Mercury{}
-	if len(opts) > 0 {
-		parser.options = opts[0]
+	if len(opts) > 0 && opts[0] != nil {
+		parser.options = *opts[0]
 	} else {
-		parser.options = ParserOptions{
-			FetchAllPages: true,
-			Fallback:      true,
-			ContentType:   "html",
-		}
+		parser.options = *DefaultParserOptions()
 	}
 	return parser
 }
 
 // Parse extracts content from a URL
-func (m *Mercury) Parse(targetURL string, opts ParserOptions) (*Result, error) {
+func (m *Mercury) Parse(targetURL string, opts *ParserOptions) (*Result, error) {
+	// Use provided options or defaults
+	var finalOpts ParserOptions
+	if opts != nil {
+		finalOpts = *opts
+	} else {
+		finalOpts = m.options
+	}
+
 	// Parse and validate URL
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
@@ -48,13 +52,13 @@ func (m *Mercury) Parse(targetURL string, opts ParserOptions) (*Result, error) {
 
 	// Create resource from URL (with fetching)
 	r := resource.NewResource()
-	doc, err := r.Create(targetURL, "", parsedURL, opts.Headers)
+	doc, err := r.Create(targetURL, "", parsedURL, finalOpts.Headers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 
 	// Extract all fields using generic extractors
-	result, err := m.extractAllFields(doc, targetURL, parsedURL, opts)
+	result, err := m.extractAllFields(doc, targetURL, parsedURL, finalOpts)
 	if err != nil {
 		return nil, fmt.Errorf("extraction failed: %w", err)
 	}
@@ -67,7 +71,15 @@ func (m *Mercury) Parse(targetURL string, opts ParserOptions) (*Result, error) {
 }
 
 // ParseHTML extracts content from provided HTML
-func (m *Mercury) ParseHTML(html string, targetURL string, opts ParserOptions) (*Result, error) {
+func (m *Mercury) ParseHTML(html string, targetURL string, opts *ParserOptions) (*Result, error) {
+	// Use provided options or defaults
+	var finalOpts ParserOptions
+	if opts != nil {
+		finalOpts = *opts
+	} else {
+		finalOpts = m.options
+	}
+
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid URL: %w", err)
@@ -85,7 +97,7 @@ func (m *Mercury) ParseHTML(html string, targetURL string, opts ParserOptions) (
 	}
 
 	// Extract all fields using generic extractors
-	result, err := m.extractAllFields(doc, targetURL, parsedURL, opts)
+	result, err := m.extractAllFields(doc, targetURL, parsedURL, finalOpts)
 	if err != nil {
 		return nil, fmt.Errorf("extraction failed: %w", err)
 	}

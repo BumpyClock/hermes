@@ -28,7 +28,7 @@ func TestSimpleHTML_Debug(t *testing.T) {
 	</html>
 	`
 
-	result, err := p.ParseHTML(html, "https://example.com/article", ParserOptions{})
+	result, err := p.ParseHTML(html, "https://example.com/article", &ParserOptions{})
 	if err != nil {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestSimpleHTML_Debug(t *testing.T) {
 	</html>
 	`
 
-	result2, err := p.ParseHTML(html2, "https://example.com/article", ParserOptions{})
+	result2, err := p.ParseHTML(html2, "https://example.com/article", &ParserOptions{})
 	if err != nil {
 		t.Fatalf("ParseHTML2 failed: %v", err)
 	}

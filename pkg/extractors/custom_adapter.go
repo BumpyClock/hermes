@@ -32,7 +32,7 @@ func (c *CustomExtractorAdapter) GetDomain() string {
 
 // Extract performs extraction using the custom extractor's configuration
 // Implements the parser.Extractor interface
-func (c *CustomExtractorAdapter) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
+func (c *CustomExtractorAdapter) Extract(doc *goquery.Document, url string, opts *parser.ExtractorOptions) (*parser.Result, error) {
 	if doc == nil {
 		return nil, fmt.Errorf("document is nil")
 	}

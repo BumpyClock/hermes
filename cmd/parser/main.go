@@ -65,7 +65,7 @@ func runParse(cmd *cobra.Command, args []string) error {
 
 	// Create parser and extract content
 	p := parser.New()
-	result, err := p.Parse(url, parser.ParserOptions{
+	result, err := p.Parse(url, &parser.ParserOptions{
 		FetchAllPages: fetchAll,
 		ContentType:   outputFormat,
 		Headers:       customHeaders,

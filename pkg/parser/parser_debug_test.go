@@ -36,7 +36,7 @@ func TestParserDebug_Basic(t *testing.T) {
 		ContentType: "html",
 	}
 
-	result, err := parser.ParseHTML(debugHTML, "https://example.com/debug", opts)
+	result, err := parser.ParseHTML(debugHTML, "https://example.com/debug", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}

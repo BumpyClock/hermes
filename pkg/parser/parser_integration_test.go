@@ -40,7 +40,7 @@ func TestParserIntegration_ParseHTML_BasicExtraction(t *testing.T) {
 		ContentType: "html",
 	}
 
-	result, err := parser.ParseHTML(sampleNewsHTML, "https://example.com/article", opts)
+	result, err := parser.ParseHTML(sampleNewsHTML, "https://example.com/article", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestParserIntegration_ParseHTML_ContentTypes(t *testing.T) {
 				ContentType: tt.contentType,
 			}
 
-			result, err := parser.ParseHTML(sampleNewsHTML, "https://example.com/article", opts)
+			result, err := parser.ParseHTML(sampleNewsHTML, "https://example.com/article", &opts)
 			if err != nil {
 				t.Fatalf("ParseHTML failed: %v", err)
 			}
@@ -159,7 +159,7 @@ func TestParserIntegration_ParseHTML_FallbackBehavior(t *testing.T) {
 		ContentType: "html",
 	}
 
-	result, err := parser.ParseHTML(sampleNewsHTML, "https://example.com/article", opts)
+	result, err := parser.ParseHTML(sampleNewsHTML, "https://example.com/article", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML with fallback failed: %v", err)
 	}
@@ -170,7 +170,7 @@ func TestParserIntegration_ParseHTML_FallbackBehavior(t *testing.T) {
 
 	// Test with fallback disabled (should still work with generic extractor)
 	opts.Fallback = false
-	result2, err := parser.ParseHTML(sampleNewsHTML, "https://example.com/article", opts)
+	result2, err := parser.ParseHTML(sampleNewsHTML, "https://example.com/article", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML without fallback failed: %v", err)
 	}
@@ -188,14 +188,14 @@ func TestParserIntegration_ParseHTML_ErrorHandling(t *testing.T) {
 	}
 
 	// Test with invalid URL
-	_, err := parser.ParseHTML(sampleNewsHTML, "not-a-url", opts)
+	_, err := parser.ParseHTML(sampleNewsHTML, "not-a-url", &opts)
 	if err == nil {
 		t.Error("Expected error for invalid URL")
 	}
 
 	// Test with malformed HTML (should still work)
 	malformedHTML := `<html><body><p>Unclosed paragraph`
-	result, err := parser.ParseHTML(malformedHTML, "https://example.com/malformed", opts)
+	result, err := parser.ParseHTML(malformedHTML, "https://example.com/malformed", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML should handle malformed HTML: %v", err)
 	}
@@ -214,7 +214,7 @@ func TestParserIntegration_ParseHTML_EmptyContent(t *testing.T) {
 
 	emptyHTML := `<html><head><title>Empty</title></head><body></body></html>`
 	
-	result, err := parser.ParseHTML(emptyHTML, "https://example.com/empty", opts)
+	result, err := parser.ParseHTML(emptyHTML, "https://example.com/empty", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML should handle empty content: %v", err)
 	}

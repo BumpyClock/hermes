@@ -46,9 +46,9 @@ func TestParseHTMLWithInvalidURL(t *testing.T) {
 
 	html := `<html><body><p>Test</p></body></html>`
 	
-	_, err := parser.ParseHTML(html, "not-a-url", opts)
+	_, err := parser.ParseHTML(html, "not-a-url", &opts)
 	t.Logf("ParseHTML with 'not-a-url': err = %v", err)
 	
-	_, err = parser.ParseHTML(html, "", opts)
+	_, err = parser.ParseHTML(html, "", &opts)
 	t.Logf("ParseHTML with empty URL: err = %v", err)
 }

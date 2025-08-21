@@ -8,8 +8,8 @@ import (
 
 // Parser is the main interface for content extraction
 type Parser interface {
-	Parse(url string, opts ParserOptions) (*Result, error)
-	ParseHTML(html string, url string, opts ParserOptions) (*Result, error)
+	Parse(url string, opts *ParserOptions) (*Result, error)
+	ParseHTML(html string, url string, opts *ParserOptions) (*Result, error)
 }
 
 // ParserOptions configures the parser behavior
@@ -48,7 +48,7 @@ type Result struct {
 
 // Extractor defines the interface for content extractors
 type Extractor interface {
-	Extract(doc *goquery.Document, url string, opts ExtractorOptions) (*Result, error)
+	Extract(doc *goquery.Document, url string, opts *ExtractorOptions) (*Result, error)
 	GetDomain() string
 }
 
@@ -95,3 +95,21 @@ type TransformFunc func(*goquery.Selection) string
 
 // ExtractorFunc is a custom extraction function
 type ExtractorFunc func(*goquery.Document, string) (interface{}, error)
+
+// DefaultParserOptions returns default parser options
+func DefaultParserOptions() *ParserOptions {
+	return &ParserOptions{
+		FetchAllPages: true,
+		Fallback:      true,
+		ContentType:   "html",
+	}
+}
+
+// DefaultExtractorOptions returns default extractor options
+func DefaultExtractorOptions() *ExtractorOptions {
+	return &ExtractorOptions{
+		Fallback:    true,
+		ContentType: "html",
+		MetaCache:   make(map[string]string),
+	}
+}

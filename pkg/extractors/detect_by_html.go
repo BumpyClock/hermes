@@ -50,7 +50,7 @@ func (m *MediumExtractor) GetDomain() string {
 	return "medium.com"
 }
 
-func (m *MediumExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
+func (m *MediumExtractor) Extract(doc *goquery.Document, url string, opts *parser.ExtractorOptions) (*parser.Result, error) {
 	// Placeholder implementation - will be replaced with actual extraction logic
 	return &parser.Result{
 		URL:    url,
@@ -66,7 +66,7 @@ func (b *BloggerExtractor) GetDomain() string {
 	return "blogspot.com"
 }
 
-func (b *BloggerExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
+func (b *BloggerExtractor) Extract(doc *goquery.Document, url string, opts *parser.ExtractorOptions) (*parser.Result, error) {
 	// Placeholder implementation - will be replaced with actual extraction logic
 	return &parser.Result{
 		URL:    url,

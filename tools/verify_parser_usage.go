@@ -56,7 +56,7 @@ func main() {
 	// Test the parser
 	fmt.Printf("\n=== PARSER EXECUTION ===")
 	p := parser.New()
-	result, err := p.Parse(targetURL, parser.ParserOptions{
+	result, err := p.Parse(targetURL, &parser.ParserOptions{
 		ContentType: "html",
 		Fallback:    true,
 	})

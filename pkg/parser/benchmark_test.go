@@ -119,7 +119,7 @@ func BenchmarkDifferentContentTypes(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				result, err := p.ParseHTML(htmlStr, url, opts)
+				result, err := p.ParseHTML(htmlStr, url, &opts)
 				if err != nil {
 					b.Fatal(err)
 				}
