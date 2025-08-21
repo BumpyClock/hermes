@@ -24,7 +24,7 @@ func BenchmarkParseHTML(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result, err := p.ParseHTML(htmlStr, url, parser.ParserOptions{})
+		result, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -49,7 +49,7 @@ func BenchmarkParseHTMLMemory(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		result, err := p.ParseHTML(htmlStr, url, parser.ParserOptions{})
+		result, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -85,7 +85,7 @@ func BenchmarkParseMultipleFixtures(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				result, err := p.ParseHTML(htmlStr, url, parser.ParserOptions{})
+				result, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
 				if err != nil {
 					b.Fatal(err)
 				}

@@ -15,19 +15,19 @@ func TestParseURL(t *testing.T) {
 	p := parser.New()
 
 	// Test with invalid URL
-	result, err := p.Parse("not-a-url", parser.ParserOptions{})
+	result, err := p.Parse("not-a-url", &parser.ParserOptions{})
 	require.NoError(t, err)
 	assert.True(t, result.IsError())
 	assert.Contains(t, result.Message, "valid URL")
 
 	// Test with malformed URL
-	result, err = p.Parse("foo.com", parser.ParserOptions{})
+	result, err = p.Parse("foo.com", &parser.ParserOptions{})
 	require.NoError(t, err)
 	assert.True(t, result.IsError())
 	assert.Contains(t, result.Message, "valid URL")
 
 	// Test with valid URL structure - may fail due to HTTP issues, which is expected
-	result, err = p.Parse("https://example.com/article", parser.ParserOptions{})
+	result, err = p.Parse("https://example.com/article", &parser.ParserOptions{})
 	if err != nil {
 		// HTTP errors are acceptable for this test - we're testing URL parsing, not HTTP fetching
 		t.Logf("HTTP fetch failed as expected: %v", err)
@@ -60,7 +60,7 @@ func TestParseHTML(t *testing.T) {
 	</html>
 	`
 
-	result, err := p.ParseHTML(html, "https://example.com/article", parser.ParserOptions{})
+	result, err := p.ParseHTML(html, "https://example.com/article", &parser.ParserOptions{})
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.False(t, result.IsError())
@@ -83,7 +83,7 @@ func TestParseHTMLWithoutTitle(t *testing.T) {
 	</html>
 	`
 
-	result, err := p.ParseHTML(html, "https://example.com/article", parser.ParserOptions{})
+	result, err := p.ParseHTML(html, "https://example.com/article", &parser.ParserOptions{})
 	require.NoError(t, err)
 	assert.Equal(t, "Header Title", result.Title)
 	assert.Contains(t, result.Content, "Some content here")
@@ -101,7 +101,7 @@ func TestParserOptions(t *testing.T) {
 		ContentType:   "markdown",
 		Headers:       map[string]string{"User-Agent": "test"},
 	}
-	p = parser.New(opts)
+	p = parser.New(&opts)
 	assert.NotNil(t, p)
 }
 

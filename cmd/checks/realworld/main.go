@@ -44,7 +44,7 @@ func main() {
 		
 		// Parse with timing
 		start := time.Now()
-		result, err := p.ParseHTML(string(htmlContent), test.url, parser.ParserOptions{
+		result, err := p.ParseHTML(string(htmlContent), test.url, &parser.ParserOptions{
 			ContentType: "html",
 		})
 		duration := time.Since(start)

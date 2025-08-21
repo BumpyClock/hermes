@@ -29,7 +29,7 @@ func TestExternalDebug(t *testing.T) {
 	</html>
 	`
 
-	result, err := p.ParseHTML(html, "https://example.com/article", parser.ParserOptions{})
+	result, err := p.ParseHTML(html, "https://example.com/article", &parser.ParserOptions{})
 	if err != nil {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}

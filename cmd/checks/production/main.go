@@ -16,7 +16,7 @@ func main() {
 	
 	// Test 1: Error Handling - Invalid URL
 	fmt.Println("\n1. Testing invalid URL handling:")
-	result, err := p.ParseHTML("", "not-a-url", parser.ParserOptions{})
+	result, err := p.ParseHTML("", "not-a-url", &parser.ParserOptions{})
 	if err != nil {
 		fmt.Printf("   ✅ Properly handles invalid URLs: %v\n", err)
 	} else if result != nil && result.Error {
@@ -26,7 +26,7 @@ func main() {
 	// Test 2: Error Handling - Malformed HTML
 	fmt.Println("\n2. Testing malformed HTML handling:")
 	malformedHTML := `<html><head><title>Test</><body><p>Unclosed tags<div>More content`
-	result, err = p.ParseHTML(malformedHTML, "https://example.com/test", parser.ParserOptions{})
+	result, err = p.ParseHTML(malformedHTML, "https://example.com/test", &parser.ParserOptions{})
 	if err != nil {
 		fmt.Printf("   ❌ Failed on malformed HTML: %v\n", err)
 	} else if result != nil {
@@ -36,7 +36,7 @@ func main() {
 	// Test 3: Empty content handling
 	fmt.Println("\n3. Testing empty content handling:")
 	emptyHTML := `<html><head><title>Empty</title></head><body></body></html>`
-	result, err = p.ParseHTML(emptyHTML, "https://example.com/empty", parser.ParserOptions{})
+	result, err = p.ParseHTML(emptyHTML, "https://example.com/empty", &parser.ParserOptions{})
 	if err != nil {
 		fmt.Printf("   ❌ Failed on empty content: %v\n", err)
 	} else if result != nil {
@@ -49,7 +49,7 @@ func main() {
 	largeHTML := fmt.Sprintf(`<html><head><title>Large Document</title></head><body><article>%s</article></body></html>`, largeContent)
 	
 	start := time.Now()
-	result, err = p.ParseHTML(largeHTML, "https://example.com/large", parser.ParserOptions{})
+	result, err = p.ParseHTML(largeHTML, "https://example.com/large", &parser.ParserOptions{})
 	duration := time.Since(start)
 	
 	if err != nil {
@@ -65,7 +65,7 @@ func main() {
 	
 	contentTypes := []string{"html", "markdown", "text"}
 	for _, ct := range contentTypes {
-		result, err = p.ParseHTML(testHTML, "https://example.com/content", parser.ParserOptions{
+		result, err = p.ParseHTML(testHTML, "https://example.com/content", &parser.ParserOptions{
 			ContentType: ct,
 		})
 		if err != nil {
@@ -77,7 +77,7 @@ func main() {
 	
 	// Test 6: Configuration options
 	fmt.Println("\n6. Testing configuration options:")
-	result, err = p.ParseHTML(testHTML, "https://example.com/config", parser.ParserOptions{
+	result, err = p.ParseHTML(testHTML, "https://example.com/config", &parser.ParserOptions{
 		FetchAllPages: false,
 		Fallback:      true,
 		ContentType:   "html",

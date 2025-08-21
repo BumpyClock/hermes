@@ -45,7 +45,7 @@ func (bge *BasicGenericExtractor) GetDomain() string {
 }
 
 // Extract performs generic extraction by delegating to the generic package
-func (bge *BasicGenericExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
+func (bge *BasicGenericExtractor) Extract(doc *goquery.Document, url string, opts *parser.ExtractorOptions) (*parser.Result, error) {
 	// Create generic extractor from the generic package
 	genericExtractor := generic.NewGenericExtractor()
 	

@@ -43,7 +43,7 @@ func main() {
 			p := parser.New()
 			
 			for j := 0; j < numExtractionsPerGoroutine; j++ {
-				_, err := p.ParseHTML(testHTML, fmt.Sprintf("https://example.com/test-%d-%d", id, j), parser.ParserOptions{
+				_, err := p.ParseHTML(testHTML, fmt.Sprintf("https://example.com/test-%d-%d", id, j), &parser.ParserOptions{
 					ContentType: "html",
 				})
 				if err != nil {

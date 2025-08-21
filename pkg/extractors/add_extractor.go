@@ -120,7 +120,7 @@ func (f *FullExtractor) GetDomain() string {
 }
 
 // Extract implements the parser.Extractor interface for FullExtractor
-func (f *FullExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
+func (f *FullExtractor) Extract(doc *goquery.Document, url string, opts *parser.ExtractorOptions) (*parser.Result, error) {
 	// This will be implemented with the root extractor logic
 	return nil, fmt.Errorf("not implemented yet")
 }

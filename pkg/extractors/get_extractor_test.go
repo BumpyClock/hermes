@@ -24,7 +24,7 @@ func (m *TestMockExtractor) GetDomain() string {
 }
 
 // Extract implements the Extractor interface
-func (m *TestMockExtractor) Extract(doc *goquery.Document, url string, opts parser.ExtractorOptions) (*parser.Result, error) {
+func (m *TestMockExtractor) Extract(doc *goquery.Document, url string, opts *parser.ExtractorOptions) (*parser.Result, error) {
 	return &parser.Result{
 		URL:    url,
 		Domain: m.domain,
