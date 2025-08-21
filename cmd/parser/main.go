@@ -112,8 +112,12 @@ func runParse(cmd *cobra.Command, args []string) error {
 			switch outputFormat {
 			case "json":
 				convertedContent = result.Content // Already in requested format
-			case "html", "markdown", "text":
-				convertedContent = result.Content // Already in requested format
+			case "html":
+				convertedContent = result.Content
+			case "markdown":
+				convertedContent = result.FormatMarkdown()
+			case "text":
+				convertedContent = result.Content
 			default:
 				convertedContent = result.Content
 			}
@@ -156,7 +160,11 @@ func runParse(cmd *cobra.Command, args []string) error {
 			if r, ok := result.(*parser.Result); ok {
 				output = []byte(r.Content)
 			}
-		case "markdown", "text":
+		case "markdown":
+			if r, ok := result.(*parser.Result); ok {
+				output = []byte(r.FormatMarkdown())
+			}
+		case "text":
 			if r, ok := result.(*parser.Result); ok {
 				output = []byte(r.Content)
 			}

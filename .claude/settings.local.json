@@ -43,7 +43,8 @@
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(chmod:*)",
       "Bash(./test-batch-performance.sh:*)",
-      "Bash(./parser-go/bin/parser:*)"
+      "Bash(./parser-go/bin/parser:*)",
+      "WebFetch(domain:www.theverge.com)"
     ],
     "deny": [],
     "ask": [],

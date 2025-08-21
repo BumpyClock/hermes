@@ -20,9 +20,9 @@ var WwwThevergeComExtractor = &CustomExtractor{
 	
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "content"},
-			[]string{"meta[name=\"parsely-author\"]", "content"},
-			[]string{"meta[name=\"cse-authors\"]", "content"},
+			[]string{"meta[name=\"author\"]", "value"},
+			[]string{"meta[name=\"parsely-author\"]", "value"},
+			[]string{"meta[name=\"cse-authors\"]", "value"},
 		},
 	},
 	
@@ -40,20 +40,16 @@ var WwwThevergeComExtractor = &CustomExtractor{
 	
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[property=\"og:image\"]", "content"},
-			[]string{"meta[name=\"og:image\"]", "content"},
+			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
 	
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
-				// Modern Verge layout - article body components + follow topics section
-				[]interface{}{".duet--article--article-body-component", ".tly2fw0"},
-				// Backup selectors for content divs + follow section
-				[]interface{}{"div[id*='zephr-anchor']", ".tly2fw0"},
-				// Just main content as fallback
+				// Modern Verge layout - just article body components (no follow section)
 				".duet--article--article-body-component",
+				// Backup selectors for content divs
 				"div[id*='zephr-anchor']",
 				// Generic content fallbacks
 				"article",
@@ -95,6 +91,15 @@ var WwwThevergeComExtractor = &CustomExtractor{
 			"div[class*='image-gallery'] img[srcset]", // Remove srcset attributes
 			".duet--media--content-warning", // Remove content warnings
 			"._1etxtj1", // Remove image gallery navigation
+			// Remove topic follow sections and related content
+			".c-related-list",
+			".c-entry-group-labels", 
+			".c-follow-button",
+			".tly2fw0", // Follow topics section
+			"button", // Interactive buttons
+			// Remove navigation elements
+			".c-image-gallery__nav",
+			"[class*='follow']", // Follow buttons/sections
 		},
 	},
 }

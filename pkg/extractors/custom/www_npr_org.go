@@ -53,6 +53,16 @@ func GetNPRExtractor() *CustomExtractor {
 
 			Clean: []string{
 				"div.enlarge_measure",
+				"b.toggle-caption",
+				"b.hide-caption", 
+				".ad-header",
+				".ad-wrap",
+				"aside.ad-wrap",
+				"aside[id*='ad-']",
+				"button",
+				// Additional patterns for UI elements
+				".bucketwrap .toggle-caption",
+				".bucketwrap .hide-caption",
 			},
 		},
 	}

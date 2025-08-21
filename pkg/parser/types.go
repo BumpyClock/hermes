@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -112,4 +113,45 @@ func DefaultExtractorOptions() *ExtractorOptions {
 		ContentType: "html",
 		MetaCache:   make(map[string]string),
 	}
+}
+
+// FormatMarkdown formats the result as markdown with metadata header
+func (r *Result) FormatMarkdown() string {
+	var sb strings.Builder
+	
+	// Add title as H1
+	if r.Title != "" {
+		sb.WriteString("# ")
+		sb.WriteString(r.Title)
+		sb.WriteString("\n\n")
+	}
+	
+	// Add metadata
+	if r.Author != "" {
+		sb.WriteString("**Author:** ")
+		sb.WriteString(r.Author)
+		sb.WriteString("\n")
+	}
+	
+	if r.DatePublished != nil {
+		sb.WriteString("**Date:** ")
+		sb.WriteString(r.DatePublished.Format(time.RFC3339))
+		sb.WriteString("\n")
+	}
+	
+	if r.URL != "" {
+		sb.WriteString("**URL:** ")
+		sb.WriteString(r.URL)
+		sb.WriteString("\n")
+	}
+	
+	// Add separator if we have metadata
+	if r.Author != "" || r.DatePublished != nil || r.URL != "" {
+		sb.WriteString("\n")
+	}
+	
+	// Add content
+	sb.WriteString(r.Content)
+	
+	return sb.String()
 }
