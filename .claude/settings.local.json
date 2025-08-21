@@ -36,7 +36,8 @@
       "Bash(go tool compile:*)",
       "Bash(/tmp/registry_check:*)",
       "Bash(/tmp/concurrency_check:*)",
-      "Bash(bin/parser parse:*)"
+      "Bash(bin/parser parse:*)",
+      "Bash(./tools/verify_custom_extractors:*)"
     ],
     "deny": [],
     "ask": [],

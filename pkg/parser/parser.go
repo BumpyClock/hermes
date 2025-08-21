@@ -32,6 +32,11 @@ func New(opts ...*ParserOptions) *Mercury {
 	}
 }
 
+// NewParser creates a new parser instance (convenience function)
+func NewParser() *Mercury {
+	return New()
+}
+
 // Parse extracts content from a URL using optimized pooling
 func (m *Mercury) Parse(targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use provided options or defaults

@@ -171,21 +171,38 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 
 // tryCustomExtractor attempts to use a custom extractor for the given domain
 func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) *Result {
-	// Look for custom extractor for this domain
-	allExtractors := custom.GetAllCustomExtractors()
-	var customExtractor *custom.CustomExtractor
+	// Look for custom extractor for this domain using the proper lookup function
+	customExtractor, found := custom.GetCustomExtractorByDomain(parsedURL.Host)
+	var usedDomain = parsedURL.Host
 	
-	// Find extractor by domain match
-	for _, extractor := range allExtractors {
-		if extractor.Domain == parsedURL.Host {
-			customExtractor = extractor
-			break
+	if !found {
+		// Try fallback - remove 'www.' prefix if present
+		if strings.HasPrefix(parsedURL.Host, "www.") {
+			baseDomain := strings.TrimPrefix(parsedURL.Host, "www.")
+			customExtractor, found = custom.GetCustomExtractorByDomain(baseDomain)
+			if found {
+				usedDomain = baseDomain
+			}
+		} else {
+			// Try adding 'www.' prefix
+			wwwDomain := "www." + parsedURL.Host
+			customExtractor, found = custom.GetCustomExtractorByDomain(wwwDomain)
+			if found {
+				usedDomain = wwwDomain
+			}
 		}
 	}
 	
-	if customExtractor == nil {
+	if !found || customExtractor == nil {
+		// Log when no custom extractor is found for debugging
+		if len(parsedURL.Host) > 0 {
+			fmt.Printf("DEBUG: No custom extractor found for domain: %s\n", parsedURL.Host)
+		}
 		return nil // No custom extractor found
 	}
+	
+	// Log successful custom extractor selection
+	fmt.Printf("DEBUG: Using custom extractor for domain: %s (matched: %s)\n", parsedURL.Host, usedDomain)
 	
 	// Create result with custom extractor info
 	result := &Result{
