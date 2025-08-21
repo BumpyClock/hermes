@@ -39,7 +39,11 @@
       "Bash(bin/parser parse:*)",
       "Bash(./tools/verify_custom_extractors:*)",
       "Bash(./test-js.sh:*)",
-      "mcp__node-code-sandbox-mcp__run_js_ephemeral"
+      "mcp__node-code-sandbox-mcp__run_js_ephemeral",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(chmod:*)",
+      "Bash(./test-batch-performance.sh:*)",
+      "Bash(./parser-go/bin/parser:*)"
     ],
     "deny": [],
     "ask": [],

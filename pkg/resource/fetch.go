@@ -8,8 +8,53 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+// Global HTTP client with connection pooling - created once and reused
+var (
+	globalHTTPClient *HTTPClient
+	clientOnce       sync.Once
+)
+
+// getGlobalHTTPClient returns the singleton HTTP client with connection pooling
+func getGlobalHTTPClient() *HTTPClient {
+	clientOnce.Do(func() {
+		// Create cookie jar
+		jar, err := cookiejar.New(nil)
+		if err != nil {
+			// If cookie jar creation fails, create client without it
+			jar = nil
+		}
+		
+		// Create client with optimized connection pooling
+		client := &http.Client{
+			Timeout: FETCH_TIMEOUT,
+			Jar:     jar,
+			Transport: &http.Transport{
+				MaxIdleConns:        100, // Increased from 10
+				MaxIdleConnsPerHost: 10,  // New setting for per-host pooling
+				IdleConnTimeout:     90 * time.Second,
+				DisableCompression:  false,
+				ForceAttemptHTTP2:   false, // Keep HTTP/2 disabled for stability
+				TLSNextProto:        make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+			},
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) >= 5 {
+					return fmt.Errorf("stopped after 5 redirects")
+				}
+				return nil
+			},
+		}
+		
+		globalHTTPClient = &HTTPClient{
+			client:  client,
+			headers: make(map[string]string), // Will be merged per request
+		}
+	})
+	return globalHTTPClient
+}
 
 // FetchResource fetches a resource from the given URL with retry logic
 func FetchResource(rawURL string, parsedURL *url.URL, headers map[string]string) (*FetchResult, error) {
@@ -25,42 +70,20 @@ func FetchResource(rawURL string, parsedURL *url.URL, headers map[string]string)
 		}
 	}
 
-	// Create HTTP client with cookie jar
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		return &FetchResult{
-			Error:   true,
-			Message: fmt.Sprintf("Failed to create cookie jar: %v", err),
-		}, nil
-	}
-
+	// Get the global HTTP client with connection pooling
+	client := getGlobalHTTPClient()
+	
 	// Use centralized header merging
 	allHeaders := MergeHeaders(headers)
-
-	// Create enhanced HTTP client
-	client := &HTTPClient{
-		client: &http.Client{
-			Timeout: FETCH_TIMEOUT,
-			Jar:     jar,
-			Transport: &http.Transport{
-				MaxIdleConns:       10,
-				IdleConnTimeout:    90 * time.Second,
-				DisableCompression: false,
-				ForceAttemptHTTP2:  false, // Disable HTTP/2 to avoid stuck connection bug
-				TLSNextProto:       make(map[string]func(authority string, c *tls.Conn) http.RoundTripper), // Prevent HTTP/2 negotiation
-			},
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				if len(via) >= 5 {
-					return fmt.Errorf("stopped after 5 redirects")
-				}
-				return nil
-			},
-		},
+	
+	// Create a temporary client wrapper with the merged headers for this request
+	clientWithHeaders := &HTTPClient{
+		client:  client.client, // Reuse the same underlying http.Client
 		headers: allHeaders,
 	}
 
-	// Perform request with retry
-	response, err := client.Get(parsedURL.String())
+	// Perform request with retry using the pooled client
+	response, err := clientWithHeaders.Get(parsedURL.String())
 	if err != nil {
 		return &FetchResult{
 			Error:   true,

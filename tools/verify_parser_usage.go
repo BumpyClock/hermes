@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/BumpyClock/hermes/internal/extractors/custom"
-	"github.com/BumpyClock/hermes"
+	"github.com/BumpyClock/hermes/pkg/extractors/custom"
+	"github.com/BumpyClock/hermes/pkg/parser"
 )
 
 func main() {
@@ -55,8 +55,8 @@ func main() {
 
 	// Test the parser
 	fmt.Printf("\n=== PARSER EXECUTION ===")
-	p := New()
-	result, err := p.Parse(targetURL, &ParserOptions{
+	p := parser.New()
+	result, err := p.Parse(targetURL, &parser.ParserOptions{
 		ContentType: "html",
 		Fallback:    true,
 	})

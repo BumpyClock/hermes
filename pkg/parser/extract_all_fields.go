@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/JohannesKaufmann/html-to-markdown"
@@ -45,28 +46,69 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 	// Build meta cache by scanning all meta tags in the document
 	metaCache := buildMetaCache(doc)
 
-	// Extract title
-	if title := generic.GenericTitleExtractor.Extract(doc.Selection, targetURL, metaCache); title != "" {
-		// First apply basic title cleaning
-		result.Title = cleaners.CleanTitle(title, targetURL, doc)
-		// Then apply split title resolution to remove breadcrumbs and site names
-		result.Title = cleaners.ResolveSplitTitle(result.Title, targetURL)
-	}
+	// Parallel extraction for independent fields
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
-	// Extract author
-	authorExtractor := &generic.GenericAuthorExtractor{}
-	if author := authorExtractor.Extract(doc.Selection, metaCache); author != nil && *author != "" {
-		result.Author = cleaners.CleanAuthor(*author)
-	}
+	// Start parallel extractions for independent fields
+	wg.Add(4)
 
-	// Extract date published
-	if dateStr := generic.GenericDateExtractor.Extract(doc.Selection, targetURL, metaCache); dateStr != nil && *dateStr != "" {
-		if date, err := parseDate(*dateStr); err == nil {
-			result.DatePublished = &date
+	// Extract title in parallel
+	go func() {
+		defer wg.Done()
+		if title := generic.GenericTitleExtractor.Extract(doc.Selection, targetURL, metaCache); title != "" {
+			// First apply basic title cleaning
+			cleanedTitle := cleaners.CleanTitle(title, targetURL, doc)
+			// Then apply split title resolution to remove breadcrumbs and site names
+			cleanedTitle = cleaners.ResolveSplitTitle(cleanedTitle, targetURL)
+			mu.Lock()
+			result.Title = cleanedTitle
+			mu.Unlock()
 		}
-	}
+	}()
 
-	// Extract lead image URL
+	// Extract author in parallel
+	go func() {
+		defer wg.Done()
+		authorExtractor := &generic.GenericAuthorExtractor{}
+		if author := authorExtractor.Extract(doc.Selection, metaCache); author != nil && *author != "" {
+			cleanedAuthor := cleaners.CleanAuthor(*author)
+			mu.Lock()
+			result.Author = cleanedAuthor
+			mu.Unlock()
+		}
+	}()
+
+	// Extract date published in parallel
+	go func() {
+		defer wg.Done()
+		if dateStr := generic.GenericDateExtractor.Extract(doc.Selection, targetURL, metaCache); dateStr != nil && *dateStr != "" {
+			if date, err := parseDate(*dateStr); err == nil {
+				mu.Lock()
+				result.DatePublished = &date
+				mu.Unlock()
+			}
+		}
+	}()
+
+	// Extract initial dek (description/subtitle) in parallel
+	go func() {
+		defer wg.Done()
+		dekExtractor := &generic.GenericDekExtractor{}
+		dekOpts := map[string]interface{}{
+			"$": doc.Selection,
+		}
+		if dek := dekExtractor.Extract(doc, dekOpts); dek != "" {
+			mu.Lock()
+			result.Dek = dek
+			mu.Unlock()
+		}
+	}()
+
+	// Wait for all parallel extractions to complete
+	wg.Wait()
+
+	// Extract lead image URL (needs to be done after parallel extraction for content dependency)
 	imageExtractor := generic.NewGenericLeadImageExtractor()
 	imageParams := generic.ExtractorImageParams{
 		Doc:       doc,
@@ -79,15 +121,6 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 		if cleaned := cleaners.CleanLeadImageURLValidated(*imageURL); cleaned != nil {
 			result.LeadImageURL = *cleaned
 		}
-	}
-
-	// Extract dek (description/subtitle)
-	dekExtractor := &generic.GenericDekExtractor{}
-	dekOpts := map[string]interface{}{
-		"$": doc.Selection,
-	}
-	if dek := dekExtractor.Extract(doc, dekOpts); dek != "" {
-		result.Dek = dek
 	}
 
 	// Extract main content
@@ -130,7 +163,11 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 		}
 
 		// Update dek with excerpt context
-		dekOpts["excerpt"] = result.Excerpt
+		dekExtractor := &generic.GenericDekExtractor{}
+		dekOpts := map[string]interface{}{
+			"$":       doc.Selection,
+			"excerpt": result.Excerpt,
+		}
 		if dek := dekExtractor.Extract(doc, dekOpts); dek != "" && result.Dek == "" {
 			result.Dek = dek
 		}

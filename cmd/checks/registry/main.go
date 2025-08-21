@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/BumpyClock/parser-go/pkg/extractors"
-	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
+	"github.com/BumpyClock/hermes/pkg/extractors"
+	"github.com/BumpyClock/hermes/pkg/extractors/custom"
 )
 
 func main() {

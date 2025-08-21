@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/BumpyClock/parser-go/pkg/extractors/custom"
+	"github.com/BumpyClock/hermes/pkg/extractors/custom"
 )
 
 func main() {

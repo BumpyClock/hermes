@@ -9,7 +9,6 @@ import (
 	"io"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/hermes/pkg/pools"
 )
 
 // Resource provides functionality for fetching and preparing HTML documents
@@ -153,8 +152,8 @@ func (r *Resource) EncodeDoc(content []byte, contentType string, alreadyDecoded 
 		}
 	}
 
-	// Create initial document using pooled document creation
-	doc, err := pools.GlobalDocumentPool.Get(strings.NewReader(htmlContent))
+	// Create initial document directly (no fake pooling)
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
@@ -209,8 +208,8 @@ func (r *Resource) recheckEncoding(content []byte, doc *goquery.Document, header
 				return doc, nil // Return original doc if re-encoding fails
 			}
 
-			// Re-parse with correct encoding using pooled document creation
-			newDoc, err := pools.GlobalDocumentPool.Get(strings.NewReader(htmlContent))
+			// Re-parse with correct encoding
+			newDoc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
 			if err != nil {
 				return doc, nil // Return original doc if re-parsing fails
 			}
@@ -276,8 +275,8 @@ func (r *Resource) GenerateDocStreaming(result *FetchResult) (*goquery.Document,
 		}
 	}
 	
-	// Parse the complete HTML using pooled document creation
-	doc, err := pools.GlobalDocumentPool.Get(strings.NewReader(htmlBuilder.String()))
+	// Parse the complete HTML
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlBuilder.String()))
 	if err != nil {
 		// Fallback to regular parsing if streaming approach fails
 		if documentSize < 5*1024*1024 { // 5MB fallback limit
