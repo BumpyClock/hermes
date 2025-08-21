@@ -338,26 +338,26 @@ func (htp *HighThroughputParser) updateStats(duration time.Duration) {
 	}
 }
 
-// Global high-throughput parser instance for convenience
-var GlobalHighThroughputParser = NewHighThroughputParser(nil)
+// Global parser instance for convenience
+var GlobalParser = New()
 
-// Convenience functions for global high-throughput parser
-func ParseOptimized(url string, opts *ParserOptions) (*Result, error) {
-	return GlobalHighThroughputParser.Parse(url, opts)
+// Convenience functions for global parser
+func Parse(url string, opts *ParserOptions) (*Result, error) {
+	return GlobalParser.Parse(url, opts)
 }
 
-func ParseHTMLOptimized(html, url string, opts *ParserOptions) (*Result, error) {
-	return GlobalHighThroughputParser.ParseHTML(html, url, opts)
+func ParseHTML(html, url string, opts *ParserOptions) (*Result, error) {
+	return GlobalParser.ParseHTML(html, url, opts)
 }
 
-func ParseBatchOptimized(urls []string, opts *ParserOptions) ([]*Result, []error) {
-	return GlobalHighThroughputParser.ParseBatch(urls, opts)
+func ParseBatch(urls []string, opts *ParserOptions) ([]*Result, []error) {
+	return GlobalParser.htParser.ParseBatch(urls, opts)
 }
 
-func ReturnResultToPool(result *Result) {
-	GlobalHighThroughputParser.ReturnResult(result)
+func ReturnResult(result *Result) {
+	GlobalParser.ReturnResult(result)
 }
 
-func GetGlobalPoolStats() *PoolStats {
-	return GlobalHighThroughputParser.GetStats()
+func GetGlobalStats() *PoolStats {
+	return GlobalParser.GetStats()
 }

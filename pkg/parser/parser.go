@@ -11,98 +11,63 @@ import (
 	"github.com/BumpyClock/parser-go/pkg/utils/security"
 )
 
-// Mercury is the main parser implementation
+// Mercury is the main parser implementation with built-in optimizations
 type Mercury struct {
-	options ParserOptions
+	options   ParserOptions
+	htParser  *HighThroughputParser
 }
 
-// New creates a new Mercury parser instance
+// New creates a new optimized Mercury parser instance
 func New(opts ...*ParserOptions) *Mercury {
-	parser := &Mercury{}
+	var options ParserOptions
 	if len(opts) > 0 && opts[0] != nil {
-		parser.options = *opts[0]
+		options = *opts[0]
 	} else {
-		parser.options = *DefaultParserOptions()
+		options = *DefaultParserOptions()
 	}
-	return parser
+	
+	return &Mercury{
+		options:  options,
+		htParser: NewHighThroughputParser(&options),
+	}
 }
 
-// Parse extracts content from a URL
+// Parse extracts content from a URL using optimized pooling
 func (m *Mercury) Parse(targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use provided options or defaults
-	var finalOpts ParserOptions
-	if opts != nil {
-		finalOpts = *opts
-	} else {
-		finalOpts = m.options
+	if opts == nil {
+		opts = &m.options
 	}
-
-	// Parse and validate URL
-	parsedURL, err := url.Parse(targetURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid URL: %w", err)
-	}
-
-	if !validateURL(parsedURL) {
-		return &Result{
-			Error:   true,
-			Message: "The url parameter passed does not look like a valid URL. Please check your URL and try again.",
-		}, nil
-	}
-
-	// Create resource from URL (with fetching)
-	r := resource.NewResource()
-	doc, err := r.Create(targetURL, "", parsedURL, finalOpts.Headers)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create resource: %w", err)
-	}
-
-	// Extract all fields using generic extractors
-	result, err := m.extractAllFields(doc, targetURL, parsedURL, finalOpts)
-	if err != nil {
-		return nil, fmt.Errorf("extraction failed: %w", err)
-	}
-
-	// Multi-page collection is not implemented in this version
-	// This feature requires implementing next page URL detection
-	// and recursive content aggregation
-
-	return result, nil
+	
+	// Use the high-throughput parser for optimized performance
+	return m.htParser.Parse(targetURL, opts)
 }
 
-// ParseHTML extracts content from provided HTML
+// ParseHTML extracts content from provided HTML using optimized pooling
 func (m *Mercury) ParseHTML(html string, targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use provided options or defaults
-	var finalOpts ParserOptions
-	if opts != nil {
-		finalOpts = *opts
-	} else {
-		finalOpts = m.options
+	if opts == nil {
+		opts = &m.options
 	}
+	
+	// Use the high-throughput parser for optimized performance
+	return m.htParser.ParseHTML(html, targetURL, opts)
+}
 
-	parsedURL, err := url.Parse(targetURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid URL: %w", err)
-	}
+// ReturnResult returns a result to the object pool for reuse
+// Call this when you're done with a Result to enable memory reuse
+func (m *Mercury) ReturnResult(result *Result) {
+	m.htParser.ReturnResult(result)
+}
 
-	if !validateURL(parsedURL) {
-		return nil, fmt.Errorf("the url parameter passed does not look like a valid URL: %s", targetURL)
-	}
+// GetStats returns performance statistics for this parser instance
+func (m *Mercury) GetStats() *PoolStats {
+	return m.htParser.GetStats()
+}
 
-	// Create resource from provided HTML
-	r := resource.NewResource()
-	doc, err := r.Create(targetURL, html, parsedURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create resource from HTML: %w", err)
-	}
-
-	// Extract all fields using generic extractors
-	result, err := m.extractAllFields(doc, targetURL, parsedURL, finalOpts)
-	if err != nil {
-		return nil, fmt.Errorf("extraction failed: %w", err)
-	}
-
-	return result, nil
+// ResetStats resets performance statistics
+func (m *Mercury) ResetStats() {
+	m.htParser.ResetStats()
 }
 
 func validateURL(u *url.URL) bool {
