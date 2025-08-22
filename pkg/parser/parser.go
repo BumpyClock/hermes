@@ -128,10 +128,14 @@ func validateURL(u *url.URL) bool {
 	return security.IsValidWebURL(u)
 }
 
+// TODO: Implement multi-page article collection and merging
+// The FetchAllPages configuration option exists but doesn't trigger actual merging.
+// Infrastructure exists in pkg/extractors/collect_all_pages.go but needs integration.
 // func (m *Mercury) collectAllPages(result *Result, extractor Extractor, opts ParserOptions) (*Result, error) {
 // 	// Multi-page collection not implemented - would require:
-// 	// 1. Next page URL detection from content
-// 	// 2. Recursive fetching and content aggregation
-// 	// 3. Deduplication and proper content merging
+// 	// 1. Next page URL detection from content (✓ partially implemented)
+// 	// 2. Recursive fetching and content aggregation (needs implementation)
+// 	// 3. Deduplication and proper content merging (needs implementation)
+// 	// 4. Integration with main extraction pipeline (needs implementation)
 // 	return result, nil
 // }

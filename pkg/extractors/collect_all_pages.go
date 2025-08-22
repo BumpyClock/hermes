@@ -1,5 +1,8 @@
 // ABOUTME: Multi-page article collection system with 100% JavaScript behavioral compatibility
 // ABOUTME: Faithful 1:1 port of JavaScript collect-all-pages.js with pagination, deduplication, and safety limits
+// TODO: This implementation exists but is not integrated with the main parser pipeline.
+// TODO: Need to connect this with the FetchAllPages configuration option in ParserOptions.
+// TODO: Main parser needs to call this function when FetchAllPages is enabled and NextPageURL is detected.
 
 package extractors
 
