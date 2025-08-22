@@ -102,6 +102,11 @@ func hasDirectionCharacters(str string, direction string) bool {
 	// Remove whitespace and non-directional characters - matches JavaScript regex
 	cleanStr := stripNonDirectionalRegex.ReplaceAllString(str, "")
 	
+	// If string is empty after stripping non-directional chars, no direction
+	if cleanStr == "" {
+		return false
+	}
+	
 	// Loop through each character - matches JavaScript character-by-character analysis
 	for _, char := range cleanStr {
 		charIsRTL := false

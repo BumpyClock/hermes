@@ -37,14 +37,24 @@ func getWordCount(content string) int {
 	// Normalize spaces using our text utility (matches JavaScript normalizeSpaces)
 	normalizedText := text.NormalizeSpaces(contentText)
 	
-	// Split on whitespace and count words (matches JavaScript .split(/\s/).length)
+	// Split on whitespace and count words (matches JavaScript .split(/\s+/).length)
 	if normalizedText == "" {
-		// Empty string splits to array with one empty string element
-		return 1
+		// Empty string should return 0 words in JavaScript
+		return 0
 	}
 	
-	words := regexp.MustCompile(`\s+`).Split(normalizedText, -1)
-	return len(words)
+	// Split on whitespace and filter out empty strings to match JavaScript behavior
+	words := regexp.MustCompile(`\s+`).Split(strings.TrimSpace(normalizedText), -1)
+	
+	// Filter out any empty strings that may result from splitting
+	nonEmptyWords := make([]string, 0, len(words))
+	for _, word := range words {
+		if word != "" {
+			nonEmptyWords = append(nonEmptyWords, word)
+		}
+	}
+	
+	return len(nonEmptyWords)
 }
 
 // getWordCountAlt implements the alternative/fallback word counting method
@@ -61,12 +71,21 @@ func getWordCountAlt(content string) int {
 	
 	// Split on single space and count words (matches content.split(' ').length)
 	if cleanContent == "" {
-		// Empty string splits to array with one empty string element
-		return 1
+		// Empty string should return 0 words
+		return 0
 	}
 	
 	words := strings.Split(cleanContent, " ")
-	return len(words)
+	
+	// Filter out empty strings to match JavaScript behavior
+	nonEmptyWords := make([]string, 0, len(words))
+	for _, word := range words {
+		if word != "" {
+			nonEmptyWords = append(nonEmptyWords, word)
+		}
+	}
+	
+	return len(nonEmptyWords)
 }
 
 // GenericWordCountExtractor extracts word count from content using JavaScript-compatible logic

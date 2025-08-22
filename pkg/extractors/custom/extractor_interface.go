@@ -57,7 +57,13 @@ type StringTransform struct {
 func (st *StringTransform) Transform(selection *goquery.Selection) error {
 	// Convert element to target tag
 	html, _ := selection.Html()
-	selection.ReplaceWithHtml("<" + st.TargetTag + ">" + html + "</" + st.TargetTag + ">")
+	newTag := "<" + st.TargetTag + ">" + html + "</" + st.TargetTag + ">"
+	
+	// Replace each element in the selection
+	selection.Each(func(i int, s *goquery.Selection) {
+		s.ReplaceWithHtml(newTag)
+	})
+	
 	return nil
 }
 

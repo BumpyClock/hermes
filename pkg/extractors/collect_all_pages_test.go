@@ -153,7 +153,7 @@ func TestCollectAllPages_SinglePage(t *testing.T) {
 			Doc:         doc,
 			MetaCache:   map[string]interface{}{},
 			Result:      originalResult,
-			Extractor:   map[string]interface{}{"domain": "example.com"},
+			Extractor:   map[string]interface{}{"domain": "*"},
 			Title:       "Single Page Article",
 			URL:         "http://example.com/single-page",
 			Resource:    mockResource,
@@ -185,10 +185,13 @@ func TestCollectAllPages_MultiplePages(t *testing.T) {
 
 		originalResult := map[string]interface{}{
 			"title":         "Multi-Page Article",
-			"content":       "<p>First page content</p>",
+			"content":       "<p>This is the first page of the multi-page article.</p> <p>It contains some important initial content.</p>",
 			"next_page_url": "http://example.com/page-2",
 		}
 
+		// Use the real RootExtractor with generic extractor for proper next_page_url extraction
+		genericExtractor := map[string]interface{}{"domain": "*"}
+		
 		// Call CollectAllPages
 		result := CollectAllPages(CollectAllPagesOptions{
 			NextPageURL: "http://example.com/page-2",
@@ -196,7 +199,7 @@ func TestCollectAllPages_MultiplePages(t *testing.T) {
 			Doc:         doc,
 			MetaCache:   map[string]interface{}{},
 			Result:      originalResult,
-			Extractor:   map[string]interface{}{"domain": "example.com"},
+			Extractor:   genericExtractor,
 			Title:       "Multi-Page Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
@@ -210,11 +213,11 @@ func TestCollectAllPages_MultiplePages(t *testing.T) {
 
 		// Verify content merging with separators
 		content := result["content"].(string)
-		assert.Contains(t, content, "<p>First page content</p>")
+		assert.Contains(t, content, "<p>This is the first page of the multi-page article.</p>")
 		assert.Contains(t, content, "<hr><h4>Page 2</h4>")
-		assert.Contains(t, content, "<p>Second page content</p>")
+		assert.Contains(t, content, "<p>This is the second page of the multi-page article.</p>")
 		assert.Contains(t, content, "<hr><h4>Page 3</h4>")
-		assert.Contains(t, content, "<p>Third page content</p>")
+		assert.Contains(t, content, "<p>This is the final page of the multi-page article.</p>")
 
 		// Verify resource calls
 		assert.Equal(t, 2, mockResource.CallCount)
@@ -260,7 +263,7 @@ func TestCollectAllPages_SafetyLimit(t *testing.T) {
 			Doc:         doc,
 			MetaCache:   map[string]interface{}{},
 			Result:      originalResult,
-			Extractor:   map[string]interface{}{"domain": "example.com"},
+			Extractor:   map[string]interface{}{"domain": "*"},
 			Title:       "Infinite Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
@@ -307,7 +310,7 @@ func TestCollectAllPages_URLDeduplication(t *testing.T) {
 			Doc:         doc,
 			MetaCache:   map[string]interface{}{},
 			Result:      originalResult,
-			Extractor:   map[string]interface{}{"domain": "example.com"},
+			Extractor:   map[string]interface{}{"domain": "*"},
 			Title:       "Circular Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
@@ -355,7 +358,7 @@ func TestCollectAllPages_WordCountCalculation(t *testing.T) {
 			Doc:         doc,
 			MetaCache:   map[string]interface{}{},
 			Result:      originalResult,
-			Extractor:   map[string]interface{}{"domain": "example.com"},
+			Extractor:   map[string]interface{}{"domain": "*"},
 			Title:       "Word Count Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
@@ -402,7 +405,7 @@ func TestCollectAllPages_JavaScriptCompatibility(t *testing.T) {
 			Doc:         doc,
 			MetaCache:   map[string]interface{}{},
 			Result:      originalResult,
-			Extractor:   map[string]interface{}{"domain": "example.com"},
+			Extractor:   map[string]interface{}{"domain": "*"},
 			Title:       "JS Compat Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,
@@ -456,7 +459,7 @@ func TestCollectAllPages_ErrorHandling(t *testing.T) {
 			Doc:         doc,
 			MetaCache:   map[string]interface{}{},
 			Result:      originalResult,
-			Extractor:   map[string]interface{}{"domain": "example.com"},
+			Extractor:   map[string]interface{}{"domain": "*"},
 			Title:       "Error Handling Article",
 			URL:         "http://example.com/page-1",
 			Resource:    mockResource,

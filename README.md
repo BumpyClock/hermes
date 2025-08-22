@@ -13,11 +13,19 @@ A high-performance Go web content extraction library inspired by the [Postlight 
 
 ## Installation
 
+### As a Go Module
+
+```bash
+go get github.com/BumpyClock/hermes@v1.0.0
+```
+
+### CLI Tool
+
 ```bash
 go install github.com/BumpyClock/hermes/cmd/parser@latest
 ```
 
-Or build from source:
+### Build from Source
 
 ```bash
 git clone https://github.com/BumpyClock/hermes
@@ -107,7 +115,7 @@ make build
 Our carefully selected Go dependencies provide the best performance and maintainability:
 
 - **goquery**: jQuery-like DOM manipulation (industry standard)
- - **html-to-markdown**: HTML to Markdown conversion (v1.6.0)
+- **html-to-markdown**: HTML to Markdown conversion (v1.6.0)
 - **go-dateparser**: Flexible date parsing with international support
 - **chardet**: Automatic charset detection for international content
 - **cobra**: Powerful CLI framework
@@ -182,6 +190,7 @@ The multi-page article collection feature is partially implemented but needs int
 - [ ] **Testing**: Add comprehensive multi-page extraction tests
 
 **Files requiring work:**
+
 - `pkg/parser/parser.go` - Uncomment and implement `collectAllPages` method
 - `pkg/extractors/collect_all_pages.go` - Already implemented, needs integration
 - `pkg/parser/extract_all_fields.go` - Add multi-page logic to extraction pipeline

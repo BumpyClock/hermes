@@ -43,7 +43,7 @@ var CLEAN_DATE_STRING_RE = regexp.MustCompile(`(?i)^\s*published\s*:?\s*(.*)`)
 
 // TIME_MERIDIAN_SPACE_RE matches time strings with AM/PM
 // Matches the JavaScript regex: /(.*\d)(am|pm)(.*)/i
-var TIME_MERIDIAN_SPACE_RE = regexp.MustCompile(`(?i)(.*\d)(am|pm)(.*)`)
+var TIME_MERIDIAN_SPACE_RE = regexp.MustCompile(`(?i)(.*\d)(a|p)(\s*m.*)`)
 
 // TIME_MERIDIAN_DOTS_RE matches ".m." in time strings
 // Matches the JavaScript regex: /\.m\./i

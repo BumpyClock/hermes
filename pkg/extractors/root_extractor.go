@@ -115,8 +115,8 @@ func FindMatchingSelector(doc *goquery.Document, selectors []interface{}, extrac
 			// String selector
 			matches := doc.Find(sel)
 			if allowMultiple || (!allowMultiple && matches.Length() == 1) {
-				// Check if element has non-empty text
-				if strings.TrimSpace(matches.Text()) != "" {
+				// Check if element exists (has content or is self-closing like img)
+				if matches.Length() > 0 && (strings.TrimSpace(matches.Text()) != "" || matches.Is("img, input, br, hr, meta, link")) {
 					return sel
 				}
 			}

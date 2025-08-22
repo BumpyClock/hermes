@@ -11,7 +11,7 @@
 
 **Context**: Hermes is a Go implementation of a web content parser inspired by Postlight Parser, focusing on extracting clean, structured data from web pages with 150+ custom extractors and high-performance features.
 
-## Recent Updates (Repository Rename):
+## Recent Updates (Repository Rename & Go Module Publication):
 
 ### Repository Rename Completed ✅
 - **Git Remote**: Updated from `https://github.com/BumpyClock/parser-go.git` to `https://github.com/BumpyClock/hermes.git`
@@ -19,6 +19,14 @@
 - **Configuration Files**: Updated .golangci.yml local-prefixes and Makefile docker tags
 - **Package Names**: Updated benchmark package.json name from parser-comparison-temp to hermes-benchmark
 - **File References**: Updated all directory and project name references throughout benchmark files
+
+### Go Module Publication Completed ✅
+- **Module Path**: `github.com/BumpyClock/hermes` properly configured
+- **Release Tag**: Created and pushed `v1.0.0` with comprehensive release notes
+- **Go Proxy**: Module indexed and available via `proxy.golang.org`
+- **Verification**: Successfully tested downloading via `go get github.com/BumpyClock/hermes@v1.0.0`
+- **Documentation**: Updated README with proper installation instructions for Go module, CLI tool, and source build
+- **Public Availability**: Module is now live and accessible to the Go community
 
 ## Completed Work:
 

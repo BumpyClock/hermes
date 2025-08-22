@@ -70,50 +70,64 @@ func CleanDatePublished(dateString, timezone, format string) *string {
 // cleanDateString cleans date strings by removing prefixes and normalizing format
 // This is a faithful port of the JavaScript cleanDateString function
 func cleanDateString(dateString string) string {
-	// First, try to extract and reassemble date components using SPLIT_DATE_STRING
-	// This is complex logic that handles various date format fragments
-	matches := SPLIT_DATE_STRING.FindAllString(dateString, -1)
-	if len(matches) > 0 {
-		// Join the matched components with spaces
-		assembled := strings.Join(matches, " ")
-		
-		// Apply additional cleaning to the assembled string
-		assembled = TIME_MERIDIAN_DOTS_RE.ReplaceAllString(assembled, "m")
-		assembled = TIME_MERIDIAN_SPACE_RE.ReplaceAllStringFunc(assembled, func(match string) string {
-			submatches := TIME_MERIDIAN_SPACE_RE.FindStringSubmatch(match)
-			if len(submatches) >= 4 {
-				var builder strings.Builder
-				builder.WriteString(submatches[1])
+	// Apply cleaning transformations directly to the original string
+	// to preserve formatting like commas while still cleaning meridian marks
+	cleaned := dateString
+	
+	// Apply meridian dot cleaning first
+	cleaned = TIME_MERIDIAN_DOTS_RE.ReplaceAllString(cleaned, "m")
+	
+	// Apply meridian spacing fixes
+	cleaned = TIME_MERIDIAN_SPACE_RE.ReplaceAllStringFunc(cleaned, func(match string) string {
+		submatches := TIME_MERIDIAN_SPACE_RE.FindStringSubmatch(match)
+		if len(submatches) >= 4 {
+			var builder strings.Builder
+			builder.WriteString(submatches[1])
+			builder.WriteString(" ")
+			builder.WriteString(submatches[2])
+			// Normalize spaces in the third group
+			thirdGroup := strings.TrimSpace(submatches[3])
+			if thirdGroup != "" {
 				builder.WriteString(" ")
-				builder.WriteString(submatches[2])
-				builder.WriteString(" ")
-				builder.WriteString(submatches[3])
-				return builder.String()
+				builder.WriteString(thirdGroup)
 			}
-			return match
-		})
-		assembled = CLEAN_DATE_STRING_RE.ReplaceAllString(assembled, "$1")
-		
-		// If the assembled version has changed the format significantly
-		// (e.g., "2021-01-01" becomes "2021 01 01"), try the simple approach
-		// This preserves important formatting like dashes in ISO dates
-		originalCleaned := CLEAN_DATE_STRING_RE.ReplaceAllString(dateString, "$1")
-		originalCleaned = strings.TrimSpace(originalCleaned)
-		
-		// If the complex assembly has significantly changed the structure
-		// or made it much shorter, prefer the simple cleaned version
-		if len(assembled) < int(float64(len(originalCleaned))*0.8) || 
-		   strings.Contains(originalCleaned, "-") && !strings.Contains(assembled, "-") ||
-		   strings.Contains(originalCleaned, "/") && !strings.Contains(assembled, "/") {
-			return originalCleaned
+			return builder.String()
 		}
-		
-		return strings.TrimSpace(assembled)
+		return match
+	})
+	
+	// Apply general date string cleaning (removes prefixes like "PUBLISHED:")
+	cleaned = CLEAN_DATE_STRING_RE.ReplaceAllString(cleaned, "$1")
+	
+	// Check if the cleaned version successfully removed prefixes
+	// If it still contains "PUBLISHED" (case insensitive), try reassembly
+	cleanedLower := strings.ToLower(cleaned)
+	if strings.Contains(cleanedLower, "published") {
+		matches := SPLIT_DATE_STRING.FindAllString(dateString, -1)
+		if len(matches) > 1 {
+			// Use reassembly for cases with clear prefixes that need removal
+			assembled := strings.Join(matches, " ")
+			assembled = TIME_MERIDIAN_DOTS_RE.ReplaceAllString(assembled, "m")
+			assembled = TIME_MERIDIAN_SPACE_RE.ReplaceAllStringFunc(assembled, func(match string) string {
+				submatches := TIME_MERIDIAN_SPACE_RE.FindStringSubmatch(match)
+				if len(submatches) >= 4 {
+					var builder strings.Builder
+					builder.WriteString(submatches[1])
+					builder.WriteString(" ")
+					builder.WriteString(submatches[2])
+					builder.WriteString(" ")
+					builder.WriteString(submatches[3])
+					return builder.String()
+				}
+				return match
+			})
+			assembled = CLEAN_DATE_STRING_RE.ReplaceAllString(assembled, "$1")
+			return strings.TrimSpace(assembled)
+		}
 	}
-
-	// If no matches found, just do simple prefix removal
-	simple := CLEAN_DATE_STRING_RE.ReplaceAllString(dateString, "$1")
-	return strings.TrimSpace(simple)
+	
+	// Return the cleaned version (preserves commas and original formatting)
+	return strings.TrimSpace(cleaned)
 }
 
 // createDate creates a time.Time from various date string formats
