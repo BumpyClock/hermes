@@ -50,7 +50,7 @@ function installPostlightParser() {
         // Create a temporary package.json if it doesn't exist
         if (!fs.existsSync('./package.json')) {
             const packageJson = {
-                name: "parser-comparison-temp",
+                name: "hermes-benchmark",
                 version: "1.0.0",
                 dependencies: {}
             };
@@ -76,20 +76,20 @@ function buildGoParser() {
     console.log('🔨 Building Go parser...');
 
     try {
-        const parserGoDir = '..'; // Now we're in parser-go/benchmark, so parent dir is parser-go
-        if (!fs.existsSync(parserGoDir)) {
-            throw new Error('parser-go directory not found');
+        const hermesDir = '..'; // Now we're in hermes/benchmark, so parent dir is hermes
+        if (!fs.existsSync(hermesDir)) {
+            throw new Error('hermes directory not found');
         }
 
         // Check if Makefile exists, otherwise use go build
-        if (fs.existsSync(path.join(parserGoDir, 'Makefile'))) {
+        if (fs.existsSync(path.join(hermesDir, 'Makefile'))) {
             execSync('make build', {
-                cwd: parserGoDir,
+                cwd: hermesDir,
                 stdio: 'inherit'
             });
         } else {
             execSync('go build -o bin/hermes ./cmd/parser', {
-                cwd: parserGoDir,
+                cwd: hermesDir,
                 stdio: 'inherit'
             });
         }

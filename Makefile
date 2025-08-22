@@ -39,7 +39,7 @@ copy-fixtures:
 	cp -r ../fixtures/* internal/fixtures/
 
 docker-build:
-	docker build -t parser-go:latest .
+	docker build -t hermes:latest .
 
 # Development helpers
 dev-setup: deps copy-fixtures

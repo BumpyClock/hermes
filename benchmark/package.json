@@ -1,5 +1,5 @@
 {
-  "name": "parser-comparison-temp",
+  "name": "hermes-benchmark",
   "version": "1.0.0",
   "dependencies": {
     "@postlight/parser": "^2.2.3"

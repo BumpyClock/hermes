@@ -14,7 +14,7 @@ A cross-platform Node.js script to compare the performance of the Hermes Go pars
 ## Usage
 
 ```bash
-cd parser-go/benchmark
+cd hermes/benchmark
 node test-comparison.js [urls-file]
 ```
 

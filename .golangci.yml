@@ -22,6 +22,6 @@ linters-settings:
   gofmt:
     simplify: true
   goimports:
-    local-prefixes: github.com/postlight/parser-go
+    local-prefixes: github.com/BumpyClock/hermes
   govet:
     check-shadowing: true
