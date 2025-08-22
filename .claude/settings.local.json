@@ -44,7 +44,10 @@
       "Bash(chmod:*)",
       "Bash(./test-batch-performance.sh:*)",
       "Bash(./parser-go/bin/parser:*)",
-      "WebFetch(domain:www.theverge.com)"
+      "WebFetch(domain:www.theverge.com)",
+      "Bash(./parser-go/bin/hermes parse:*)",
+      "Bash(./test-go.sh:*)",
+      "Bash(./test-comparison.sh:*)"
     ],
     "deny": [],
     "ask": [],
