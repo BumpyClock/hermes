@@ -1,5 +1,7 @@
 {
   "name": "parser-comparison-temp",
   "version": "1.0.0",
-  "dependencies": {}
+  "dependencies": {
+    "@postlight/parser": "^2.2.3"
+  }
 }

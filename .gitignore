@@ -55,3 +55,4 @@ debug
 .claude/cclsp.json
 
 test-output/
+benchmark/node_modules/
