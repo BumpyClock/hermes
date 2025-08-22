@@ -149,13 +149,16 @@ The parser includes 150+ custom extractors for major publications including:
 
 ## Performance
 
-Indicative benchmarks comparing Go vs JavaScript (Node.js) versions:
+Performance varies by site and output format. See benchmark details in `benchmark/README.md`.
 
-| Metric | JavaScript | Go | Improvement |
-|--------|------------|----|------------|
-| Extraction Speed | 100ms | 35ms | 2.8x faster |
-| Memory Usage | 45MB | 22MB | 51% less |
-| Concurrent Extractions | 10/sec | 50/sec | 5x more |
+Latest benchmark (5 URLs from `benchmark/testurls.txt`):
+
+- JSON output: JS avg 627ms, Go avg 629ms (parity)
+- Markdown output: JS avg 173ms, Go avg 652ms (JS faster on this set)
+
+Run the comparison yourself via `benchmark/test-comparison.js` (see docs in `benchmark/README.md`).
+
+Running the bench with 1 url at a time JS comes out slightly faster than go but with twice the memory usage. In API scenarios and processing multiple urls at once GO leaps ahead with approx 20ms per request with around 60mb memory as the efficiency gains of reusing the same HTTP client and goroutines start to show their edge.
 
 ## Compatibility
 

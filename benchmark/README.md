@@ -20,7 +20,7 @@ node test-comparison.js [urls-file]
 
 **Example:**
 ```bash
-node test-comparison.js ../../test-single.txt
+node test-comparison.js ./testurls.txt
 ```
 
 If no URL file is provided, it defaults to `../../testurls.txt`.
