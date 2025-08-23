@@ -42,6 +42,14 @@ type Result struct {
 	ExtractorUsed  string                `json:"extractor_used,omitempty"`
 	Extended       map[string]interface{} `json:"extended,omitempty"`
 	
+	// Site metadata fields
+	SiteName       string                `json:"site_name"`
+	SiteTitle      string                `json:"site_title"`
+	SiteImage      string                `json:"site_image"`
+	Favicon        string                `json:"favicon"`
+	Description    string                `json:"description"`
+	Language       string                `json:"language"`
+	
 	// Error handling fields for JS compatibility
 	Error   bool   `json:"error,omitempty"`
 	Message string `json:"message,omitempty"`
@@ -126,32 +134,81 @@ func (r *Result) FormatMarkdown() string {
 		sb.WriteString("\n\n")
 	}
 	
-	// Add metadata
-	if r.Author != "" {
-		sb.WriteString("**Author:** ")
-		sb.WriteString(r.Author)
+	// Add site metadata section
+	hasSiteMetadata := r.SiteName != "" || r.SiteTitle != "" || r.SiteImage != "" || r.Favicon != "" || r.Description != "" || r.Language != ""
+	if hasSiteMetadata {
+		sb.WriteString("## Site Information\n\n")
+		
+		if r.SiteName != "" {
+			sb.WriteString("**Site:** ")
+			sb.WriteString(r.SiteName)
+			sb.WriteString("\n")
+		}
+		
+		if r.SiteTitle != "" {
+			sb.WriteString("**Site Title:** ")
+			sb.WriteString(r.SiteTitle)
+			sb.WriteString("\n")
+		}
+		
+		if r.SiteImage != "" {
+			sb.WriteString("**Site Image:** ")
+			sb.WriteString(r.SiteImage)
+			sb.WriteString("\n")
+		}
+		
+		if r.Favicon != "" {
+			sb.WriteString("**Favicon:** ")
+			sb.WriteString(r.Favicon)
+			sb.WriteString("\n")
+		}
+		
+		if r.Description != "" {
+			sb.WriteString("**Description:** ")
+			sb.WriteString(r.Description)
+			sb.WriteString("\n")
+		}
+		
+		if r.Language != "" {
+			sb.WriteString("**Language:** ")
+			sb.WriteString(r.Language)
+			sb.WriteString("\n")
+		}
+		
 		sb.WriteString("\n")
 	}
 	
-	if r.DatePublished != nil {
-		sb.WriteString("**Date:** ")
-		sb.WriteString(r.DatePublished.Format(time.RFC3339))
+	// Add article metadata
+	hasArticleMetadata := r.Author != "" || r.DatePublished != nil || r.URL != ""
+	if hasArticleMetadata {
+		sb.WriteString("## Article Information\n\n")
+		
+		if r.Author != "" {
+			sb.WriteString("**Author:** ")
+			sb.WriteString(r.Author)
+			sb.WriteString("\n")
+		}
+		
+		if r.DatePublished != nil {
+			sb.WriteString("**Date:** ")
+			sb.WriteString(r.DatePublished.Format(time.RFC3339))
+			sb.WriteString("\n")
+		}
+		
+		if r.URL != "" {
+			sb.WriteString("**URL:** ")
+			sb.WriteString(r.URL)
+			sb.WriteString("\n")
+		}
+		
 		sb.WriteString("\n")
 	}
 	
-	if r.URL != "" {
-		sb.WriteString("**URL:** ")
-		sb.WriteString(r.URL)
-		sb.WriteString("\n")
+	// Add content section
+	if r.Content != "" {
+		sb.WriteString("## Content\n\n")
+		sb.WriteString(r.Content)
 	}
-	
-	// Add separator if we have metadata
-	if r.Author != "" || r.DatePublished != nil || r.URL != "" {
-		sb.WriteString("\n")
-	}
-	
-	// Add content
-	sb.WriteString(r.Content)
 	
 	return sb.String()
 }

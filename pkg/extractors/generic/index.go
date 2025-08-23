@@ -46,6 +46,10 @@ type ExtractionResult struct {
 	Excerpt       string     `json:"excerpt"`
 	WordCount     int        `json:"word_count"`
 	Direction     string     `json:"direction"`
+	SiteName      string     `json:"site_name"`
+	SiteTitle     string     `json:"site_title"`
+	SiteImage     string     `json:"site_image"`
+	Favicon       string     `json:"favicon"`
 }
 
 // ExtractionOptions contains all parameters needed for extraction
@@ -211,6 +215,46 @@ func (ge *GenericExtractor) extractURLAndDomain(options *ExtractionOptions) (str
 	return options.URL, domain
 }
 
+func (ge *GenericExtractor) extractSiteName(options *ExtractionOptions) string {
+	// Use the site name extractor
+	if options.Doc == nil {
+		return ""
+	}
+	
+	extractor := &GenericSiteNameExtractor{}
+	return extractor.Extract(options.Doc.Selection, options.URL, options.MetaCache)
+}
+
+func (ge *GenericExtractor) extractSiteTitle(options *ExtractionOptions) string {
+	// Use the site title extractor
+	if options.Doc == nil {
+		return ""
+	}
+	
+	extractor := &GenericSiteTitleExtractor{}
+	return extractor.Extract(options.Doc.Selection, options.URL, options.MetaCache)
+}
+
+func (ge *GenericExtractor) extractSiteImage(options *ExtractionOptions) string {
+	// Use the site image extractor
+	if options.Doc == nil {
+		return ""
+	}
+	
+	extractor := &GenericSiteImageExtractor{}
+	return extractor.Extract(options.Doc.Selection, options.URL, options.MetaCache)
+}
+
+func (ge *GenericExtractor) extractFavicon(options *ExtractionOptions) string {
+	// Use the favicon extractor
+	if options.Doc == nil {
+		return ""
+	}
+	
+	extractor := &GenericFaviconExtractor{}
+	return extractor.Extract(options.Doc.Selection, options.URL, options.MetaCache)
+}
+
 // ExtractGeneric performs the main generic extraction with full options
 func (ge *GenericExtractor) ExtractGeneric(options *ExtractionOptions) (*ExtractionResult, error) {
 	// Ensure we have a document to work with
@@ -242,7 +286,13 @@ func (ge *GenericExtractor) ExtractGeneric(options *ExtractionOptions) (*Extract
 	excerpt := ge.extractExcerpt(options, content)
 	wordCount := ge.extractWordCount(options, content)
 	
-	// Phase 4: Final extractions
+	// Phase 4: Site metadata extractions
+	siteName := ge.extractSiteName(options)
+	siteTitle := ge.extractSiteTitle(options)
+	siteImage := ge.extractSiteImage(options)
+	favicon := ge.extractFavicon(options)
+	
+	// Phase 5: Final extractions
 	direction := ge.extractDirection(title)
 	url, domain := ge.extractURLAndDomain(options)
 
@@ -259,5 +309,9 @@ func (ge *GenericExtractor) ExtractGeneric(options *ExtractionOptions) (*Extract
 		Excerpt:       excerpt,
 		WordCount:     wordCount,
 		Direction:     direction,
+		SiteName:      siteName,
+		SiteTitle:     siteTitle,
+		SiteImage:     siteImage,
+		Favicon:       favicon,
 	}, nil
 }

@@ -38,20 +38,92 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 		Domain: parsedURL.Host,
 	}
 	
-	// Try to use custom extractor first if available
-	if customResult := m.tryCustomExtractor(doc, targetURL, parsedURL, opts); customResult != nil {
+	// Build meta cache first for use by both custom and generic extractors
+	metaCache := buildMetaCache(doc)
+	
+	// Extract site metadata first (independent of custom/generic extractor choice)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	
+	// Start parallel site metadata extractions
+	wg.Add(6)
+	
+	// Extract site name
+	go func() {
+		defer wg.Done()
+		siteNameExtractor := &generic.GenericSiteNameExtractor{}
+		if siteName := siteNameExtractor.Extract(doc.Selection, targetURL, metaCache); siteName != "" {
+			mu.Lock()
+			result.SiteName = siteName
+			mu.Unlock()
+		}
+	}()
+	
+	// Extract site title  
+	go func() {
+		defer wg.Done()
+		siteTitleExtractor := &generic.GenericSiteTitleExtractor{}
+		if siteTitle := siteTitleExtractor.Extract(doc.Selection, targetURL, metaCache); siteTitle != "" {
+			mu.Lock()
+			result.SiteTitle = siteTitle
+			mu.Unlock()
+		}
+	}()
+	
+	// Extract site image
+	go func() {
+		defer wg.Done()
+		siteImageExtractor := &generic.GenericSiteImageExtractor{}
+		if siteImage := siteImageExtractor.Extract(doc.Selection, targetURL, metaCache); siteImage != "" {
+			mu.Lock()
+			result.SiteImage = siteImage
+			mu.Unlock()
+		}
+	}()
+	
+	// Extract favicon
+	go func() {
+		defer wg.Done()
+		faviconExtractor := &generic.GenericFaviconExtractor{}
+		if favicon := faviconExtractor.Extract(doc.Selection, targetURL, metaCache); favicon != "" {
+			mu.Lock()
+			result.Favicon = favicon
+			mu.Unlock()
+		}
+	}()
+	
+	// Extract description
+	go func() {
+		defer wg.Done()
+		descriptionExtractor := &generic.GenericDescriptionExtractor{}
+		if description := descriptionExtractor.Extract(doc.Selection, targetURL, metaCache); description != "" {
+			mu.Lock()
+			result.Description = description
+			mu.Unlock()
+		}
+	}()
+	
+	// Extract language
+	go func() {
+		defer wg.Done()
+		languageExtractor := &generic.GenericLanguageExtractor{}
+		if language := languageExtractor.Extract(doc.Selection, targetURL, metaCache); language != "" {
+			mu.Lock()
+			result.Language = language
+			mu.Unlock()
+		}
+	}()
+	
+	// Wait for site metadata extraction to complete
+	wg.Wait()
+	
+	// Try to use custom extractor, passing the result with site metadata
+	if customResult := m.tryCustomExtractor(doc, targetURL, parsedURL, opts, result); customResult != nil {
 		return customResult, nil
 	}
 
-	// Build meta cache by scanning all meta tags in the document
-	metaCache := buildMetaCache(doc)
-
-	// Parallel extraction for independent fields
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
-	// Start parallel extractions for independent fields
-	wg.Add(4)
+	// Parallel extraction for independent fields (meta cache already built)
+	wg.Add(4) // Reset for generic extraction
 
 	// Extract title in parallel
 	go func() {
@@ -207,7 +279,7 @@ func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, pars
 }
 
 // tryCustomExtractor attempts to use a custom extractor for the given domain
-func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) *Result {
+func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions, baseResult *Result) *Result {
 	// Look for custom extractor for this domain using the proper lookup function
 	customExtractor, found := custom.GetCustomExtractorByDomain(parsedURL.Host)
 	var usedDomain = parsedURL.Host
@@ -231,21 +303,25 @@ func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, pa
 	}
 	
 	if !found || customExtractor == nil {
-		// Log when no custom extractor is found for debugging
-		if len(parsedURL.Host) > 0 {
-			fmt.Printf("DEBUG: No custom extractor found for domain: %s\n", parsedURL.Host)
-		}
+		// No custom extractor found
 		return nil // No custom extractor found
 	}
 	
 	// Log successful custom extractor selection (optional debug)
 	_ = usedDomain // Suppress unused variable warning
 	
-	// Create result with custom extractor info
+	// Create result with custom extractor info, preserving site metadata from base result
 	result := &Result{
 		URL:           targetURL,
 		Domain:        parsedURL.Host,
 		ExtractorUsed: "custom:" + customExtractor.Domain,
+		// Preserve site metadata
+		SiteName:    baseResult.SiteName,
+		SiteTitle:   baseResult.SiteTitle,
+		SiteImage:   baseResult.SiteImage,
+		Favicon:     baseResult.Favicon,
+		Description: baseResult.Description,
+		Language:    baseResult.Language,
 	}
 	
 	// Extract title using custom selectors
@@ -452,6 +528,34 @@ func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, pa
 			}
 		}
 	}
+	
+	// Extract site metadata for custom extractors too (independent of content extraction)
+	metaCache := buildMetaCache(doc)
+	
+	// Site name extraction
+	siteNameExtractor := &generic.GenericSiteNameExtractor{}
+	if siteName := siteNameExtractor.Extract(doc.Selection, targetURL, metaCache); siteName != "" {
+		result.SiteName = siteName
+	}
+	
+	// Site title extraction  
+	siteTitleExtractor := &generic.GenericSiteTitleExtractor{}
+	if siteTitle := siteTitleExtractor.Extract(doc.Selection, targetURL, metaCache); siteTitle != "" {
+		result.SiteTitle = siteTitle
+	}
+	
+	// Site image extraction
+	siteImageExtractor := &generic.GenericSiteImageExtractor{}
+	if siteImage := siteImageExtractor.Extract(doc.Selection, targetURL, metaCache); siteImage != "" {
+		result.SiteImage = siteImage
+	}
+	
+	// Favicon extraction
+	faviconExtractor := &generic.GenericFaviconExtractor{}
+	if favicon := faviconExtractor.Extract(doc.Selection, targetURL, metaCache); favicon != "" {
+		result.Favicon = favicon
+	}
+	
 	
 	return result
 }

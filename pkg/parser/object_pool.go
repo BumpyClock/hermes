@@ -99,6 +99,14 @@ func (rp *ResultPool) resetResult(result *Result) {
 	result.Error = false
 	result.Message = ""
 	
+	// Clear site metadata fields
+	result.SiteName = ""
+	result.SiteTitle = ""
+	result.SiteImage = ""
+	result.Favicon = ""
+	result.Description = ""
+	result.Language = ""
+	
 	// Clear the Extended map without reallocating
 	for k := range result.Extended {
 		delete(result.Extended, k)
@@ -302,6 +310,14 @@ func (htp *HighThroughputParser) copyResult(src, dst *Result) {
 	dst.ExtractorUsed = src.ExtractorUsed
 	dst.Error = src.Error
 	dst.Message = src.Message
+	
+	// Copy site metadata fields
+	dst.SiteName = src.SiteName
+	dst.SiteTitle = src.SiteTitle
+	dst.SiteImage = src.SiteImage
+	dst.Favicon = src.Favicon
+	dst.Description = src.Description
+	dst.Language = src.Language
 	
 	// Copy Extended map
 	if src.Extended != nil {
