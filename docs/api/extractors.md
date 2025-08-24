@@ -513,6 +513,184 @@ func TestCustomExtractor(t *testing.T) {
 }
 ```
 
+## Site Metadata Extractors
+
+Hermes includes specialized extractors for site-level metadata that provide information about the website or publication itself, rather than individual articles.
+
+### GenericDescriptionExtractor
+
+Extracts site-level descriptions from meta tags and JSON-LD structured data.
+
+```go
+type GenericDescriptionExtractor struct{}
+
+func (extractor *GenericDescriptionExtractor) Extract(selection *goquery.Selection, pageURL string, metaCache []string) string
+```
+
+#### Extraction Strategy
+
+The description extractor uses a priority-based approach:
+
+1. **Meta tags** (highest priority)
+   - `<meta name="description" content="..." />`
+   - `<meta property="og:description" content="..." />`
+   - `<meta name="twitter:description" content="..." />`
+   - `<meta name="dc.description" content="..." />`
+
+2. **JSON-LD structured data**
+   - `WebSite` schema description
+   - `Organization` schema description
+   - `NewsMediaOrganization` schema description
+   - Publisher description from Article schema
+
+#### Content Validation
+
+The extractor includes validation to ensure quality:
+
+```go
+func (extractor *GenericDescriptionExtractor) isValidDescription(description string) bool
+```
+
+- **Length validation**: 10-500 characters
+- **URL detection**: Rejects descriptions containing URLs
+- **Article-specific filtering**: Excludes descriptions starting with:
+  - "In this article"
+  - "This article"
+  - "Read more about"
+  - "Continue reading"
+  - "Full story:"
+
+#### Usage Example
+
+```go
+descriptionExtractor := &GenericDescriptionExtractor{}
+description := descriptionExtractor.Extract(doc.Selection, "https://example.com", []string{})
+
+if description != "" {
+    fmt.Printf("Site description: %s\n", description)
+}
+```
+
+### GenericLanguageExtractor
+
+Extracts content language from HTML attributes, meta tags, and JSON-LD structured data.
+
+```go
+type GenericLanguageExtractor struct{}
+
+func (extractor *GenericLanguageExtractor) Extract(selection *goquery.Selection, pageURL string, metaCache []string) string
+```
+
+#### Extraction Strategy
+
+The language extractor checks multiple sources in priority order:
+
+1. **HTML attributes** (highest priority)
+   - `<html lang="en-US">`
+   - `<html xml:lang="en-US">`
+
+2. **Meta tags**
+   - `<meta property="og:locale" content="en_US" />`
+   - `<meta name="content-language" content="en-US" />`
+   - `<meta http-equiv="Content-Language" content="en-US" />`
+   - `<meta name="dc.language" content="en" />`
+
+3. **JSON-LD structured data**
+   - `inLanguage` property
+   - `@language` property
+   - `contentLanguage` property (Article schema)
+
+#### Language Code Normalization
+
+The extractor normalizes language codes to standard formats:
+
+```go
+func (extractor *GenericLanguageExtractor) normalizeLanguageCode(code string) string
+```
+
+**Normalization Rules:**
+- Convert underscores to hyphens: `"en_US"` → `"en-US"`
+- Proper case handling: `"en-us"` → `"en-US"`
+- Special Chinese variants: `"zh-hans"` → `"zh-Hans"`
+- Simple codes remain lowercase: `"en"`, `"fr"`, `"es"`
+
+#### Language Validation
+
+```go
+func (extractor *GenericLanguageExtractor) isValidLanguageCode(code string) bool
+```
+
+Validates language codes against common patterns:
+- Simple codes: 2 letters (e.g., `"en"`, `"fr"`)
+- Locale codes: language-region format (e.g., `"en-US"`, `"pt-BR"`)
+- Underscore variants: `"en_US"` (normalized to hyphen format)
+
+#### Usage Example
+
+```go
+languageExtractor := &GenericLanguageExtractor{}
+language := languageExtractor.Extract(doc.Selection, "https://example.com", []string{})
+
+if language != "" {
+    fmt.Printf("Content language: %s\n", language)
+}
+```
+
+#### Common Language Codes
+
+The extractor recognizes standard ISO language codes:
+
+**Simple Codes:**
+- `"en"` - English
+- `"es"` - Spanish  
+- `"fr"` - French
+- `"de"` - German
+- `"it"` - Italian
+- `"pt"` - Portuguese
+- `"ru"` - Russian
+- `"ja"` - Japanese
+- `"ko"` - Korean
+- `"zh"` - Chinese
+- `"ar"` - Arabic
+
+**Locale Codes:**
+- `"en-US"` - English (United States)
+- `"en-GB"` - English (United Kingdom)
+- `"es-ES"` - Spanish (Spain)
+- `"es-MX"` - Spanish (Mexico)
+- `"fr-FR"` - French (France)
+- `"fr-CA"` - French (Canada)
+- `"pt-BR"` - Portuguese (Brazil)
+- `"zh-CN"` - Chinese (Simplified)
+- `"zh-TW"` - Chinese (Traditional)
+
+### Integration with Parser
+
+Both extractors are automatically used during the extraction process:
+
+```go
+// In extractAllFields function
+go func() {
+    defer wg.Done()
+    descriptionExtractor := &generic.GenericDescriptionExtractor{}
+    if description := descriptionExtractor.Extract(doc.Selection, targetURL, metaCache); description != "" {
+        mu.Lock()
+        result.Description = description
+        mu.Unlock()
+    }
+}()
+
+go func() {
+    defer wg.Done()
+    languageExtractor := &generic.GenericLanguageExtractor{}
+    if language := languageExtractor.Extract(doc.Selection, targetURL, metaCache); language != "" {
+        mu.Lock()
+        result.Language = language
+        mu.Unlock()
+    }
+}()
+```
+
 ## Advanced Features
 
 ### Extended Fields

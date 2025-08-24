@@ -34,6 +34,11 @@ type Result struct {
     RenderedPages  int                   `json:"rendered_pages"`
     ExtractorUsed  string                `json:"extractor_used,omitempty"`
     Extended       map[string]interface{} `json:"extended,omitempty"`
+    
+    // Site metadata fields
+    Description    string                `json:"description"`
+    Language       string                `json:"language"`
+    
     Error          bool                   `json:"error,omitempty"`
     Message        string                 `json:"message,omitempty"`
 }
@@ -217,6 +222,55 @@ if result.TotalPages > result.RenderedPages {
 }
 ```
 
+### Site Metadata Fields
+
+#### Description
+```go
+Description string `json:"description"`
+```
+Site-level description extracted from meta tags and structured data.
+
+**Example:**
+```go
+result.Description // "NPR delivers breaking news and analysis on politics, business, science, and more."
+```
+
+**Extraction Sources:**
+- `<meta name="description" content="..." />`
+- `<meta property="og:description" content="..." />`
+- `<meta name="twitter:description" content="..." />`
+- JSON-LD structured data (`WebSite`, `Organization`, `NewsMediaOrganization`)
+
+**Validation:**
+- Filters out article-specific descriptions
+- Removes descriptions containing URLs
+- Validates minimum length (10 characters)
+- Excludes spam or promotional content
+
+#### Language
+```go
+Language string `json:"language"`
+```
+Content language code extracted from HTML attributes, meta tags, and structured data.
+
+**Example:**
+```go
+result.Language // "en-US"
+```
+
+**Extraction Sources:**
+- `<html lang="en-US">` or `<html xml:lang="en-US">`
+- `<meta property="og:locale" content="en_US" />`
+- `<meta name="content-language" content="en-US" />`
+- `<meta http-equiv="Content-Language" content="en-US" />`
+- JSON-LD structured data (`inLanguage`, `@language`, `contentLanguage`)
+
+**Language Code Format:**
+- Simple codes: `"en"`, `"fr"`, `"es"`
+- Locale codes: `"en-US"`, `"fr-CA"`, `"pt-BR"`
+- Normalized from underscore format: `"en_US"` → `"en-US"`
+- Proper case handling: `"en-us"` → `"en-US"`
+
 ### Metadata Fields
 
 #### ExtractorUsed
@@ -297,6 +351,8 @@ Formats the result as markdown with metadata header.
 **Author:** John Doe
 **Date:** 2024-01-15T10:30:00Z
 **URL:** https://example.com/article
+**Language:** en-US
+**Description:** Site description from meta tags or structured data
 
 Article content in markdown format...
 ```
@@ -408,6 +464,8 @@ Complete result structure serialized as JSON:
   "total_pages": 1,
   "rendered_pages": 1,
   "extractor_used": "custom:example.com",
+  "description": "Example site's description from meta tags",
+  "language": "en-US",
   "extended": {
     "category": "Technology",
     "tags": ["AI", "Science"]
@@ -639,6 +697,8 @@ func (r *Result) MarshalJSON() ([]byte, error) {
   "total_pages": 1,
   "rendered_pages": 1,
   "extractor_used": "custom:example.com",
+  "description": "Leading scientific research and news from the world's top researchers",
+  "language": "en-US",
   "extended": {
     "category": "Science",
     "tags": ["marine biology", "deep sea", "biodiversity"],

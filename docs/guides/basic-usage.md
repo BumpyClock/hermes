@@ -168,6 +168,15 @@ func main() {
     fmt.Printf("Title: %s\n", result.Title)
     fmt.Printf("Author: %s\n", result.Author)
     fmt.Printf("Word Count: %d\n", result.WordCount)
+    
+    // Site metadata is automatically extracted
+    if result.Language != "" {
+        fmt.Printf("Language: %s\n", result.Language)
+    }
+    if result.Description != "" {
+        fmt.Printf("Description: %s\n", result.Description)
+    }
+    
     fmt.Printf("Content: %s\n", result.Content)
 }
 ```
@@ -446,7 +455,9 @@ fmt.Println(string(jsonData))
 //   "author": "John Doe",
 //   "date_published": "2024-01-15T10:30:00Z",
 //   "word_count": 450,
-//   "url": "https://example.com/article"
+//   "url": "https://example.com/article",
+//   "language": "en-US",
+//   "description": "Site description from meta tags"
 // }
 ```
 
@@ -528,6 +539,8 @@ type ContentStats struct {
     Domain      string
     PublishDate time.Time
     Category    string
+    Language    string // Content language
+    Description string // Site description
 }
 
 func analyzeContent(url string) (*ContentStats, error) {
@@ -555,6 +568,8 @@ func analyzeContent(url string) (*ContentStats, error) {
         WordCount:   result.WordCount,
         ReadingTime: result.WordCount / 200, // 200 WPM average
         Domain:      result.Domain,
+        Language:    result.Language,
+        Description: result.Description,
     }
     
     if result.DatePublished != nil {

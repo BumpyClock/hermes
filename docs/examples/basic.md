@@ -53,6 +53,15 @@ func main() {
         fmt.Printf("Lead Image: %s\n", result.LeadImageURL)
     }
     
+    // Display site metadata if available
+    if result.Language != "" {
+        fmt.Printf("Language: %s\n", result.Language)
+    }
+    
+    if result.Description != "" {
+        fmt.Printf("Site Description: %s\n", result.Description)
+    }
+    
     // Print first 200 characters of content
     if len(result.Content) > 200 {
         fmt.Printf("Content Preview: %s...\n", result.Content[:200])
@@ -119,7 +128,106 @@ func main() {
     fmt.Printf("Extracted Title: %s\n", result.Title)
     fmt.Printf("Extracted Author: %s\n", result.Author)
     fmt.Printf("Word Count: %d\n", result.WordCount)
+    
+    // Display site metadata
+    if result.Language != "" {
+        fmt.Printf("Language: %s\n", result.Language)
+    }
+    if result.Description != "" {
+        fmt.Printf("Description: %s\n", result.Description)
+    }
+    
     fmt.Printf("Content:\n%s\n", result.Content)
+}
+```
+
+### Site Metadata Extraction
+
+This example demonstrates extracting site-level metadata including description and language.
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    
+    "github.com/BumpyClock/hermes/pkg/parser"
+)
+
+func main() {
+    htmlContent := `
+    <!DOCTYPE html>
+    <html lang="en-US">
+    <head>
+        <title>Technology News - Example.com</title>
+        <meta name="description" content="Example.com provides the latest technology news, reviews, and analysis covering AI, software development, and emerging technologies.">
+        <meta property="og:locale" content="en_US">
+        <meta property="og:description" content="Your trusted source for technology news and insights">
+        <meta name="dc.language" content="en">
+        
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Example Tech News",
+            "description": "Leading technology news and analysis platform",
+            "inLanguage": "en-US"
+        }
+        </script>
+    </head>
+    <body>
+        <article>
+            <h1>AI Breakthrough in Natural Language Processing</h1>
+            <p class="byline">By Tech Reporter</p>
+            <div class="content">
+                <p>Researchers have achieved a significant breakthrough in natural language processing...</p>
+            </div>
+        </article>
+    </body>
+    </html>`
+    
+    p := parser.New()
+    
+    result, err := p.ParseHTML(htmlContent, "https://example.com", nil)
+    if err != nil {
+        log.Fatal("Failed to parse HTML:", err)
+    }
+    
+    if result.IsError() {
+        log.Fatal("Extraction failed:", result.Message)
+    }
+    
+    // Display article information
+    fmt.Printf("Article Title: %s\n", result.Title)
+    fmt.Printf("Word Count: %d\n", result.WordCount)
+    fmt.Printf("URL: %s\n", result.URL)
+    fmt.Printf("Domain: %s\n", result.Domain)
+    
+    fmt.Println("\n--- Site Metadata ---")
+    
+    // Display site metadata
+    if result.Language != "" {
+        fmt.Printf("Site Language: %s\n", result.Language)
+    } else {
+        fmt.Println("No language information found")
+    }
+    
+    if result.Description != "" {
+        fmt.Printf("Site Description: %s\n", result.Description)
+    } else {
+        fmt.Println("No site description found")
+    }
+    
+    // Example output:
+    // Article Title: AI Breakthrough in Natural Language Processing
+    // Word Count: 15
+    // URL: https://example.com
+    // Domain: example.com
+    //
+    // --- Site Metadata ---
+    // Site Language: en-US
+    // Site Description: Example.com provides the latest technology news, reviews, and analysis covering AI, software development, and emerging technologies.
 }
 ```
 

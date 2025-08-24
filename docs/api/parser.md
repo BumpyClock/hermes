@@ -80,6 +80,11 @@ type Result struct {
     RenderedPages  int                   `json:"rendered_pages"`
     ExtractorUsed  string                `json:"extractor_used,omitempty"`
     Extended       map[string]interface{} `json:"extended,omitempty"`
+    
+    // Site metadata fields
+    Description    string                `json:"description"`
+    Language       string                `json:"language"`
+    
     Error          bool                   `json:"error,omitempty"`
     Message        string                 `json:"message,omitempty"`
 }
