@@ -36,6 +36,8 @@ type ExtractorChecker interface {
 
 // GetExtractorParallel performs parallel extractor lookup with priority ordering
 // This is the high-performance version of GetExtractor that uses goroutines
+// DEPRECATED: This method uses context.Background() which prevents proper cancellation.
+// Use GetExtractorParallelWithContext instead.
 func GetExtractorParallel(urlStr string, parsedURL *neturl.URL, doc *goquery.Document) (Extractor, error) {
 	return GetExtractorParallelWithContext(context.Background(), urlStr, parsedURL, doc)
 }
@@ -263,7 +265,14 @@ type ExtractorStats struct {
 }
 
 // GetExtractorWithStats performs parallel lookup and returns performance statistics
+// DEPRECATED: This method uses context.Background() which prevents proper cancellation.
+// Use GetExtractorWithStatsContext instead.
 func GetExtractorWithStats(urlStr string, parsedURL *neturl.URL, doc *goquery.Document) (Extractor, *ExtractorStats, error) {
+	return GetExtractorWithStatsContext(context.Background(), urlStr, parsedURL, doc)
+}
+
+// GetExtractorWithStatsContext performs parallel lookup with context and returns performance statistics
+func GetExtractorWithStatsContext(ctx context.Context, urlStr string, parsedURL *neturl.URL, doc *goquery.Document) (Extractor, *ExtractorStats, error) {
 	start := time.Now()
 	
 	// Extract URL components
@@ -279,10 +288,10 @@ func GetExtractorWithStats(urlStr string, parsedURL *neturl.URL, doc *goquery.Do
 
 	// Build candidates and check in parallel
 	candidates := buildExtractorCandidates(hostname, baseDomain)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	extractorCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result := checkExtractorsParallel(ctx, candidates, doc, urlStr)
+	result := checkExtractorsParallel(extractorCtx, candidates, doc, urlStr)
 
 	// Calculate statistics
 	stats := &ExtractorStats{

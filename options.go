@@ -97,3 +97,17 @@ func WithAllowPrivateNetworks(allow bool) Option {
 		c.allowPrivateNetworks = allow
 	}
 }
+
+// WithContentType sets the output content type for parsing.
+// Valid options are "html", "markdown", and "text".
+// By default, content is returned as HTML.
+//
+// Example:
+//
+//	// Get content as markdown
+//	client := hermes.New(hermes.WithContentType("markdown"))
+func WithContentType(contentType string) Option {
+	return func(c *Client) {
+		c.contentType = contentType
+	}
+}

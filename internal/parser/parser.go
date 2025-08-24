@@ -10,7 +10,7 @@ import (
 	"net/url"
 
 	"github.com/BumpyClock/hermes/internal/resource"
-	"github.com/BumpyClock/hermes/internal/utils/security"
+	"github.com/BumpyClock/hermes/internal/validation"
 )
 
 // Mercury is the main parser implementation
@@ -107,8 +107,10 @@ func (m *Mercury) ResetStats() {
 
 // parseWithoutOptimization performs basic parsing without optimization layers
 // Used internally by the optimization framework to avoid circular dependencies
+// DEPRECATED: This method uses context.Background() which prevents proper cancellation.
+// Use parseWithoutOptimizationContext instead.
 func (m *Mercury) parseWithoutOptimization(targetURL string, opts *ParserOptions) (*Result, error) {
-	// Use background context for backward compatibility
+	// Use background context for backward compatibility - DEPRECATED
 	// Callers should use ParseWithContext for proper context handling
 	return m.parseWithoutOptimizationContext(context.Background(), targetURL, opts)
 }
@@ -121,26 +123,20 @@ func (m *Mercury) parseWithoutOptimizationContext(ctx context.Context, targetURL
 		return nil, err
 	}
 	
-	if !validateURLWithOptions(parsedURL, opts.AllowPrivateNetworks) {
-		return nil, fmt.Errorf("URL not allowed: %s", targetURL)
+	// Use unified URL validation
+	validationOpts := validation.DefaultValidationOptions()
+	validationOpts.AllowPrivateNetworks = opts.AllowPrivateNetworks
+	validationOpts.AllowLocalhost = opts.AllowPrivateNetworks // Localhost should be allowed when private networks are allowed
+	
+	if err := validation.ValidateURL(ctx, targetURL, validationOpts); err != nil {
+		return nil, fmt.Errorf("URL validation failed: %w", err)
 	}
 	
 	// Create resource instance and fetch content with context
 	r := resource.NewResource()
 	
-	// Use HTTP client from options if available, or create a default one
-	var httpClient *resource.HTTPClient
-	if opts.HTTPClient != nil {
-		// Create HTTPClient wrapper for the provided client
-		httpClient = &resource.HTTPClient{
-			Client: opts.HTTPClient,
-			Headers: opts.Headers,
-		}
-	} else {
-		// Create a default HTTP client when none is provided
-		httpClient = resource.CreateDefaultHTTPClient()
-		httpClient.Headers = opts.Headers
-	}
+	// Use centralized HTTP client creation
+	httpClient := ensureHTTPClient(opts)
 	
 	doc, err := r.CreateWithClient(ctx, targetURL, "", parsedURL, opts.Headers, httpClient)
 	if err != nil {
@@ -152,8 +148,10 @@ func (m *Mercury) parseWithoutOptimizationContext(ctx context.Context, targetURL
 }
 
 // parseHTMLWithoutOptimization performs basic HTML parsing without optimization layers
+// DEPRECATED: This method uses context.Background() which prevents proper cancellation.
+// Use parseHTMLWithoutOptimizationContext instead.
 func (m *Mercury) parseHTMLWithoutOptimization(html, targetURL string, opts *ParserOptions) (*Result, error) {
-	// Use background context for backward compatibility
+	// Use background context for backward compatibility - DEPRECATED
 	// Callers should use ParseHTMLWithContext for proper context handling
 	return m.parseHTMLWithoutOptimizationContext(context.Background(), html, targetURL, opts)
 }
@@ -169,19 +167,8 @@ func (m *Mercury) parseHTMLWithoutOptimizationContext(ctx context.Context, html,
 	// Create resource instance and parse HTML with context
 	r := resource.NewResource()
 	
-	// Use HTTP client from options if available (though not needed for HTML parsing)
-	var httpClient *resource.HTTPClient
-	if opts.HTTPClient != nil {
-		// Create HTTPClient wrapper for the provided client
-		httpClient = &resource.HTTPClient{
-			Client: opts.HTTPClient,
-			Headers: opts.Headers,
-		}
-	} else {
-		// Create a default HTTP client when none is provided (for consistency)
-		httpClient = resource.CreateDefaultHTTPClient()
-		httpClient.Headers = opts.Headers
-	}
+	// Use centralized HTTP client creation (for consistency, even though HTML parsing doesn't need HTTP)
+	httpClient := ensureHTTPClientForHTML(opts)
 	
 	doc, err := r.CreateWithClient(ctx, targetURL, html, parsedURL, opts.Headers, httpClient)
 	if err != nil {
@@ -192,19 +179,6 @@ func (m *Mercury) parseHTMLWithoutOptimizationContext(ctx context.Context, html,
 	return m.extractAllFieldsWithContext(ctx, doc, targetURL, parsedURL, *opts)
 }
 
-func validateURL(u *url.URL) bool {
-	return validateURLWithOptions(u, false)
-}
-
-func validateURLWithOptions(u *url.URL, allowPrivateNetworks bool) bool {
-	// Use the enhanced security validation with options
-	if err := security.ValidateURLWithOptions(context.Background(), u.String(), allowPrivateNetworks); err != nil {
-		return false
-	}
-
-	// Additional basic checks
-	return security.IsValidWebURL(u)
-}
 
 // TODO: Implement multi-page article collection and merging
 // The FetchAllPages configuration option exists but doesn't trigger actual merging.

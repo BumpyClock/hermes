@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/BumpyClock/hermes/internal/parser"
+	"github.com/BumpyClock/hermes/internal/validation"
 )
 
 // Client is a thread-safe, reusable parser client for extracting content from web pages.
@@ -16,6 +17,7 @@ type Client struct {
 	userAgent            string
 	timeout              time.Duration
 	allowPrivateNetworks bool
+	contentType          string
 	
 	// Internal parser instance
 	parser *parser.Mercury
@@ -36,6 +38,7 @@ func New(opts ...Option) *Client {
 		userAgent: "Hermes/1.0",
 		timeout:   30 * time.Second,
 		allowPrivateNetworks: false,
+		contentType: "html",
 	}
 	
 	// Apply options
@@ -88,22 +91,13 @@ func (c *Client) Parse(ctx context.Context, url string) (*Result, error) {
 	}
 	
 	// Create parser options with client configuration
-	opts := &parser.ParserOptions{
-		FetchAllPages:        false,
-		ContentType:          "html",
-		Headers:              map[string]string{"User-Agent": c.userAgent},
-		HTTPClient:           c.httpClient,
-		AllowPrivateNetworks: c.allowPrivateNetworks,
-	}
+	opts := c.buildParserOptions()
 	
 	// Parse the URL with context support
 	internalResult, err := c.parser.ParseWithContext(ctx, url, opts)
 	if err != nil {
-		// Determine error type based on error message
-		code := ErrFetch
-		if ctx.Err() != nil {
-			code = ErrTimeout
-		}
+		// Use proper error classification instead of string matching
+		code := ErrorCode(parser.ClassifyErrorCode(err, ctx, "Parse"))
 		// Wrap error with type information
 		return nil, &ParseError{
 			Code: code,
@@ -145,21 +139,31 @@ func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, erro
 		}
 	}
 	
-	// Create parser options with client configuration
-	opts := &parser.ParserOptions{
-		FetchAllPages:        false,
-		ContentType:          "html",
-		Headers:              map[string]string{"User-Agent": c.userAgent},
-		HTTPClient:           c.httpClient,
-		AllowPrivateNetworks: c.allowPrivateNetworks,
+	// Validate URL format
+	validationOpts := validation.DefaultValidationOptions()
+	validationOpts.AllowPrivateNetworks = c.allowPrivateNetworks
+	validationOpts.AllowLocalhost = c.allowPrivateNetworks // Localhost should be allowed when private networks are allowed
+	
+	if err := validation.ValidateURL(ctx, url, validationOpts); err != nil {
+		return nil, &ParseError{
+			Code: ErrInvalidURL,
+			URL:  url,
+			Op:   "ParseHTML",
+			Err:  err,
+		}
 	}
+	
+	// Create parser options with client configuration
+	opts := c.buildParserOptions()
 	
 	// Parse the HTML with context support
 	internalResult, err := c.parser.ParseHTMLWithContext(ctx, html, url, opts)
 	if err != nil {
+		// Use proper error classification instead of hardcoded ErrExtract
+		code := ErrorCode(parser.ClassifyErrorCode(err, ctx, "ParseHTML"))
 		// Wrap error with type information
 		return nil, &ParseError{
-			Code: ErrExtract, // HTML parsing errors are extraction errors
+			Code: code,
 			URL:  url,
 			Op:   "ParseHTML",
 			Err:  err,
@@ -169,6 +173,18 @@ func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, erro
 	// Map internal result to public result
 	result := mapInternalResult(internalResult)
 	return result, nil
+}
+
+// buildParserOptions creates parser options with client configuration
+// This centralizes the option building logic to avoid duplication
+func (c *Client) buildParserOptions() *parser.ParserOptions {
+	return &parser.ParserOptions{
+		FetchAllPages:        false,
+		ContentType:          c.contentType,
+		Headers:              map[string]string{"User-Agent": c.userAgent},
+		HTTPClient:           c.httpClient,
+		AllowPrivateNetworks: c.allowPrivateNetworks,
+	}
 }
 
 // mapInternalResult converts the internal parser.Result to our public Result type

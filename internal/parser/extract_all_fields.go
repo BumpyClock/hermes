@@ -21,8 +21,10 @@ import (
 )
 
 // extractAllFields orchestrates the complete extraction pipeline
+// DEPRECATED: This method uses context.Background() which prevents proper cancellation.
+// Use extractAllFieldsWithContext instead.
 func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) (*Result, error) {
-	// Use background context for backward compatibility
+	// Use background context for backward compatibility - DEPRECATED
 	// Callers should use extractAllFieldsWithContext for proper context handling
 	return m.extractAllFieldsWithContext(context.Background(), doc, targetURL, parsedURL, opts)
 }

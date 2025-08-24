@@ -71,9 +71,10 @@ func (r *Resource) CreateWithClient(ctx context.Context, rawURL string, prepared
 
 // GenerateDoc creates a goquery Document from fetch result
 // Handles encoding detection and applies DOM preparation pipeline with resource limits
-// DEPRECATED: Use Create or GenerateDocWithContext instead
+// DEPRECATED: This method uses context.Background() which prevents proper timeout control.
+// Use Create or GenerateDocWithContext instead.
 func (r *Resource) GenerateDoc(result *FetchResult) (*goquery.Document, error) {
-	// Use background context for backward compatibility
+	// Use background context for backward compatibility - DEPRECATED
 	// Callers should provide context via GenerateDocWithContext
 	return r.GenerateDocWithContext(context.Background(), result)
 }

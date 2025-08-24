@@ -113,12 +113,12 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 func TestContextCancellation(t *testing.T) {
 	// Create a test server that delays response
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(5 * time.Second) // Delay longer than our context timeout
+		time.Sleep(200 * time.Millisecond) // Delay longer than our context timeout
 		w.Write([]byte(`<html><body>Too late</body></html>`))
 	}))
 	defer ts.Close()
 
-	client := New()
+	client := New(WithAllowPrivateNetworks(true)) // Allow localhost for testing
 
 	// Create a context with a short timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)

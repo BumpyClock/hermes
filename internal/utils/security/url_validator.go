@@ -57,7 +57,8 @@ func init() {
 }
 
 // ValidateURL performs comprehensive URL validation for security
-// DEPRECATED: Use ValidateURLWithContext instead
+// DEPRECATED: This method uses context.Background() which prevents proper timeout control.
+// Use ValidateURLWithContext instead.
 func ValidateURL(rawURL string) error {
 	return ValidateURLWithContext(context.Background(), rawURL)
 }
@@ -114,7 +115,8 @@ func ValidateURLWithOptions(ctx context.Context, rawURL string, allowPrivateNetw
 }
 
 // validateHostNotPrivate checks if the host resolves to private IP addresses
-// DEPRECATED: Use validateHostNotPrivateWithContext instead
+// DEPRECATED: This method uses context.Background() which prevents proper timeout control.
+// Use validateHostNotPrivateWithContext instead.
 func validateHostNotPrivate(host string) error {
 	return validateHostNotPrivateWithContext(context.Background(), host)
 }
