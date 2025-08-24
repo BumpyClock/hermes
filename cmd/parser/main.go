@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/BumpyClock/hermes/pkg/parser"
+	"github.com/BumpyClock/hermes/internal/parser"
 )
 
 var (

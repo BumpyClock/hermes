@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BumpyClock/hermes/pkg/parser"
+	"github.com/BumpyClock/hermes/internal/parser"
 )
 
 func main() {

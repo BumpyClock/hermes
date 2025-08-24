@@ -56,3 +56,4 @@ debug
 
 test-output/
 benchmark/node_modules/
+node_modules/
