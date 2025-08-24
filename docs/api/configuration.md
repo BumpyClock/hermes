@@ -150,7 +150,6 @@ Specifies the output format for extracted content.
 ContentType: "html"     // Clean HTML (default)
 ContentType: "markdown" // Markdown format
 ContentType: "text"     // Plain text
-ContentType: "json"     // JSON structure
 ```
 
 **Format Examples:**
@@ -326,18 +325,21 @@ ContentType: "text"
 - Preserves line breaks and basic structure
 - Smallest output size
 
-### JSON Configuration
+### JSON Output
+
+Hermes always returns a structured `Result` object that can be serialized to JSON for programmatic use:
 
 ```go
-ContentType: "json"
+res, err := parser.Parse(url, &parser.ParserOptions{ContentType: "html"})
+if err != nil {
+    log.Fatal(err)
+}
+
+data, _ := json.MarshalIndent(res, "", "  ")
+fmt.Println(string(data))
 ```
 
-**Features:**
-
-- Complete structured data export
-- Includes all extracted fields and metadata
-- Programmatic access to all content
-- Ideal for API responses and data processing
+This is separate from `ContentType`, which only controls the format of the `Content` field. See the [Results API](results.md#json-serialization) for more details.
 
 ## HTTP Configuration
 
@@ -591,7 +593,7 @@ func ValidateParserOptions(opts *ParserOptions) error {
     }
     
     // Validate content type
-    validTypes := []string{"html", "markdown", "text", "json"}
+    validTypes := []string{"html", "markdown", "text"}
     if !contains(validTypes, opts.ContentType) {
         return fmt.Errorf("invalid content type: %s", opts.ContentType)
     }
