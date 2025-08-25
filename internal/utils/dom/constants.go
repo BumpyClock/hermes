@@ -7,7 +7,7 @@ var SPACER_RE = regexp.MustCompile(`(?i)transparent|spacer|blank`)
 
 // The class we will use to mark elements we want to keep
 // but would normally remove
-const KEEP_CLASS = "mercury-parser-keep"
+const KEEP_CLASS = "hermes-parser-keep"
 
 var KEEP_SELECTORS = []string{
 	`iframe[src^="https://www.youtube.com"]`,

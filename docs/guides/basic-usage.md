@@ -331,7 +331,7 @@ import (
     "github.com/BumpyClock/hermes/pkg/parser"
 )
 
-func processURL(url string, p *parser.Mercury, wg *sync.WaitGroup, results chan<- *parser.Result) {
+func processURL(url string, p *parser.Hermes, wg *sync.WaitGroup, results chan<- *parser.Result) {
     defer wg.Done()
     
     result, err := p.Parse(url, nil)

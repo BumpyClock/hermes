@@ -1,5 +1,6 @@
 // ABOUTME: Main parser implementation integrating all extractors and cleaners into complete extraction pipeline
 // ABOUTME: Wires together resource layer, generic extractors, and content cleaners to create working end-to-end parser
+// ABOUTME: Originally inspired by the Postlight Mercury parser, now rebranded as Hermes for consistency
 
 package parser
 
@@ -13,14 +14,14 @@ import (
 	"github.com/BumpyClock/hermes/internal/validation"
 )
 
-// Mercury is the main parser implementation
-type Mercury struct {
+// Hermes (formerly Mercury) is the main parser implementation
+type Hermes struct {
 	options    ParserOptions
 	httpClient *http.Client // Store HTTP client
 }
 
-// New creates a new Mercury parser instance
-func New(opts ...*ParserOptions) *Mercury {
+// New creates a new Hermes parser instance
+func New(opts ...*ParserOptions) *Hermes {
 	var options ParserOptions
 	if len(opts) > 0 && opts[0] != nil {
 		options = *opts[0]
@@ -28,80 +29,80 @@ func New(opts ...*ParserOptions) *Mercury {
 		options = *DefaultParserOptions()
 	}
 
-	m := &Mercury{
+	h := &Hermes{
 		options: options,
 	}
 	
 	// Store HTTP client if provided
 	if options.HTTPClient != nil {
-		m.httpClient = options.HTTPClient
+		h.httpClient = options.HTTPClient
 	}
 	
-	return m
+	return h
 }
 
 // NewParser creates a new parser instance (convenience function)
-func NewParser() *Mercury {
+func NewParser() *Hermes {
 	return New()
 }
 
 // Parse extracts content from a URL
-func (m *Mercury) Parse(targetURL string, opts *ParserOptions) (*Result, error) {
+func (h *Hermes) Parse(targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use provided options or defaults
 	if opts == nil {
-		opts = &m.options
+		opts = &h.options
 	}
 
 	// Use the simple parsing approach
-	return m.parseWithoutOptimization(targetURL, opts)
+	return h.parseWithoutOptimization(targetURL, opts)
 }
 
 // ParseWithContext extracts content from a URL with context support
-func (m *Mercury) ParseWithContext(ctx context.Context, targetURL string, opts *ParserOptions) (*Result, error) {
+func (h *Hermes) ParseWithContext(ctx context.Context, targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use provided options or defaults
 	if opts == nil {
-		opts = &m.options
+		opts = &h.options
 	}
 
 	// Use the context-aware parsing path
-	return m.parseWithoutOptimizationContext(ctx, targetURL, opts)
+	return h.parseWithoutOptimizationContext(ctx, targetURL, opts)
 }
 
 // ParseHTML extracts content from provided HTML
-func (m *Mercury) ParseHTML(html string, targetURL string, opts *ParserOptions) (*Result, error) {
+func (h *Hermes) ParseHTML(html string, targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use provided options or defaults
 	if opts == nil {
-		opts = &m.options
+		opts = &h.options
 	}
 
 	// Use the simple parsing approach
-	return m.parseHTMLWithoutOptimization(html, targetURL, opts)
+	return h.parseHTMLWithoutOptimization(html, targetURL, opts)
 }
 
 // ParseHTMLWithContext extracts content from provided HTML with context support
-func (m *Mercury) ParseHTMLWithContext(ctx context.Context, html string, targetURL string, opts *ParserOptions) (*Result, error) {
+func (h *Hermes) ParseHTMLWithContext(ctx context.Context, html string, targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use provided options or defaults
 	if opts == nil {
-		opts = &m.options
+		opts = &h.options
 	}
 
 	// Use the context-aware parsing path
-	return m.parseHTMLWithoutOptimizationContext(ctx, html, targetURL, opts)
+	return h.parseHTMLWithoutOptimizationContext(ctx, html, targetURL, opts)
 }
 
 // ReturnResult is deprecated - no longer needed without object pooling
-func (m *Mercury) ReturnResult(result *Result) {
+func (h *Hermes) ReturnResult(result *Result) {
 	// No-op - object pooling has been removed
 }
 
 // GetStats is deprecated - no longer tracks statistics
-func (m *Mercury) GetStats() *PoolStats {
+func (h *Hermes) GetStats() *PoolStats {
 	// Return empty stats for backward compatibility
 	return &PoolStats{}
 }
 
 // ResetStats is deprecated - no longer tracks statistics
-func (m *Mercury) ResetStats() {
+func (h *Hermes) ResetStats() {
 	// No-op - statistics tracking has been removed
 }
 
@@ -109,14 +110,14 @@ func (m *Mercury) ResetStats() {
 // Used internally by the optimization framework to avoid circular dependencies
 // DEPRECATED: This method uses context.Background() which prevents proper cancellation.
 // Use parseWithoutOptimizationContext instead.
-func (m *Mercury) parseWithoutOptimization(targetURL string, opts *ParserOptions) (*Result, error) {
+func (h *Hermes) parseWithoutOptimization(targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use background context for backward compatibility - DEPRECATED
 	// Callers should use ParseWithContext for proper context handling
-	return m.parseWithoutOptimizationContext(context.Background(), targetURL, opts)
+	return h.parseWithoutOptimizationContext(context.Background(), targetURL, opts)
 }
 
 // parseWithoutOptimizationContext performs basic parsing with context support
-func (m *Mercury) parseWithoutOptimizationContext(ctx context.Context, targetURL string, opts *ParserOptions) (*Result, error) {
+func (h *Hermes) parseWithoutOptimizationContext(ctx context.Context, targetURL string, opts *ParserOptions) (*Result, error) {
 	// Validate URL
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
@@ -144,20 +145,20 @@ func (m *Mercury) parseWithoutOptimizationContext(ctx context.Context, targetURL
 	}
 	
 	// Use the real extraction logic with context
-	return m.extractAllFieldsWithContext(ctx, doc, targetURL, parsedURL, *opts)
+	return h.extractAllFieldsWithContext(ctx, doc, targetURL, parsedURL, *opts)
 }
 
 // parseHTMLWithoutOptimization performs basic HTML parsing without optimization layers
 // DEPRECATED: This method uses context.Background() which prevents proper cancellation.
 // Use parseHTMLWithoutOptimizationContext instead.
-func (m *Mercury) parseHTMLWithoutOptimization(html, targetURL string, opts *ParserOptions) (*Result, error) {
+func (h *Hermes) parseHTMLWithoutOptimization(html, targetURL string, opts *ParserOptions) (*Result, error) {
 	// Use background context for backward compatibility - DEPRECATED
 	// Callers should use ParseHTMLWithContext for proper context handling
-	return m.parseHTMLWithoutOptimizationContext(context.Background(), html, targetURL, opts)
+	return h.parseHTMLWithoutOptimizationContext(context.Background(), html, targetURL, opts)
 }
 
 // parseHTMLWithoutOptimizationContext performs HTML parsing with context support
-func (m *Mercury) parseHTMLWithoutOptimizationContext(ctx context.Context, html, targetURL string, opts *ParserOptions) (*Result, error) {
+func (h *Hermes) parseHTMLWithoutOptimizationContext(ctx context.Context, html, targetURL string, opts *ParserOptions) (*Result, error) {
 	// Validate URL
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
@@ -176,14 +177,14 @@ func (m *Mercury) parseHTMLWithoutOptimizationContext(ctx context.Context, html,
 	}
 	
 	// Use the real extraction logic with context
-	return m.extractAllFieldsWithContext(ctx, doc, targetURL, parsedURL, *opts)
+	return h.extractAllFieldsWithContext(ctx, doc, targetURL, parsedURL, *opts)
 }
 
 
 // TODO: Implement multi-page article collection and merging
 // The FetchAllPages configuration option exists but doesn't trigger actual merging.
 // Infrastructure exists in pkg/extractors/collect_all_pages.go but needs integration.
-// func (m *Mercury) collectAllPages(result *Result, extractor Extractor, opts ParserOptions) (*Result, error) {
+// func (h *Hermes) collectAllPages(result *Result, extractor Extractor, opts ParserOptions) (*Result, error) {
 // 	// Multi-page collection not implemented - would require:
 // 	// 1. Next page URL detection from content (✓ partially implemented)
 // 	// 2. Recursive fetching and content aggregation (needs implementation)

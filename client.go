@@ -20,7 +20,7 @@ type Client struct {
 	contentType          string
 	
 	// Internal parser instance
-	parser *parser.Mercury
+	parser *parser.Hermes
 }
 
 // New creates a new Hermes client with the provided options.

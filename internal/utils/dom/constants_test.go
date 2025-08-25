@@ -110,7 +110,7 @@ func TestConstants_Lists(t *testing.T) {
 	assert.Contains(t, dom.BLOCK_LEVEL_TAGS, "div")
 	assert.Contains(t, dom.BLOCK_LEVEL_TAGS, "p")
 	
-	assert.Equal(t, "mercury-parser-keep", dom.KEEP_CLASS)
+	assert.Equal(t, "hermes-parser-keep", dom.KEEP_CLASS)
 }
 
 func TestConstants_CandidatesRegex(t *testing.T) {

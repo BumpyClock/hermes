@@ -64,7 +64,7 @@ Hermes is built on several key design principles that guide architectural decisi
 ┌─────────────────────────────────────────────────────────────┐
 │                     Parser Layer                           │
 ├─────────────────────────────────────────────────────────────┤
-│  Mercury Parser    │  High Throughput  │  Batch API        │
+│  Hermes Parser    │  High Throughput  │  Batch API        │
 │  (Single requests) │  Parser (Pooled)  │  (Bulk ops)       │
 └─────────────────────────────────────────────────────────────┘
                                 │
@@ -101,12 +101,12 @@ Hermes is built on several key design principles that guide architectural decisi
 
 ### 1. Parser Layer
 
-#### Mercury Parser
+#### Hermes Parser
 
 The main parser implementation providing the primary interface:
 
 ```go
-type Mercury struct {
+type Hermes struct {
     options  ParserOptions
     htParser *HighThroughputParser
 }

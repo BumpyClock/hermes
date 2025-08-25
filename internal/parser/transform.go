@@ -172,8 +172,8 @@ func NewTransformRegistry() TransformRegistry {
 	registry["h4_to_h5"] = &TagRenameTransform{OriginalTag: "h4", NewTag: "h5"}
 	registry["h5_to_h6"] = &TagRenameTransform{OriginalTag: "h5", NewTag: "h6"}
 	
-	registry["add_mercury_keep"] = &ClassAddTransform{ClassName: "mercury-parser-keep"}
-	registry["remove_mercury_keep"] = &ClassRemoveTransform{ClassName: "mercury-parser-keep"}
+	registry["add_hermes_keep"] = &ClassAddTransform{ClassName: "hermes-parser-keep"}
+	registry["remove_hermes_keep"] = &ClassRemoveTransform{ClassName: "hermes-parser-keep"}
 	
 	return registry
 }

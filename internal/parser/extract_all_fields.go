@@ -23,14 +23,14 @@ import (
 // extractAllFields orchestrates the complete extraction pipeline
 // DEPRECATED: This method uses context.Background() which prevents proper cancellation.
 // Use extractAllFieldsWithContext instead.
-func (m *Mercury) extractAllFields(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) (*Result, error) {
+func (h *Hermes) extractAllFields(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) (*Result, error) {
 	// Use background context for backward compatibility - DEPRECATED
 	// Callers should use extractAllFieldsWithContext for proper context handling
-	return m.extractAllFieldsWithContext(context.Background(), doc, targetURL, parsedURL, opts)
+	return h.extractAllFieldsWithContext(context.Background(), doc, targetURL, parsedURL, opts)
 }
 
 // extractAllFieldsWithContext orchestrates the complete extraction pipeline with context support
-func (m *Mercury) extractAllFieldsWithContext(ctx context.Context, doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) (*Result, error) {
+func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) (*Result, error) {
 	// Check context before starting
 	select {
 	case <-ctx.Done():
@@ -141,7 +141,7 @@ func (m *Mercury) extractAllFieldsWithContext(ctx context.Context, doc *goquery.
 	}
 	
 	// Try to use custom extractor, passing the result with site metadata
-	if customResult := m.tryCustomExtractor(doc, targetURL, parsedURL, opts, result); customResult != nil {
+	if customResult := h.tryCustomExtractor(doc, targetURL, parsedURL, opts, result); customResult != nil {
 		return customResult, nil
 	}
 
@@ -309,7 +309,7 @@ func (m *Mercury) extractAllFieldsWithContext(ctx context.Context, doc *goquery.
 }
 
 // tryCustomExtractor attempts to use a custom extractor for the given domain
-func (m *Mercury) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions, baseResult *Result) *Result {
+func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions, baseResult *Result) *Result {
 	// Look for custom extractor for this domain using the proper lookup function
 	customExtractor, found := custom.GetCustomExtractorByDomain(parsedURL.Host)
 	var usedDomain = parsedURL.Host

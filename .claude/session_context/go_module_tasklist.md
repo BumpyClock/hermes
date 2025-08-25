@@ -234,48 +234,71 @@
   - [x] Fixed markdown/text output to extract content in requested format (not just client-side formatting)
   - [x] Verified markdown and text extraction work correctly with CLI
 
-## Phase F: Documentation & Examples
+## Phase F: Documentation & Examples ✅ COMPLETED
 **Goal**: Make library approachable for developers
 
 ### Documentation:
-- [ ] Update root `README.md`
-  - [ ] Add Go module usage section
-  - [ ] Add installation instructions
-  - [ ] Add quick start guide
-  - [ ] Document migration from v0 to v1
+- [x] Update root `README.md`
+  - [x] Add Go module usage section with comprehensive examples
+  - [x] Add installation instructions for library and CLI
+  - [x] Add quick start guide with basic, advanced, and HTML parsing examples
+  - [x] Document migration from v0 to v1 with mapping table and error handling patterns
 
-- [ ] Create `CHANGELOG.md`
-  - [ ] Document breaking changes
-  - [ ] Document new features
-  - [ ] Document removed features
+- [x] Create `CHANGELOG.md`
+  - [x] Document breaking changes in detail
+  - [x] Document new features (public API, context support, error types)
+  - [x] Document removed features (batch API, worker pools, global state)
+  - [x] Include migration guide and version support information
 
 ### Example Files:
-- [ ] Create `examples/basic/main.go`
-  - [ ] Simple single URL parsing
-  - [ ] Error handling example
-  - [ ] Result field access
+- [x] Create `examples/basic/main.go`
+  - [x] Simple single URL parsing with multiple test URLs
+  - [x] Error handling example with structured error types
+  - [x] Result field access with comprehensive display function
+  - [x] Context usage with timeout demonstration
 
-- [ ] Create `examples/concurrent/main.go`
-  - [ ] Semaphore pattern implementation
-  - [ ] Worker pool example
-  - [ ] Progress reporting
+- [x] Create `examples/concurrent/main.go`
+  - [x] Semaphore pattern implementation with configurable concurrency
+  - [x] Worker pool example using goroutines and WaitGroup
+  - [x] Progress reporting with real-time status updates
+  - [x] Timing statistics and throughput calculations
+  - [x] Graceful partial failure handling
 
-- [ ] Create `examples/custom-client/main.go`
-  - [ ] Custom HTTP client injection
-  - [ ] Custom transport configuration
-  - [ ] Proxy configuration example
+- [x] Create `examples/custom-client/main.go`
+  - [x] Custom HTTP client injection with connection pooling
+  - [x] Custom transport configuration with TLS settings
+  - [x] Proxy configuration example (with demo implementation)
+  - [x] High-performance client optimization for batch processing
+  - [x] Custom headers via transport wrapping
+  - [x] Multiple client configuration patterns
 
-- [ ] Create `examples/api-server/main.go`
-  - [ ] HTTP handler example
-  - [ ] JSON response formatting
-  - [ ] Error response handling
+- [x] Create `examples/api-server/main.go`
+  - [x] HTTP handler example with GET and POST endpoints
+  - [x] JSON response formatting with structured error handling
+  - [x] Error response handling with proper HTTP status codes
+  - [x] Multiple content format support (JSON, HTML, Markdown, Text)
+  - [x] Request validation and URL format checking
+  - [x] API documentation with HTML interface
+  - [x] Health check endpoint
 
 ### Testable Examples:
-- [ ] Create `example_test.go`
-  - [ ] Example_basic()
-  - [ ] Example_withOptions()
-  - [ ] Example_errorHandling()
-  - [ ] Example_concurrent()
+- [x] Create `example_test.go`
+  - [x] Example_basic() - Basic client usage and parsing
+  - [x] Example_withOptions() - Functional options demonstration
+  - [x] Example_errorHandling() - Structured error handling patterns
+  - [x] Example_concurrent() - Thread safety demonstration
+  - [x] Example_customHTTPClient() - Custom HTTP client injection
+  - [x] Example_parseHTML() - Pre-fetched HTML parsing
+  - [x] Example_contextCancellation() - Context timeout behavior
+  - [x] Example_contentTypes() - Different content format extraction
+
+### Phase F Summary:
+**✅ Complete developer-friendly documentation and examples created**
+- **README.md**: Updated with comprehensive Go module usage, migration guide, and error handling patterns
+- **CHANGELOG.md**: Detailed v1.0.0 release notes with breaking changes and migration instructions
+- **Examples**: 4 complete example applications covering basic usage, concurrency, custom HTTP clients, and API server patterns
+- **Testable Examples**: 8 runnable examples in `example_test.go` serving as both documentation and API validation
+- **All Examples Verified**: Basic example runs successfully, testable examples pass `go test`
 
 ## Phase G: Comprehensive Testing
 **Goal**: Ensure quality and prevent regressions
@@ -345,7 +368,7 @@
 - **Phase D**: ✅ COMPLETED - ORCHESTRATION REMOVED CLEANLY
 - **Phase D.1**: ✅ COMPLETED - NO GLOBAL SINGLETONS REMAIN
 - **Phase E**: ✅ COMPLETED - CLI USING NEW API SUCCESSFULLY
-- **Phase F**: ⏳ NEXT
+- **Phase F**: ✅ COMPLETED - COMPREHENSIVE DOCUMENTATION COMPLETE
 - **Phase G**: ⚠️ BLOCKED BY MINOR TEST FIXES
 
 ## Notes

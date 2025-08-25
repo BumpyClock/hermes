@@ -226,7 +226,7 @@ func markToKeepInSelection(selection *goquery.Selection, baseURL string) {
 	}
 	
 	for _, selector := range keepSelectors {
-		selection.Find(selector).AddClass("mercury-parser-keep")
+		selection.Find(selector).AddClass("hermes-parser-keep")
 	}
 	
 	// If we have a base URL, also mark iframes from the same domain
@@ -239,7 +239,7 @@ func markToKeepInSelection(selection *goquery.Selection, baseURL string) {
 			domainSelectorBuilder.WriteString(parsed.Host)
 			domainSelectorBuilder.WriteString("\"]")
 			domainSelector := domainSelectorBuilder.String()
-			selection.Find(domainSelector).AddClass("mercury-parser-keep")
+			selection.Find(domainSelector).AddClass("hermes-parser-keep")
 		}
 	}
 }
@@ -252,7 +252,7 @@ func stripJunkTagsInSelection(selection *goquery.Selection) {
 	}
 	
 	selector := strings.Join(junkTags, ", ")
-	selection.Find(selector).Not(".mercury-parser-keep").Remove()
+	selection.Find(selector).Not(".hermes-parser-keep").Remove()
 }
 
 func cleanHOnesInSelection(selection *goquery.Selection) {
@@ -309,12 +309,12 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool)
 	for _, tag := range conditionalTags {
 		selection.Find(tag).Each(func(i int, elem *goquery.Selection) {
 			// Skip if marked to keep
-			if elem.HasClass("mercury-parser-keep") {
+			if elem.HasClass("hermes-parser-keep") {
 				return
 			}
 			
 			// Skip if it contains elements marked to keep
-			if elem.Find(".mercury-parser-keep").Length() > 0 {
+			if elem.Find(".hermes-parser-keep").Length() > 0 {
 				return
 			}
 			
@@ -384,7 +384,7 @@ func cleanAttributesInSelection(selection *goquery.Selection) {
 					break
 				}
 			}
-			// Also keep data-content-score and class (for mercury-parser-keep)
+			// Also keep data-content-score and class (for hermes-parser-keep)
 			if attr.Key == "data-content-score" || attr.Key == "class" {
 				keep = true
 			}
