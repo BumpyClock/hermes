@@ -7,7 +7,7 @@ The `parser` package provides the core functionality for extracting clean, struc
 - [Types](#types)
 - [Core Functions](#core-functions)
 - [Parser Interface](#parser-interface)
-- [Mercury Parser](#mercury-parser)
+- [Hermes Parser](#hermes-parser)
 - [High Throughput Parser](#high-throughput-parser)
 - [Batch Operations](#batch-operations)
 - [Error Handling](#error-handling)
@@ -25,16 +25,16 @@ type Parser interface {
 
 Main interface for content extraction operations.
 
-### Mercury
+### Hermes
 
 ```go
-type Mercury struct {
+type Hermes struct {
     options  ParserOptions
     htParser *HighThroughputParser
 }
 ```
 
-Main parser implementation with built-in optimizations and pooling.
+Main parser implementation (formerly Mercury) with built-in optimizations and pooling.
 
 ### ParserOptions
 
@@ -97,16 +97,16 @@ Extracted article data and metadata.
 ### New
 
 ```go
-func New(opts ...*ParserOptions) *Mercury
+func New(opts ...*ParserOptions) *Hermes
 ```
 
-Creates a new optimized Mercury parser instance.
+Creates a new optimized Hermes parser instance.
 
 **Parameters:**
 - `opts` (optional): Parser configuration options
 
 **Returns:**
-- `*Mercury`: Configured parser instance
+- `*Hermes`: Configured parser instance
 
 **Example:**
 ```go
@@ -124,13 +124,13 @@ parser := parser.New(opts)
 ### NewParser
 
 ```go
-func NewParser() *Mercury
+func NewParser() *Hermes
 ```
 
 Convenience function to create a new parser with default options.
 
 **Returns:**
-- `*Mercury`: Parser instance with defaults
+- `*Hermes`: Parser instance with defaults
 
 ### DefaultParserOptions
 
@@ -157,7 +157,7 @@ Returns default parser configuration.
 ### Parse
 
 ```go
-func (m *Mercury) Parse(targetURL string, opts *ParserOptions) (*Result, error)
+func (h *Hermes) Parse(targetURL string, opts *ParserOptions) (*Result, error)
 ```
 
 Extracts content from a URL using optimized pooling.
@@ -190,7 +190,7 @@ fmt.Printf("Content: %s\n", result.Content)
 ### ParseHTML
 
 ```go
-func (m *Mercury) ParseHTML(html string, targetURL string, opts *ParserOptions) (*Result, error)
+func (h *Hermes) ParseHTML(html string, targetURL string, opts *ParserOptions) (*Result, error)
 ```
 
 Extracts content from provided HTML using optimized pooling.
@@ -213,16 +213,16 @@ if err != nil {
 }
 ```
 
-## Mercury Parser
+## Hermes Parser
 
-The Mercury parser includes advanced features for high-performance scenarios.
+The Hermes parser includes advanced features for high-performance scenarios.
 
 ### Performance Methods
 
 #### ReturnResult
 
 ```go
-func (m *Mercury) ReturnResult(result *Result)
+func (h *Hermes) ReturnResult(result *Result)
 ```
 
 Returns a result to the object pool for memory reuse.
@@ -247,7 +247,7 @@ parser.ReturnResult(result)
 #### GetStats
 
 ```go
-func (m *Mercury) GetStats() *PoolStats
+func (h *Hermes) GetStats() *PoolStats
 ```
 
 Returns performance statistics for the parser instance.
@@ -272,7 +272,7 @@ fmt.Printf("Avg processing time: %.2fms\n", stats.AverageProcessingTime)
 #### ResetStats
 
 ```go
-func (m *Mercury) ResetStats()
+func (h *Hermes) ResetStats()
 ```
 
 Resets performance statistics.

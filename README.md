@@ -8,7 +8,7 @@ A high-performance Go web content extraction library inspired by the [Postlight 
 - **Memory Efficient**: 50% less memory usage
 - **150+ Custom Extractors**: Site-specific parsers for major publications
 - **Multiple Output Formats**: HTML, Markdown, plain text, and JSON
-- **Pagination Aware**: Detects `next_page_url` (automatic multi-page merging pending)
+- **Pagination Aware**: Detects `next_page_url` for manual multi-page handling
 - **CLI Tool**: Command-line interface for single and batch parsing
 
 ## Installation
@@ -16,7 +16,7 @@ A high-performance Go web content extraction library inspired by the [Postlight 
 ### As a Go Module
 
 ```bash
-go get github.com/BumpyClock/hermes@v1.0.0
+go get github.com/BumpyClock/hermes@latest
 ```
 
 ### CLI Tool
@@ -47,38 +47,189 @@ parser parse -f markdown https://example.com/article
 # Save to file
 parser parse -o article.md -f markdown https://example.com/article
 
-# Custom headers
-parser parse --headers '{"User-Agent": "MyBot/1.0"}' https://example.com/article
+# Multiple URLs with timing
+parser parse --timing https://example.com/article1 https://example.com/article2
 ```
 
 ### Go Library
+
+#### Basic Usage
 
 ```go
 package main
 
 import (
+    "context"
     "fmt"
     "log"
+    "time"
     
-    "github.com/BumpyClock/hermes/pkg/parser"
+    "github.com/BumpyClock/hermes"
 )
 
 func main() {
-    p := parser.New()
+    // Create a client with options
+    client := hermes.New(
+        hermes.WithTimeout(30*time.Second),
+        hermes.WithContentType("html"), // "html", "markdown", or "text"
+        hermes.WithUserAgent("MyApp/1.0"),
+    )
     
-    result, err := p.Parse("https://example.com/article", &parser.ParserOptions{
-        ContentType:  "markdown",
-        FetchAllPages: true, // Note: merging not yet implemented; see README
-    })
+    // Parse a URL with context
+    ctx := context.Background()
+    result, err := client.Parse(ctx, "https://example.com/article")
     if err != nil {
         log.Fatal(err)
     }
-    if result.IsError() {
-        log.Fatal(result.Message)
-    }
+    
     fmt.Printf("Title: %s\n", result.Title)
     fmt.Printf("Author: %s\n", result.Author)
     fmt.Printf("Content: %s\n", result.Content)
+    fmt.Printf("Word Count: %d\n", result.WordCount)
+}
+```
+
+#### Advanced Usage with Custom HTTP Client
+
+```go
+package main
+
+import (
+    "context"
+    "crypto/tls"
+    "fmt"
+    "net/http"
+    "time"
+    
+    "github.com/BumpyClock/hermes"
+)
+
+func main() {
+    // Create custom HTTP client with proxy, custom transport, etc.
+    customClient := &http.Client{
+        Timeout: 60 * time.Second,
+        Transport: &http.Transport{
+            MaxIdleConns:        100,
+            MaxIdleConnsPerHost: 10,
+            IdleConnTimeout:     90 * time.Second,
+            TLSClientConfig: &tls.Config{
+                InsecureSkipVerify: false,
+            },
+        },
+    }
+    
+    // Create Hermes client with custom HTTP client
+    client := hermes.New(
+        hermes.WithHTTPClient(customClient),
+        hermes.WithContentType("markdown"),
+        hermes.WithAllowPrivateNetworks(false), // SSRF protection
+    )
+    
+    // Parse with timeout context
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    
+    result, err := client.Parse(ctx, "https://example.com/article")
+    if err != nil {
+        if parseErr, ok := err.(*hermes.ParseError); ok {
+            fmt.Printf("Parse error [%s]: %v\n", parseErr.Code, parseErr.Err)
+        } else {
+            log.Fatal(err)
+        }
+        return
+    }
+    
+    fmt.Printf("Title: %s\n", result.Title)
+    fmt.Printf("Content: %s\n", result.Content)
+}
+```
+
+#### Parse Pre-fetched HTML
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    
+    "github.com/BumpyClock/hermes"
+)
+
+func main() {
+    client := hermes.New(hermes.WithContentType("text"))
+    
+    html := `<html><head><title>Test</title></head><body><p>Hello World</p></body></html>`
+    
+    result, err := client.ParseHTML(context.Background(), html, "https://example.com/test")
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("Title: %s\n", result.Title)
+    fmt.Printf("Content: %s\n", result.Content)
+}
+```
+
+## Migration from v0.x to v1.0
+
+If you're upgrading from the old internal API, here are the key changes:
+
+### Old API (v0.x)
+```go
+import "github.com/BumpyClock/hermes/pkg/parser"
+
+p := parser.New()
+result, err := p.Parse(url, &parser.ParserOptions{...})
+```
+
+### New API (v1.0+)
+```go
+import "github.com/BumpyClock/hermes"
+
+client := hermes.New(hermes.WithTimeout(...))
+result, err := client.Parse(ctx, url)
+```
+
+### Key Changes
+
+1. **Package Import**: Use root package instead of `/pkg/parser`
+2. **Context Required**: All methods now require `context.Context` first parameter
+3. **Functional Options**: Use `hermes.WithXxx()` options instead of struct fields
+4. **Error Types**: New `*hermes.ParseError` type with error codes
+5. **HTTP Client**: Client manages its own HTTP client, configurable via options
+6. **Content Types**: Set via `WithContentType()` option, affects parser extraction
+
+### Options Mapping
+
+| Old API | New API |
+|---------|---------|
+| `parser.ParserOptions{ContentType: "markdown"}` | `hermes.WithContentType("markdown")` |
+| `parser.ParserOptions{FetchAllPages: true}` | Use `result.NextPageURL` for manual pagination |
+| Custom headers in options | Use `hermes.WithHTTPClient()` with custom transport |
+
+## Error Handling
+
+The new API provides structured error handling:
+
+```go
+result, err := client.Parse(ctx, url)
+if err != nil {
+    if parseErr, ok := err.(*hermes.ParseError); ok {
+        switch parseErr.Code {
+        case hermes.ErrInvalidURL:
+            // Handle invalid URL
+        case hermes.ErrFetch:
+            // Handle fetch error
+        case hermes.ErrTimeout:
+            // Handle timeout
+        case hermes.ErrExtract:
+            // Handle extraction error
+        default:
+            // Handle other errors
+        }
+    }
 }
 ```
 
@@ -176,7 +327,7 @@ Hermes aims for high compatibility with the JavaScript version:
 - CLI commands and options are similar
 - Next page URL detection is implemented
 
-Note: automatic multi-page fetching and merging is not yet implemented; use the `next_page_url` field to handle pagination if needed.
+Note: Use the `next_page_url` field for manual pagination handling when needed.
 
 ## TODOs
 

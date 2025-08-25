@@ -47,7 +47,8 @@
       "WebFetch(domain:www.theverge.com)",
       "Bash(./parser-go/bin/hermes parse:*)",
       "Bash(./test-go.sh:*)",
-      "Bash(./test-comparison.sh:*)"
+      "Bash(./test-comparison.sh:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": [],
