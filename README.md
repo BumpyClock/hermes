@@ -233,6 +233,8 @@ if err != nil {
 }
 ```
 
+See the [Library Usage Guide](docs/guides/library-usage.md) for more ways to integrate Hermes into your Go projects.
+
 ## Development
 
 ### Prerequisites
