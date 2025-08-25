@@ -8,6 +8,7 @@ Welcome to the comprehensive documentation for Hermes, a high-performance Go web
 - [Installation & Setup](guides/installation.md) - Quick start guide and installation instructions
 - [Basic Usage](guides/basic-usage.md) - Your first steps with Hermes
 - [CLI Usage](guides/cli-usage.md) - Command line interface documentation
+- [Library Usage](guides/library-usage.md) - Using Hermes as a Go module
 
 ### API Reference
 - [Parser API](api/parser.md) - Core parser interface and methods
@@ -21,6 +22,7 @@ Welcome to the comprehensive documentation for Hermes, a high-performance Go web
 ### Guides & Tutorials
 - [CLI Usage](guides/cli-usage.md) - Detailed CLI commands and flags
 - [Basic Usage](guides/basic-usage.md) - Common patterns and examples
+- [Library Usage](guides/library-usage.md) - Integration as a library
 
 ### Development
 - See repository README for development setup, testing, and build commands
