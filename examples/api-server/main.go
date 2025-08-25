@@ -259,13 +259,15 @@ func (s *Server) parseURL(w http.ResponseWriter, r *http.Request, targetURL, for
 	if err != nil {
 		var code, message string
 		
-		if parseErr, ok := err.(*hermes.ParseError); ok {
-			code = string(parseErr.Code)
-			message = parseErr.Err.Error()
-		} else {
-			code = "parse_error"
-			message = err.Error()
-		}
+                if parseErr, ok := err.(*hermes.ParseError); ok {
+                        // Use the ErrorCode's String method to avoid
+                        // converting the numeric code to a single rune.
+                        code = parseErr.Code.String()
+                        message = parseErr.Err.Error()
+                } else {
+                        code = "parse_error"
+                        message = err.Error()
+                }
 		
 		s.sendError(w, http.StatusBadGateway, code, message, targetURL, start)
 		return
