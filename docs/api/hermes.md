@@ -1,6 +1,6 @@
-# Parser API Reference
+# Hermes API Reference
 
-The `parser` package provides the core functionality for extracting clean, structured content from web pages.
+The `hermes` package provides the core functionality for extracting clean, structured content from web pages.
 
 ## Table of Contents
 

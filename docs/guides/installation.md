@@ -46,10 +46,10 @@ Hermes uses carefully selected dependencies for optimal performance:
 Install the latest release directly from the repository:
 
 ```bash
-go install github.com/BumpyClock/hermes/cmd/parser@latest
+go install github.com/BumpyClock/hermes/cmd/hermes@latest
 ```
 
-This installs the `parser` CLI tool to your `$GOPATH/bin` directory.
+This installs the `hermes` CLI tool to your `$GOPATH/bin` directory.
 
 ### Method 2: Build from Source
 
@@ -126,19 +126,19 @@ Go version: 1.24.6
 Parse a single URL:
 
 ```bash
-parser parse https://example.com/article
+hermes parse https://example.com/article
 ```
 
 Parse with Markdown output:
 
 ```bash
-parser parse -f markdown https://example.com/article
+hermes parse -f markdown https://example.com/article
 ```
 
 Save to file:
 
 ```bash
-parser parse -f markdown -o article.md https://example.com/article
+hermes parse -f markdown -o article.md https://example.com/article
 ```
 
 ### 3. Library Usage
@@ -273,19 +273,19 @@ Test CLI functionality:
 
 ```bash
 # Basic parsing
-parser parse https://www.theguardian.com/technology
+hermes parse https://www.theguardian.com/technology
 
 # Format options
-parser parse -f markdown https://www.nytimes.com/section/technology
+hermes parse -f markdown https://www.nytimes.com/section/technology
 
 # Multiple URLs
-parser parse https://example.com/1 https://example.com/2 https://example.com/3
+hermes parse https://example.com/1 https://example.com/2 https://example.com/3
 
 # Custom headers
-parser parse --headers '{"User-Agent": "MyBot/1.0"}' https://example.com
+hermes parse --headers '{"User-Agent": "MyBot/1.0"}' https://example.com
 
 # Timing information
-parser parse --timing https://example.com
+hermes parse --timing https://example.com
 ```
 
 ### 2. Library Verification
@@ -426,7 +426,7 @@ fi
 
 # Test basic functionality
 echo "Testing basic functionality..."
-RESULT=$(parser parse https://httpbin.org/html 2>/dev/null)
+RESULT=$(hermes parse https://httpbin.org/html 2>/dev/null)
 if [ $? -eq 0 ] && [ ! -z "$RESULT" ]; then
     echo "✓ Basic parsing works"
 else
@@ -455,11 +455,11 @@ Note: Official pre-built images are not yet published. Use the build-from-source
 docker pull ghcr.io/bumpyclock/hermes:latest
 
 # Run parser
-docker run --rm ghcr.io/bumpyclock/hermes:latest parser parse https://example.com
+docker run --rm ghcr.io/bumpyclock/hermes:latest hermes parse https://example.com
 
 # Run with volume for output
 docker run --rm -v $(pwd):/output ghcr.io/bumpyclock/hermes:latest \
-    parser parse -f markdown -o /output/article.md https://example.com
+    hermes parse -f markdown -o /output/article.md https://example.com
 ```
 
 ### 2. Building from Source
@@ -473,7 +473,7 @@ cd hermes
 docker build -t hermes:local .
 
 # Run the image
-docker run --rm hermes:local parser parse https://example.com
+docker run --rm hermes:local hermes parse https://example.com
 ```
 
 ### 3. Docker Compose
@@ -493,7 +493,7 @@ services:
       - HERMES_CONTENT_TYPE=markdown
       - HERMES_TIMEOUT=30s
     command: >
-      parser parse 
+      hermes parse 
       -f markdown 
       -o /output/articles.json
       https://example.com/article1

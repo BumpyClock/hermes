@@ -21,38 +21,38 @@ The Hermes CLI provides a simple interface for extracting content from web pages
 
 ```bash
 # Basic parsing with JSON output
-parser parse https://example.com/article
+hermes parse https://example.com/article
 
 # Parse with specific output format
-parser parse -f markdown https://example.com/article
-parser parse -f html https://example.com/article
-parser parse -f text https://example.com/article
+hermes parse -f markdown https://example.com/article
+hermes parse -f html https://example.com/article
+hermes parse -f text https://example.com/article
 ```
 
 #### Save Output to File
 
 ```bash
 # Save as Markdown
-parser parse -f markdown -o article.md https://example.com/article
+hermes parse -f markdown -o article.md https://example.com/article
 
 # Save as HTML
-parser parse -f html -o article.html https://example.com/article
+hermes parse -f html -o article.html https://example.com/article
 
 # Save as JSON
-parser parse -o article.json https://example.com/article
+hermes parse -o article.json https://example.com/article
 ```
 
 #### Parse Multiple URLs
 
 ```bash
 # Parse multiple URLs (outputs JSON array)
-parser parse https://example.com/1 https://example.com/2 https://example.com/3
+hermes parse https://example.com/1 https://example.com/2 https://example.com/3
 
 # With timing information
-parser parse --timing https://example.com/1 https://example.com/2
+hermes parse --timing https://example.com/1 https://example.com/2
 
 # Save multiple results
-parser parse -o articles.json https://example.com/1 https://example.com/2
+hermes parse -o articles.json https://example.com/1 https://example.com/2
 ```
 
 ### Advanced CLI Options
@@ -61,10 +61,10 @@ parser parse -o articles.json https://example.com/1 https://example.com/2
 
 ```bash
 # Single header
-parser parse --headers '{"User-Agent": "MyBot/1.0"}' https://example.com
+hermes parse --headers '{"User-Agent": "MyBot/1.0"}' https://example.com
 
 # Multiple headers
-parser parse --headers '{
+hermes parse --headers '{
   "User-Agent": "MyBot/1.0",
   "Accept": "text/html,application/xhtml+xml",
   "Accept-Language": "en-US,en;q=0.5"
@@ -75,10 +75,10 @@ parser parse --headers '{
 
 ```bash
 # Disable pagination handling hint (default is true)
-parser parse --fetch-all=false https://example.com/article
+hermes parse --fetch-all=false https://example.com/article
 
 # Enable pagination handling hint (default)
-parser parse --fetch-all=true https://example.com/article
+hermes parse --fetch-all=true https://example.com/article
 ```
 
 **Note on Multi-page Articles:** Hermes detects and exposes `next_page_url` when a site provides a "next page" link. However, automatic fetching and merging of subsequent pages is not yet implemented. Use the `next_page_url` value to iterate manually if needed.
@@ -87,7 +87,7 @@ parser parse --fetch-all=true https://example.com/article
 
 ```bash
 # Show timing for each URL
-parser parse --timing https://example.com/1 https://example.com/2
+hermes parse --timing https://example.com/1 https://example.com/2
 
 # Example output:
 # Parsing URL 1/2: https://example.com/1
@@ -107,11 +107,11 @@ parser parse --timing https://example.com/1 https://example.com/2
 
 ```bash
 # Extract NY Times article as Markdown
-parser parse -f markdown -o nytimes-article.md \
+hermes parse -f markdown -o nytimes-article.md \
   "https://www.nytimes.com/2024/01/15/technology/ai-breakthrough.html"
 
 # Extract with custom User-Agent
-parser parse --headers '{"User-Agent": "NewsBot/1.0"}' \
+hermes parse --headers '{"User-Agent": "NewsBot/1.0"}' \
   "https://www.theguardian.com/technology/ai"
 ```
 
@@ -119,7 +119,7 @@ parser parse --headers '{"User-Agent": "NewsBot/1.0"}' \
 
 ```bash
 # Process multiple tech articles
-parser parse --timing -f markdown -o tech-articles.json \
+hermes parse --timing -f markdown -o tech-articles.json \
   "https://arstechnica.com/latest-article" \
   "https://www.theverge.com/tech-news" \
   "https://techcrunch.com/startup-news"
@@ -129,7 +129,7 @@ parser parse --timing -f markdown -o tech-articles.json \
 
 ```bash
 # Extract blog post with full content
-parser parse -f html --fetch-all=true \
+hermes parse -f html --fetch-all=true \
   "https://medium.com/@author/long-article-part-1"
 ```
 

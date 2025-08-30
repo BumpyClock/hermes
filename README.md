@@ -22,7 +22,7 @@ go get github.com/BumpyClock/hermes@latest
 ### CLI Tool
 
 ```bash
-go install github.com/BumpyClock/hermes/cmd/parser@latest
+go install github.com/BumpyClock/hermes/cmd/hermes@latest
 ```
 
 ### Build from Source
@@ -39,16 +39,16 @@ make build
 
 ```bash
 # Parse a URL and output JSON
-parser parse https://example.com/article
+hermes parse https://example.com/article
 
 # Output as markdown
-parser parse -f markdown https://example.com/article
+hermes parse -f markdown https://example.com/article
 
 # Save to file
-parser parse -o article.md -f markdown https://example.com/article
+hermes parse -o article.md -f markdown https://example.com/article
 
 # Multiple URLs with timing
-parser parse --timing https://example.com/article1 https://example.com/article2
+hermes parse --timing https://example.com/article1 https://example.com/article2
 ```
 
 ### Go Library

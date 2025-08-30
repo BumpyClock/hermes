@@ -5,7 +5,7 @@ GO_VERSION := 1.24.6
 CURRENT_GO := $(shell go version | cut -d' ' -f3 | sed 's/go//')
 
 build:
-	go build -o bin/hermes cmd/parser/main.go
+	go build -o bin/hermes cmd/hermes/main.go
 
 test:
 	go test -v -cover ./...
@@ -21,7 +21,7 @@ clean:
 	go clean -testcache
 
 install:
-	go install ./cmd/parser
+	go install ./cmd/hermes
 
 deps:
 	go mod download
