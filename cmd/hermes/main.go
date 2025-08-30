@@ -23,7 +23,7 @@ var (
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "parser",
+		Use:   "hermes",
 		Short: "Hermes - High-performance web content extraction tool",
 		Long:  "Hermes extracts clean, structured content from any web page with lightning speed",
 	}

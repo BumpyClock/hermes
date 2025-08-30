@@ -160,7 +160,7 @@ After conducting a comprehensive documentation accuracy review of the Hermes Go 
 
 ### ✅ Working Tests
 - **Example Tests**: All examples in `example_test.go` pass
-- **Basic CLI Usage**: `parser parse <url>` works correctly
+- **Basic CLI Usage**: `hermes parse <url>` works correctly
 - **API Compilation**: All core API files compile without errors
 - **Thread Safety**: Concurrent example demonstrates safe usage
 - **Content Extraction**: HTML, Markdown, Text formats working

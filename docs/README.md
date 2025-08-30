@@ -10,7 +10,7 @@ Welcome to the comprehensive documentation for Hermes, a high-performance Go web
 - [CLI Usage](guides/cli-usage.md) - Command line interface documentation
 
 ### API Reference
-- [Parser API](api/parser.md) - Core parser interface and methods
+- [Hermes API](api/hermes.md) - Core Hermes interface and methods
 - [Extractors](api/extractors.md) - Custom and generic extractors
 - [Configuration](api/configuration.md) - Parser options and settings
 - [Results](api/results.md) - Result structures and formatting
@@ -32,10 +32,10 @@ Welcome to the comprehensive documentation for Hermes, a high-performance Go web
 
 ```bash
 # Install Hermes
-go install github.com/BumpyClock/hermes/cmd/parser@latest
+go install github.com/BumpyClock/hermes/cmd/hermes@latest
 
 # Parse a URL
-parser parse https://example.com/article
+hermes parse https://example.com/article
 
 # Use as library
 go get github.com/BumpyClock/hermes

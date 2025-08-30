@@ -36,7 +36,7 @@
       "Bash(go tool compile:*)",
       "Bash(/tmp/registry_check:*)",
       "Bash(/tmp/concurrency_check:*)",
-      "Bash(bin/parser parse:*)",
+      "Bash(bin/hermes parse:*)",
       "Bash(./tools/verify_custom_extractors:*)",
       "Bash(./test-js.sh:*)",
       "mcp__node-code-sandbox-mcp__run_js_ephemeral",

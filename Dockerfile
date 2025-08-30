@@ -5,12 +5,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o parser cmd/parser/main.go
+RUN go build -o hermes cmd/hermes/main.go
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
-COPY --from=builder /app/parser .
+COPY --from=builder /app/hermes .
 COPY --from=builder /app/internal/fixtures ./internal/fixtures
 
-CMD ["./parser"]
+CMD ["./hermes"]

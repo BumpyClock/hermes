@@ -88,7 +88,7 @@ function buildGoParser() {
                 stdio: 'inherit'
             });
         } else {
-            execSync('go build -o bin/hermes ./cmd/parser', {
+            execSync('go build -o bin/hermes ./cmd/hermes', {
                 cwd: hermesDir,
                 stdio: 'inherit'
             });

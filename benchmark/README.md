@@ -1,4 +1,4 @@
-# Parser Benchmark Tool
+# Hermes Benchmark Tool
 
 A cross-platform Node.js script to compare the performance of the Hermes Go parser against the original JavaScript Postlight Parser.
 

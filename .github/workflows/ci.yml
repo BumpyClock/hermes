@@ -76,9 +76,9 @@ jobs:
     
     - name: Test CLI
       run: |
-        ./bin/parser version
+        ./bin/hermes version
         echo '<!DOCTYPE html><html><head><title>Test</title></head><body><p>Test content</p></body></html>' > test.html
-        # Test would require network access: ./bin/parser parse https://example.com
+        # Test would require network access: ./bin/hermes parse https://example.com
 
   benchmark:
     runs-on: ubuntu-latest
