@@ -342,25 +342,41 @@ fmt.Println(result.Title)
 func (r *Result) FormatMarkdown() string
 ```
 
-Formats the result as markdown with metadata header.
+Formats the **entire result** as a single markdown document with metadata sections and content.
+
+**Important Distinction:**
+- `ContentType: "markdown"` → Only the `Content` field is markdown, metadata remains typed
+- `FormatMarkdown()` → Everything is combined into one markdown document string
 
 **Returns:**
 ```markdown
 # Article Title
 
+## Metadata
+
 **Author:** John Doe
 **Date:** 2024-01-15T10:30:00Z
 **URL:** https://example.com/article
 **Language:** en-US
-**Description:** Site description from meta tags or structured data
+**Word Count:** 245
 
-Article content in markdown format...
+## Description
+
+Site description from meta tags or structured data
+
+## Content
+
+Article content here...
 ```
 
 **Usage:**
 ```go
+// For exporting complete articles as markdown files
 markdown := result.FormatMarkdown()
 err := os.WriteFile("article.md", []byte(markdown), 0644)
+
+// For API responses, use ContentType: "markdown" instead
+// to get structured data with markdown content
 ```
 
 ## Output Formats
@@ -397,14 +413,22 @@ result.Content // Clean HTML content
 When `ContentType: "markdown"` is specified:
 
 ```go
-result.Content // Markdown formatted content
+result.Content // Markdown formatted content ONLY
+result.Title   // Still a typed string field
+result.Author  // Still a typed string field  
+result.WordCount // Still an int field
+// All other metadata fields remain properly typed
 ```
 
 **Features:**
-- Clean markdown syntax
-- Preserves formatting and structure
+- Only the `Content` field is converted to markdown
+- All metadata fields (title, author, date, etc.) remain as properly typed values
+- Clean markdown syntax for content
+- Preserves formatting and structure in content
 - Suitable for documentation systems
-- Human-readable plain text
+- Human-readable content while maintaining structured metadata
+
+**Important:** This is different from `FormatMarkdown()` which combines everything into a single markdown document.
 
 **Example:**
 ```markdown

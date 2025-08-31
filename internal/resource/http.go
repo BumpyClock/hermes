@@ -47,16 +47,21 @@ func (c *HTTPClient) Get(ctx context.Context, url string) (*Response, error) {
 // GetWithRetry performs a GET request with specified number of retries
 func (c *HTTPClient) GetWithRetry(ctx context.Context, url string, maxRetries int) (*Response, error) {
 	var lastErr error
+	fmt.Printf("[HERMES HTTP DEBUG] Starting GetWithRetry for %s (max retries: %d)\n", url, maxRetries)
 	
 	for attempt := 0; attempt <= maxRetries; attempt++ {
+		fmt.Printf("[HERMES HTTP DEBUG] Attempt %d/%d for %s\n", attempt+1, maxRetries+1, url)
+		
 		// Check if context is cancelled before each attempt
 		if err := ctx.Err(); err != nil {
+			fmt.Printf("[HERMES HTTP DEBUG] Context cancelled before attempt %d: %v\n", attempt+1, err)
 			return nil, fmt.Errorf("context cancelled: %w", err)
 		}
 		
 		if attempt > 0 {
 			// Exponential backoff: 1s, 2s, 4s
 			delay := time.Duration(1<<uint(attempt-1)) * time.Second
+			fmt.Printf("[HERMES HTTP DEBUG] Waiting %v before retry %d\n", delay, attempt+1)
 			
 			// Use context-aware sleep
 			select {
@@ -69,9 +74,11 @@ func (c *HTTPClient) GetWithRetry(ctx context.Context, url string, maxRetries in
 		
 		resp, err := c.doRequest(ctx, url)
 		if err == nil {
+			fmt.Printf("[HERMES HTTP DEBUG] Request succeeded on attempt %d\n", attempt+1)
 			return resp, nil
 		}
 		
+		fmt.Printf("[HERMES HTTP DEBUG] Request failed on attempt %d: %v\n", attempt+1, err)
 		lastErr = err
 		
 		// Don't retry on client errors (4xx)
@@ -85,6 +92,8 @@ func (c *HTTPClient) GetWithRetry(ctx context.Context, url string, maxRetries in
 
 // doRequest performs the actual HTTP request
 func (c *HTTPClient) doRequest(ctx context.Context, url string) (*Response, error) {
+	fmt.Printf("[HERMES HTTP DEBUG] Starting HTTP request to: %s\n", url)
+	
 	// Use the provided context directly - no longer create our own timeout
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -96,12 +105,26 @@ func (c *HTTPClient) doRequest(ctx context.Context, url string) (*Response, erro
 	for key, value := range allHeaders {
 		req.Header.Set(key, value)
 	}
-	// Note: Accept-Encoding is handled automatically by Go's HTTP client when DisableCompression=false
+	fmt.Printf("[HERMES HTTP DEBUG] Request headers: %v\n", allHeaders)
 	
+	// Log transport details if available
+	if transport, ok := c.Client.Transport.(*http.Transport); ok {
+		fmt.Printf("[HERMES HTTP DEBUG] Transport config:\n")
+		fmt.Printf("[HERMES HTTP DEBUG] - MaxIdleConns: %d\n", transport.MaxIdleConns)
+		fmt.Printf("[HERMES HTTP DEBUG] - MaxIdleConnsPerHost: %d\n", transport.MaxIdleConnsPerHost)
+		fmt.Printf("[HERMES HTTP DEBUG] - ForceAttemptHTTP2: %t\n", transport.ForceAttemptHTTP2)
+		fmt.Printf("[HERMES HTTP DEBUG] - TLSNextProto length: %d (0 = disabled)\n", len(transport.TLSNextProto))
+	}
+	
+	// Note: Accept-Encoding is handled automatically by Go's HTTP client when DisableCompression=false
+	fmt.Printf("[HERMES HTTP DEBUG] Making HTTP request...\n")
 	resp, err := c.Client.Do(req)
 	if err != nil {
+		fmt.Printf("[HERMES HTTP DEBUG] HTTP request failed: %v\n", err)
 		return nil, fmt.Errorf("performing request: %w", err)
 	}
+	
+	fmt.Printf("[HERMES HTTP DEBUG] HTTP request successful: %s (proto: %s)\n", resp.Status, resp.Proto)
 	
 	// Check for HTTP errors
 	if resp.StatusCode >= 400 {

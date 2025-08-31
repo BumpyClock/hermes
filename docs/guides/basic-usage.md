@@ -399,10 +399,17 @@ fmt.Println(result.Content)
 Clean Markdown for documentation and text processing:
 
 ```go
-opts := &parser.ParserOptions{ContentType: "markdown"}
-result, _ := parser.Parse(url, opts)
+// Option 1: Extract content as markdown while keeping metadata typed
+client := hermes.New(hermes.WithContentType("markdown"))
+result, _ := client.Parse(ctx, url)
 
-// Get formatted markdown with metadata
+// result.Content is markdown, but other fields remain typed
+fmt.Printf("Title: %s\n", result.Title)         // Typed string
+fmt.Printf("Author: %s\n", result.Author)       // Typed string  
+fmt.Printf("Word Count: %d\n", result.WordCount) // Typed int
+fmt.Printf("Content: %s\n", result.Content)     // Markdown string
+
+// Option 2: Export entire result as markdown document
 markdown := result.FormatMarkdown()
 fmt.Println(markdown)
 
