@@ -210,5 +210,9 @@ func mapInternalResult(internal *parser.Result) *Result {
 		SiteName:      internal.SiteName,
 		Description:   internal.Description,
 		Language:      internal.Language,
+		ThemeColor:    internal.ThemeColor,
+		Favicon:       internal.Favicon,
+		VideoURL:      internal.VideoURL,
+		VideoMetadata: internal.VideoMetadata,
 	}
 }

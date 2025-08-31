@@ -62,7 +62,7 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	var mu sync.Mutex
 	
 	// Start parallel site metadata extractions
-	wg.Add(6)
+	wg.Add(7) // Added theme color extractor
 	
 	// Extract site name
 	go func() {
@@ -126,6 +126,17 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 		if language := languageExtractor.Extract(doc.Selection, targetURL, metaCache); language != "" {
 			mu.Lock()
 			result.Language = language
+			mu.Unlock()
+		}
+	}()
+	
+	// Extract theme color
+	go func() {
+		defer wg.Done()
+		themeColorExtractor := &generic.GenericThemeColorExtractor{}
+		if themeColor := themeColorExtractor.Extract(doc.Selection, targetURL, metaCache); themeColor != "" {
+			mu.Lock()
+			result.ThemeColor = themeColor
 			mu.Unlock()
 		}
 	}()
@@ -272,6 +283,41 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 		}
 		if dek := dekExtractor.Extract(doc, dekOpts); dek != "" && result.Dek == "" {
 			result.Dek = dek
+		}
+		
+		// Extract video metadata
+		videoExtractor := &generic.GenericVideoExtractor{}
+		if videoData := videoExtractor.Extract(doc.Selection, targetURL, metaCache); videoData != nil {
+			// Set the primary video URL
+			if videoData.SecureURL != "" {
+				result.VideoURL = videoData.SecureURL
+			} else if videoData.URL != "" {
+				result.VideoURL = videoData.URL
+			}
+			
+			// Store full video metadata if we have any data
+			if videoData.URL != "" || videoData.SecureURL != "" {
+				result.VideoMetadata = make(map[string]interface{})
+				
+				if videoData.URL != "" {
+					result.VideoMetadata["url"] = videoData.URL
+				}
+				if videoData.SecureURL != "" {
+					result.VideoMetadata["secure_url"] = videoData.SecureURL
+				}
+				if videoData.Type != "" {
+					result.VideoMetadata["type"] = videoData.Type
+				}
+				if videoData.Width > 0 {
+					result.VideoMetadata["width"] = videoData.Width
+				}
+				if videoData.Height > 0 {
+					result.VideoMetadata["height"] = videoData.Height
+				}
+				if videoData.Duration > 0 {
+					result.VideoMetadata["duration"] = videoData.Duration
+				}
+			}
 		}
 	}
 
@@ -586,6 +632,46 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		result.Favicon = favicon
 	}
 	
+	// Theme color extraction
+	themeColorExtractor := &generic.GenericThemeColorExtractor{}
+	if themeColor := themeColorExtractor.Extract(doc.Selection, targetURL, metaCache); themeColor != "" {
+		result.ThemeColor = themeColor
+	}
+	
+	// Video metadata extraction
+	videoExtractor := &generic.GenericVideoExtractor{}
+	if videoData := videoExtractor.Extract(doc.Selection, targetURL, metaCache); videoData != nil {
+		// Set the primary video URL
+		if videoData.SecureURL != "" {
+			result.VideoURL = videoData.SecureURL
+		} else if videoData.URL != "" {
+			result.VideoURL = videoData.URL
+		}
+		
+		// Store full video metadata if we have any data
+		if videoData.URL != "" || videoData.SecureURL != "" {
+			result.VideoMetadata = make(map[string]interface{})
+			
+			if videoData.URL != "" {
+				result.VideoMetadata["url"] = videoData.URL
+			}
+			if videoData.SecureURL != "" {
+				result.VideoMetadata["secure_url"] = videoData.SecureURL
+			}
+			if videoData.Type != "" {
+				result.VideoMetadata["type"] = videoData.Type
+			}
+			if videoData.Width > 0 {
+				result.VideoMetadata["width"] = videoData.Width
+			}
+			if videoData.Height > 0 {
+				result.VideoMetadata["height"] = videoData.Height
+			}
+			if videoData.Duration > 0 {
+				result.VideoMetadata["duration"] = videoData.Duration
+			}
+		}
+	}
 	
 	return result
 }

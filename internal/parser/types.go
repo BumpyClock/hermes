@@ -52,6 +52,11 @@ type Result struct {
 	Favicon        string                `json:"favicon"`
 	Description    string                `json:"description"`
 	Language       string                `json:"language"`
+	ThemeColor     string                `json:"theme_color,omitempty"`
+	
+	// Video metadata fields
+	VideoURL       string                `json:"video_url,omitempty"`
+	VideoMetadata  map[string]interface{} `json:"video_metadata,omitempty"`
 	
 	// Error handling fields for JS compatibility
 	Error   bool   `json:"error,omitempty"`

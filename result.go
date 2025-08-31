@@ -32,6 +32,12 @@ type Result struct {
 	SiteName    string `json:"site_name,omitempty"`
 	Description string `json:"description,omitempty"`
 	Language    string `json:"language,omitempty"`
+	ThemeColor  string `json:"theme_color,omitempty"`
+	Favicon     string `json:"favicon,omitempty"`
+	
+	// Video metadata
+	VideoURL      string                 `json:"video_url,omitempty"`
+	VideoMetadata map[string]interface{} `json:"video_metadata,omitempty"`
 }
 
 // FormatMarkdown formats the result as Markdown with metadata header.
