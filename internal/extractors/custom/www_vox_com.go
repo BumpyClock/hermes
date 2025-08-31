@@ -14,7 +14,8 @@ var VoxCustomExtractor = &CustomExtractor{
 	
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
-			"h1.c-page-title",
+			"h1[class*=\"h74scy\"]",
+			"h1.c-page-title", // Legacy fallback
 		},
 	},
 	
@@ -27,6 +28,10 @@ var VoxCustomExtractor = &CustomExtractor{
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
+				".duet--article--article-body-component",
+				"div[id*='zephr-anchor']",
+				".duet--layout--entry-body",
+				// Legacy selectors as fallback
 				[]string{"figure.e-image--hero", ".c-entry-content"},
 				".c-entry-content",
 			},
@@ -45,8 +50,16 @@ var VoxCustomExtractor = &CustomExtractor{
 			},
 		},
 		
-		// Clean selectors - empty for Vox
-		Clean: []string{},
+		// Clean selectors - remove unwanted elements
+		Clean: []string{
+			".duet--article--block-placement", // Ads and promotional blocks
+			".duet--article--related",         // Related articles
+			".duet--cta--newsletter",          // Newsletter signup forms
+			"form",                           // All forms
+			".duet--article--share-buttons",  // Share buttons
+			".duet--article--article-pullquote", // Pull quotes (duplicate content)
+			".duet--media--caption",          // Image captions (can duplicate)
+		},
 	},
 	
 	DatePublished: &FieldExtractor{
@@ -63,7 +76,8 @@ var VoxCustomExtractor = &CustomExtractor{
 	
 	Dek: &FieldExtractor{
 		Selectors: []interface{}{
-			".p-dek",
+			"p[class*=\"h74scyi\"]", // Modern Vox subtitle
+			".p-dek",               // Legacy fallback
 		},
 	},
 	
