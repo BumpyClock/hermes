@@ -220,6 +220,9 @@ func GetAllCustomExtractors() map[string]*CustomExtractor {
 		"ElecomCoJpExtractor":           GetWwwElecomCoJpExtractor(),
 		// Note: Many international extractors already implemented in previous phases
 		
+		// Blog & Commentary Sites - NEW ✅ (1 extractor)
+		"DaringFireballExtractor":       GetDaringFireballExtractor(),
+		
 		// Specialty/Business Sites - PHASE SPECIALTY COMPLETE ✅ (3 extractors)
 		"FastCompanyExtractor":          GetWwwFastcompanyComExtractor(),
 		"MentalFlossExtractor":          GetWwwMentalflossComExtractor(),
