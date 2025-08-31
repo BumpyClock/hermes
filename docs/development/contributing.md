@@ -124,46 +124,13 @@ Follow the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeRevie
 
 #### Package Organization
 
-```go
-// Package structure
-package parser
-
-import (
-    // Standard library imports first
-    "context"
-    "fmt"
-    "strings"
-    
-    // Third-party imports second
-    "github.com/PuerkitoBio/goquery"
-    "github.com/spf13/cobra"
-    
-    // Local imports last
-    "github.com/BumpyClock/hermes/pkg/cleaners"
-    "github.com/BumpyClock/hermes/pkg/utils/dom"
-)
-```
+Use standard import grouping and clear package structure. Prefer small, focused packages under `internal/` for non-public code.
 
 #### Function Documentation
 
 All exported functions must have documentation comments:
 
-```go
-// Parse extracts content from the specified URL using the configured options.
-// It returns a Result containing the extracted content and metadata, or an error
-// if the URL cannot be fetched or parsed.
-//
-// The opts parameter is optional; if nil, default options will be used.
-// Custom extractors take precedence over generic extraction when available.
-//
-// Example:
-//   result, err := parser.Parse("https://example.com", &ParserOptions{
-//       ContentType: "markdown",
-//   })
-func (p *Parser) Parse(url string, opts *ParserOptions) (*Result, error) {
-    // implementation
-}
-```
+Document exported functions and types with clear, complete comments and usage examples where helpful.
 
 #### Error Handling
 
@@ -236,7 +203,7 @@ func TestParser_Parse(t *testing.T) {
     tests := []struct {
         name        string
         url         string
-        options     *ParserOptions
+        // options appropriate to the API under test
         want        *Result
         wantErr     bool
         wantErrType error
@@ -387,22 +354,7 @@ go test -cover ./...
 3. **Type documentation** for all exported types
 4. **Example functions** for complex APIs
 
-```go
-// Package parser provides high-performance web content extraction capabilities.
-//
-// The parser package implements a content extraction system inspired by
-// Postlight Parser, offering both site-specific custom extractors and
-// generic fallback extraction algorithms.
-//
-// Basic usage:
-//   p := parser.New()
-//   result, err := p.Parse("https://example.com/article", nil)
-//   if err != nil {
-//       log.Fatal(err)
-//   }
-//   fmt.Println(result.Title)
-package parser
-```
+Keep package-level docs aligned with the current public API. Avoid stale examples.
 
 ### API Documentation
 
@@ -417,29 +369,7 @@ Update relevant documentation files in `docs/`:
 
 Provide working examples for new features:
 
-```go
-func ExampleParser_Parse() {
-    p := parser.New()
-    
-    result, err := p.Parse("https://example.com/article", &parser.ParserOptions{
-        ContentType: "markdown",
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    if result.IsError() {
-        log.Fatal(result.Message)
-    }
-    
-    fmt.Printf("Title: %s\n", result.Title)
-    fmt.Printf("Word Count: %d\n", result.WordCount)
-    
-    // Output:
-    // Title: Example Article
-    // Word Count: 250
-}
-```
+Provide examples that compile against the current `hermes` package when adding or changing user-facing behavior.
 
 ## Pull Request Process
 
@@ -548,11 +478,14 @@ Add any other context about the problem here.
 // Minimal code example that reproduces the issue
 package main
 
-import "github.com/BumpyClock/hermes/pkg/parser"
+import (
+    "context"
+    "github.com/BumpyClock/hermes"
+)
 
 func main() {
-    p := parser.New()
-    // Code that demonstrates the bug
+    client := hermes.New()
+    _, _ = client.Parse(context.Background(), "https://example.com")
 }
 ```
 ```

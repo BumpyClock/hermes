@@ -49,7 +49,11 @@
       "Bash(./test-go.sh:*)",
       "Bash(./test-comparison.sh:*)",
       "Bash(git checkout:*)",
-      "WebFetch(domain:www.vox.com)"
+      "WebFetch(domain:www.vox.com)",
+      "WebFetch(domain:www.polygon.com)",
+      "Bash(./bin/hermes parse:*)",
+      "Bash(./hermes.exe parse \"https://www.polygon.com/windstorm-the-legend-of-khiimori-gamescom-preview/\" -f markdown)",
+      "Bash(./hermes.exe:*)"
     ],
     "deny": [],
     "ask": [],

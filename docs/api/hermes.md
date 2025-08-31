@@ -1,503 +1,148 @@
 # Hermes API Reference
 
-The `hermes` package provides the core functionality for extracting clean, structured content from web pages.
+The `github.com/BumpyClock/hermes` package exposes a small, stable API for extracting clean, structured content from web pages.
 
 ## Table of Contents
 
-- [Types](#types)
-- [Core Functions](#core-functions)
-- [Parser Interface](#parser-interface)
-- [Hermes Parser](#hermes-parser)
-- [High Throughput Parser](#high-throughput-parser)
-- [Batch Operations](#batch-operations)
-- [Error Handling](#error-handling)
+- [Client](#client)
+- [Options](#options)
+- [Parsing](#parsing)
+- [Results](#results)
+- [Errors](#errors)
 
-## Types
-
-### Parser
+## Client
 
 ```go
-type Parser interface {
-    Parse(url string, opts *ParserOptions) (*Result, error)
-    ParseHTML(html string, url string, opts *ParserOptions) (*Result, error)
+type Client struct { /* ... */ }
+
+func New(opts ...Option) *Client
+```
+
+Creates a reusable, thread-safe client. Share a single client across goroutines.
+
+Example:
+```go
+client := hermes.New(
+    hermes.WithTimeout(30 * time.Second),
+    hermes.WithUserAgent("MyApp/1.0"),
+)
+```
+
+## Options
+
+Hermes uses functional options to configure the client:
+
+```go
+type Option func(*Client)
+
+func WithHTTPClient(httpClient *http.Client) Option
+func WithTransport(transport http.RoundTripper) Option
+func WithTimeout(timeout time.Duration) Option
+func WithUserAgent(userAgent string) Option
+func WithAllowPrivateNetworks(allow bool) Option
+func WithContentType(contentType string) Option // "html" | "markdown" | "text"
+```
+
+- WithHTTPClient: Provide a custom `*http.Client` (timeouts, proxies, pools).
+- WithTransport: Set a custom transport if not using a full client.
+- WithTimeout: Set request timeout.
+- WithUserAgent: Set the `User-Agent` header.
+- WithAllowPrivateNetworks: Allow parsing of private/localhost URLs (default: false).
+- WithContentType: Choose output format for `Result.Content` (default: `"html"`).
+
+## Parsing
+
+```go
+func (c *Client) Parse(ctx context.Context, url string) (*Result, error)
+func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, error)
+```
+
+- Parse: Fetches the URL and extracts content.
+- ParseHTML: Extracts from pre-fetched HTML with the given base URL.
+
+Examples:
+```go
+// Parse a URL
+ctx := context.Background()
+res, err := client.Parse(ctx, "https://example.com/article")
+if err != nil { /* handle */ }
+fmt.Println(res.Title)
+
+// Parse pre-fetched HTML
+html := "<html>...</html>"
+res, err := client.ParseHTML(ctx, html, "https://example.com")
+```
+
+Concurrency pattern (limit with a semaphore):
+```go
+sem := make(chan struct{}, 10)
+var wg sync.WaitGroup
+for _, u := range urls {
+    wg.Add(1)
+    sem <- struct{}{}
+    go func(url string) {
+        defer wg.Done()
+        defer func(){ <-sem }()
+        res, err := client.Parse(ctx, url)
+        _ = res; _ = err
+    }(u)
 }
+wg.Wait()
 ```
 
-Main interface for content extraction operations.
+## Results
 
-### Hermes
+See [Results](results.md) for all fields and helper methods.
 
-```go
-type Hermes struct {
-    options  ParserOptions
-    htParser *HighThroughputParser
-}
-```
+Key fields include `Title`, `Content`, `Author`, `DatePublished`, `LeadImageURL`, `Domain`, `Excerpt`, `WordCount`, `Language`, `Favicon`, `VideoURL`, and more.
 
-Main parser implementation (formerly Mercury) with built-in optimizations and pooling.
+## Errors
 
-### ParserOptions
+Hermes returns typed errors to simplify handling:
 
 ```go
-type ParserOptions struct {
-    FetchAllPages   bool              // Enable next page URL detection (merging not implemented)
-    Fallback        bool              // Use generic extractor as fallback
-    ContentType     string            // Output format: "html", "markdown", "text"
-    Headers         map[string]string // Custom HTTP headers
-    CustomExtractor *CustomExtractor  // Custom extraction rules
-    Extend          map[string]ExtractorFunc // Extended fields
-}
-```
-
-Configuration options for parser behavior.
-
-#### Fields
-
-- **FetchAllPages** (bool): Enable next page URL detection (automatic merging not yet implemented)
-- **Fallback** (bool): Fall back to generic extractor if custom extractor fails
-- **ContentType** (string): Output format - "html", "markdown", or "text"
-- **Headers** (map[string]string): Custom HTTP headers for requests
-- **CustomExtractor** (*CustomExtractor): Override site-specific extraction rules
-- **Extend** (map[string]ExtractorFunc): Add custom field extractors
-
-### Result
-
-```go
-type Result struct {
-    Title          string                 `json:"title"`
-    Content        string                 `json:"content"`
-    Author         string                 `json:"author"`
-    DatePublished  *time.Time            `json:"date_published"`
-    LeadImageURL   string                `json:"lead_image_url"`
-    Dek            string                `json:"dek"`
-    NextPageURL    string                `json:"next_page_url"`
-    URL            string                `json:"url"`
-    Domain         string                `json:"domain"`
-    Excerpt        string                `json:"excerpt"`
-    WordCount      int                   `json:"word_count"`
-    Direction      string                `json:"direction"`
-    TotalPages     int                   `json:"total_pages"`
-    RenderedPages  int                   `json:"rendered_pages"`
-    ExtractorUsed  string                `json:"extractor_used,omitempty"`
-    Extended       map[string]interface{} `json:"extended,omitempty"`
-    
-    // Site metadata fields
-    Description    string                `json:"description"`
-    Language       string                `json:"language"`
-    
-    Error          bool                   `json:"error,omitempty"`
-    Message        string                 `json:"message,omitempty"`
-}
-```
-
-Extracted article data and metadata.
-
-## Core Functions
-
-### New
-
-```go
-func New(opts ...*ParserOptions) *Hermes
-```
-
-Creates a new optimized Hermes parser instance.
-
-**Parameters:**
-- `opts` (optional): Parser configuration options
-
-**Returns:**
-- `*Hermes`: Configured parser instance
-
-**Example:**
-```go
-// Default configuration
-parser := parser.New()
-
-// Custom configuration
-opts := &parser.ParserOptions{
-    ContentType: "markdown",
-    FetchAllPages: true,
-}
-parser := parser.New(opts)
-```
-
-### NewParser
-
-```go
-func NewParser() *Hermes
-```
-
-Convenience function to create a new parser with default options.
-
-**Returns:**
-- `*Hermes`: Parser instance with defaults
-
-### DefaultParserOptions
-
-```go
-func DefaultParserOptions() *ParserOptions
-```
-
-Returns default parser configuration.
-
-**Returns:**
-- `*ParserOptions`: Default configuration
-
-**Default Values:**
-```go
-&ParserOptions{
-    FetchAllPages: true,
-    Fallback:      true,
-    ContentType:   "html",
-}
-```
-
-## Parser Interface
-
-### Parse
-
-```go
-func (h *Hermes) Parse(targetURL string, opts *ParserOptions) (*Result, error)
-```
-
-Extracts content from a URL using optimized pooling.
-
-**Parameters:**
-- `targetURL` (string): URL to extract content from
-- `opts` (*ParserOptions): Optional configuration (uses parser defaults if nil)
-
-**Returns:**
-- `*Result`: Extracted content and metadata
-- `error`: Extraction or network error
-
-**Example:**
-```go
-result, err := parser.Parse("https://example.com/article", &parser.ParserOptions{
-    ContentType: "markdown",
-    Headers: map[string]string{
-        "User-Agent": "MyBot/1.0",
-    },
-})
-if err != nil {
-    log.Fatal(err)
-}
-
-fmt.Printf("Title: %s\n", result.Title)
-fmt.Printf("Author: %s\n", result.Author)
-fmt.Printf("Content: %s\n", result.Content)
-```
-
-### ParseHTML
-
-```go
-func (h *Hermes) ParseHTML(html string, targetURL string, opts *ParserOptions) (*Result, error)
-```
-
-Extracts content from provided HTML using optimized pooling.
-
-**Parameters:**
-- `html` (string): HTML content to parse
-- `targetURL` (string): Base URL for relative links
-- `opts` (*ParserOptions): Optional configuration
-
-**Returns:**
-- `*Result`: Extracted content and metadata
-- `error`: Parsing error
-
-**Example:**
-```go
-html := `<html><body><h1>Title</h1><p>Content...</p></body></html>`
-result, err := parser.ParseHTML(html, "https://example.com", nil)
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-## Hermes Parser
-
-The Hermes parser includes advanced features for high-performance scenarios.
-
-### Performance Methods
-
-#### ReturnResult
-
-```go
-func (h *Hermes) ReturnResult(result *Result)
-```
-
-Returns a result to the object pool for memory reuse.
-
-**Parameters:**
-- `result` (*Result): Result object to return to pool
-
-**Usage:**
-```go
-result, err := parser.Parse("https://example.com", nil)
-if err != nil {
-    log.Fatal(err)
-}
-
-// Use the result...
-fmt.Println(result.Title)
-
-// Return to pool when done
-parser.ReturnResult(result)
-```
-
-#### GetStats
-
-```go
-func (h *Hermes) GetStats() *PoolStats
-```
-
-Returns performance statistics for the parser instance.
-
-**Returns:**
-- `*PoolStats`: Performance metrics
-
-`PoolStats` fields:
-- TotalRequests (int64)
-- PoolHits (int64)
-- PoolMisses (int64)
-- AverageProcessingTime (float64, ms)
-- LastReset (time.Time)
-
-**Example:**
-```go
-stats := parser.GetStats()
-fmt.Printf("Total requests: %d\n", stats.TotalRequests)
-fmt.Printf("Avg processing time: %.2fms\n", stats.AverageProcessingTime)
-```
-
-#### ResetStats
-
-```go
-func (h *Hermes) ResetStats()
-```
-
-Resets performance statistics.
-
-## High Throughput Parser
-
-For high-concurrency scenarios, use the `HighThroughputParser`:
-
-```go
-type HighThroughputParser struct {
-    // internal fields for pooling and core parsing
-}
-```
-
-### Methods
-
-#### NewHighThroughputParser
-
-```go
-func NewHighThroughputParser(opts *ParserOptions) *HighThroughputParser
-```
-
-Creates an optimized parser for high-throughput scenarios.
-
-#### BatchParse
-
-```go
-func (htp *HighThroughputParser) ParseBatch(urls []string, opts *ParserOptions) ([]*Result, []error)
-```
-
-Parses multiple URLs in parallel.
-
-**Example:**
-```go
-htParser := parser.NewHighThroughputParser(nil)
-urls := []string{
-    "https://example.com/article1",
-    "https://example.com/article2",
-    "https://example.com/article3",
-}
-
-results, errs := htParser.ParseBatch(urls, nil)
-_ = errs
-for i, result := range results {
-    if result != nil {
-        fmt.Printf("Article %d: %s\n", i+1, result.Title)
-    }
-}
-```
-
-## Batch Operations
-
-### BatchAPI
-
-Hermes provides a BatchAPI for high-throughput processing.
-
-```go
-type BatchRequest struct {
-    ID      string
-    URL     string
-    HTML    string
-    Options *ParserOptions
-    Context context.Context
-    Meta    map[string]interface{}
-}
-
-type BatchResponse struct {
-    ID         string
-    Result     *Result
-    Error      error
-    Duration   time.Duration
-    WorkerID   int
-    ProcessedAt time.Time
-}
-
-type BatchAPIConfig struct {
-    MaxWorkers        int
-    QueueSize         int
-    ProcessingTimeout time.Duration
-    UseObjectPooling  bool
-    ParserOptions     *ParserOptions
-    EnableMetrics     bool
-    RetryCount        int
-    RetryDelay        time.Duration
-}
-
-func NewBatchAPI(config *BatchAPIConfig) *BatchAPI
-func (api *BatchAPI) Start() error
-func (api *BatchAPI) Stop() error
-func (api *BatchAPI) Submit(req *BatchRequest) error
-func (api *BatchAPI) SubmitBatch(reqs []*BatchRequest) []error
-func (api *BatchAPI) GetResponse() *BatchResponse
-func (api *BatchAPI) ProcessBatch(reqs []*BatchRequest) ([]*BatchResponse, error)
-```
-
-**Example:**
-```go
-api := parser.NewBatchAPI(nil)
-defer api.Stop()
-_ = api.Start()
-
-urls := []string{"https://example.com/1", "https://example.com/2"}
-reqs := make([]*parser.BatchRequest, len(urls))
-for i, u := range urls {
-    reqs[i] = &parser.BatchRequest{URL: u}
-}
-responses, err := api.ProcessBatch(reqs)
-if err != nil { log.Fatal(err) }
-for _, r := range responses {
-    if r.Error == nil { fmt.Println(r.Result.Title) }
-}
-```
-
-## Error Handling
-
-### Error Types
-
-The parser returns standard Go errors with additional context:
-
-```go
-// URL validation error
-if err := security.ValidateURL(url); err != nil {
-    return nil, fmt.Errorf("invalid URL: %w", err)
-}
-
-// Network/HTTP errors
-if err := r.Create(targetURL, "", parsedURL, opts.Headers); err != nil {
-    return nil, fmt.Errorf("failed to fetch content: %w", err)
-}
-
-// Extraction errors
-if result.IsError() {
-    return nil, fmt.Errorf("extraction failed: %s", result.Message)
-}
-```
-
-### Result Error Checking
-
-```go
-func (r *Result) IsError() bool {
-    return r.Error
-}
-```
-
-Check if a result contains an error state.
-
-**Example:**
-```go
-result, err := parser.Parse("https://example.com", nil)
-if err != nil {
-    log.Fatal("Network error:", err)
-}
-
-if result.IsError() {
-    log.Fatal("Extraction error:", result.Message)
-}
-
-// Safe to use result
-fmt.Println(result.Title)
-```
-
-## Usage Patterns
-
-### Basic Usage
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    "github.com/BumpyClock/hermes/pkg/parser"
+type ErrorCode int
+
+const (
+    ErrInvalidURL ErrorCode = iota
+    ErrFetch
+    ErrTimeout
+    ErrSSRF
+    ErrExtract
+    ErrContext
 )
 
-func main() {
-    p := parser.New()
-    
-    result, err := p.Parse("https://example.com/article", nil)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    if result.IsError() {
-        log.Fatal(result.Message)
-    }
-    
-    fmt.Printf("Title: %s\n", result.Title)
-    fmt.Printf("Author: %s\n", result.Author)
-    fmt.Printf("Content: %s\n", result.Content)
+type ParseError struct {
+    Code ErrorCode
+    URL  string
+    Op   string // "Parse" or "ParseHTML"
+    Err  error  // underlying error (optional)
 }
 ```
 
-### Advanced Configuration
-
+Usage:
 ```go
-opts := &parser.ParserOptions{
-    ContentType: "markdown",
-    FetchAllPages: true,
-    Headers: map[string]string{
-        "User-Agent": "MyBot/1.0",
-        "Accept": "text/html,application/xhtml+xml",
-    },
-}
-
-result, err := parser.Parse("https://example.com", opts)
-```
-
-### High-Performance Batch Processing
-
-```go
-htParser := parser.NewHighThroughputParser(&parser.ParserOptions{
-    ContentType: "markdown",
-})
-
-urls := []string{
-    "https://example.com/1",
-    "https://example.com/2",
-    "https://example.com/3",
-}
-
-results, err := htParser.BatchParse(urls, nil)
-for _, result := range results {
-    if !result.IsError() {
-        fmt.Printf("Title: %s\n", result.Title)
+res, err := client.Parse(ctx, url)
+if err != nil {
+    var perr *hermes.ParseError
+    if errors.As(err, &perr) {
+        switch perr.Code {
+        case hermes.ErrTimeout:
+            // handle timeout
+        case hermes.ErrSSRF:
+            // handle SSRF protection
+        }
     }
-    htParser.ReturnResult(result) // Return to pool
 }
 ```
+
+## Relationships
+
+```mermaid
+flowchart LR
+    A[Client] -->|WithTimeout/WithUserAgent/...| B[Configured Client]
+    B --> C{Parse or ParseHTML}
+    C --> D[Result]
+    C --> E[ParseError]
+```
+

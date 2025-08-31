@@ -1,668 +1,83 @@
 # Configuration API Reference
 
-This document covers configuration options available in Hermes, including parser options, extractor settings, and advanced configuration patterns.
+This document covers available configuration for the public Hermes client.
 
-Note: Environment-based configuration helpers shown in examples are illustrative. The core library exposes programmatic options via `ParserOptions`; it does not currently include built-in functions to load configuration from environment variables.
+Hermes is configured via functional options passed to `hermes.New(...)`. There is no public `ParserOptions` type, no environment-variable loader, and no YAML/JSON config reader in the library.
 
 ## Table of Contents
 
-- [Parser Configuration](#parser-configuration)
-- [Extractor Configuration](#extractor-configuration)
-- [Content Type Configuration](#content-type-configuration)
-- [HTTP Configuration](#http-configuration)
-- [Performance Configuration](#performance-configuration)
-- [Security Configuration](#security-configuration)
-- [Environment Variables](#environment-variables)
+- [Client Options](#client-options)
+- [Content Type](#content-type)
+- [HTTP/TLS](#httptls)
+- [Security](#security)
+- [Examples](#examples)
 
-## Parser Configuration
-
-### ParserOptions
-
-The main configuration structure for parser behavior.
+## Client Options
 
 ```go
-type ParserOptions struct {
-    FetchAllPages   bool              // Fetch and merge multi-page articles
-    Fallback        bool              // Use generic extractor as fallback
-    ContentType     string            // Output format: "html", "markdown", "text"
-    Headers         map[string]string // Custom HTTP headers
-    CustomExtractor *CustomExtractor  // Custom extraction rules
-    Extend          map[string]ExtractorFunc // Extended fields
-}
+func WithHTTPClient(httpClient *http.Client) Option
+func WithTransport(transport http.RoundTripper) Option
+func WithTimeout(timeout time.Duration) Option
+func WithUserAgent(userAgent string) Option
+func WithAllowPrivateNetworks(allow bool) Option
+func WithContentType(contentType string) Option // "html" | "markdown" | "text"
 ```
 
-#### Default Configuration
+- WithHTTPClient: Provide a fully configured `*http.Client` (proxies, TLS, pools, timeouts).
+- WithTransport: Provide a custom `http.RoundTripper` if you are not supplying a full client.
+- WithTimeout: Set request timeout (also applied to the internal client if created by Hermes).
+- WithUserAgent: Override the default `User-Agent` string.
+- WithAllowPrivateNetworks: Permit private network/localhost URLs (defaults to false for SSRF protection).
+- WithContentType: Select output format for the `Result.Content` field.
 
+## Content Type
+
+`WithContentType` controls the format of the extracted `Result.Content`:
+
+- `"html"` (default): Clean, sanitized HTML.
+- `"markdown"`: Markdown conversion of the content.
+- `"text"`: Plain text.
+
+This option affects only the content body. All metadata fields are structured the same regardless of content type.
+
+## HTTP/TLS
+
+- Prefer `WithHTTPClient` to supply your own client if you need proxies, retry logic, or custom TLS settings.
+- Use `WithTransport` to swap only the transport on the internally created client.
+- `WithUserAgent` sets the `User-Agent` header; other headers are not currently configurable at the client level.
+
+Note: The CLI accepts a `--headers` flag for future extensibility, but these headers are not currently applied by the client. See [CLI Usage](../guides/cli-usage.md) for details.
+
+## Security
+
+- `WithAllowPrivateNetworks(false)` (default) blocks private IP ranges and localhost to mitigate SSRF.
+- Set `WithAllowPrivateNetworks(true)` only in trusted environments when you need to parse internal URLs.
+
+## Examples
+
+Basic configuration:
 ```go
-func DefaultParserOptions() *ParserOptions {
-    return &ParserOptions{
-        FetchAllPages: true,
-        Fallback:      true,
-        ContentType:   "html",
-        Headers:       nil,
-        CustomExtractor: nil,
-        Extend:        nil,
-    }
-}
+client := hermes.New(
+    hermes.WithTimeout(20*time.Second),
+    hermes.WithUserAgent("MyApp/2.0"),
+    hermes.WithContentType("markdown"),
+)
 ```
 
-#### Configuration Examples
-
-**Basic Configuration:**
-
+Custom HTTP client with proxy and TLS:
 ```go
-opts := &parser.ParserOptions{
-    ContentType: "markdown",
-    FetchAllPages: false,
-}
+tr := &http.Transport{ /* custom TLS, proxy, pools */ }
+httpClient := &http.Client{ Transport: tr, Timeout: 45*time.Second }
+
+client := hermes.New(
+    hermes.WithHTTPClient(httpClient),
+)
 ```
 
-**Advanced Configuration:**
-
+Allow private networks (in a trusted, internal tool):
 ```go
-opts := &parser.ParserOptions{
-    FetchAllPages: true,
-    Fallback: true,
-    ContentType: "html",
-    Headers: map[string]string{
-        "User-Agent": "Hermes/1.0 (+https://example.com/bot)",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate",
-        "DNT": "1",
-        "Connection": "keep-alive",
-        "Pragma": "no-cache",
-        "Cache-Control": "no-cache",
-    },
-    Extend: map[string]parser.ExtractorFunc{
-        "reading_time": func(doc *goquery.Document, url string) (interface{}, error) {
-            text := doc.Find("article").Text()
-            words := len(strings.Fields(text))
-            readingTime := words / 200 // Assume 200 WPM
-            return fmt.Sprintf("%d min read", readingTime), nil
-        },
-    },
-}
+client := hermes.New(
+    hermes.WithAllowPrivateNetworks(true),
+)
 ```
 
-### Field Options
-
-#### FetchAllPages
-
-Controls automatic pagination handling.
-
-```go
-// Enable multi-page detection (default)
-FetchAllPages: true
-
-// Disable multi-page detection for faster single-page extraction
-FetchAllPages: false
-```
-
-**When enabled:**
-
-- Automatically detects "next page" links
-- Populates NextPageURL field if pagination detected
-- **Note: Automatic fetching and merging of subsequent pages is not yet implemented**
-
-**When disabled:**
-
-- Only processes the initial page
-- Faster extraction for single-page articles
-- NextPageURL field will be empty even if pagination exists
-
-**Current Limitations:**
-
-- Multi-page content fetching and merging is not functional
-- Only next page URL detection is implemented
-- See TODO items in codebase for planned implementation
-
-#### Fallback
-
-Controls fallback to generic extractor when custom extractors fail.
-
-```go
-// Enable fallback (default) - recommended for production
-Fallback: true
-
-// Disable fallback - custom extractors only
-Fallback: false
-```
-
-**When enabled:**
-
-- Uses custom extractor if available
-- Falls back to generic algorithm if custom fails
-- Ensures content extraction even for unsupported sites
-
-**When disabled:**
-
-- Only uses custom extractors
-- Returns empty result if no custom extractor available
-- Useful for testing custom extractors
-
-#### ContentType
-
-Specifies the output format for extracted content.
-
-```go
-// Available options
-ContentType: "html"     // Clean HTML (default)
-ContentType: "markdown" // Markdown format
-ContentType: "text"     // Plain text
-```
-
-**Format Examples:**
-
-**HTML Output:**
-
-```html
-<h2>Section Title</h2>
-<p>Article content with <strong>emphasis</strong> and <a href="...">links</a>.</p>
-<ul>
-  <li>List item 1</li>
-  <li>List item 2</li>
-</ul>
-```
-
-**Markdown Output:**
-
-```markdown
-## Section Title
-
-Article content with **emphasis** and [links](...).
-
-- List item 1
-- List item 2
-```
-
-**Text Output:**
-
-```
-Section Title
-
-Article content with emphasis and links.
-
-- List item 1
-- List item 2
-```
-
-## Extractor Configuration
-
-### ExtractorOptions
-
-Configuration for individual extractor operations.
-
-```go
-type ExtractorOptions struct {
-    URL         string
-    HTML        string
-    MetaCache   map[string]string
-    Fallback    bool
-    ContentType string
-}
-```
-
-#### Default Extractor Options
-
-```go
-func DefaultExtractorOptions() *ExtractorOptions {
-    return &ExtractorOptions{
-        Fallback:    true,
-        ContentType: "html",
-        MetaCache:   make(map[string]string),
-    }
-}
-```
-
-### Generic Extractor Configuration
-
-```go
-type ExtractorOptions struct {
-    StripUnlikelyCandidates bool // Remove unlikely content elements
-    WeightNodes             bool // Apply content scoring algorithm  
-    CleanConditionally      bool // Apply conditional cleaning rules
-}
-```
-
-#### Extraction Strategy Configuration
-
-**Strict Extraction (High Quality):**
-
-```go
-opts := ExtractorOptions{
-    StripUnlikelyCandidates: true,
-    WeightNodes:             true,
-    CleanConditionally:      true,
-}
-```
-
-**Permissive Extraction (More Content):**
-
-```go
-opts := ExtractorOptions{
-    StripUnlikelyCandidates: false,
-    WeightNodes:             false,
-    CleanConditionally:      false,
-}
-```
-
-**Balanced Extraction (Recommended):**
-
-```go
-opts := ExtractorOptions{
-    StripUnlikelyCandidates: true,
-    WeightNodes:             true,
-    CleanConditionally:      false,
-}
-```
-
-## Content Type Configuration
-
-### HTML Configuration
-
-```go
-ContentType: "html"
-```
-
-**Features:**
-
-- Preserves HTML structure and formatting
-- Includes links, images, lists, and emphasis
-- Applies content cleaning and normalization
-- Best for web display or further HTML processing
-
-**Cleaning Options:**
-
-```go
-// Control HTML cleaning behavior
-defaultCleaner := true  // Apply standard HTML cleaning
-cleanConditionally := true  // Apply conditional cleaning rules
-```
-
-### Markdown Configuration
-
-```go
-ContentType: "markdown"
-```
-
-**Features:**
-
-- Converts HTML to clean Markdown
-- Preserves formatting and structure
-- Ideal for documentation and text processing
-- Includes metadata header
-
-**Example Output:**
-
-```markdown
-# Article Title
-
-**Author:** John Doe  
-**Date:** 2024-01-15T10:30:00Z  
-**URL:** https://example.com/article
-
-## Section Heading
-
-Article content with **bold text** and [links](https://example.com).
-
-- List item one
-- List item two
-
-> Blockquote content
-```
-
-### Text Configuration
-
-```go
-ContentType: "text"
-```
-
-**Features:**
-
-- Plain text output with minimal formatting
-- Removes all HTML tags and structure
-- Preserves line breaks and basic structure
-- Smallest output size
-
-### JSON Output
-
-Hermes always returns a structured `Result` object that can be serialized to JSON for programmatic use:
-
-```go
-res, err := parser.Parse(url, &parser.ParserOptions{ContentType: "html"})
-if err != nil {
-    log.Fatal(err)
-}
-
-data, _ := json.MarshalIndent(res, "", "  ")
-fmt.Println(string(data))
-```
-
-This is separate from `ContentType`, which only controls the format of the `Content` field. See the [Results API](results.md#json-serialization) for more details.
-
-## HTTP Configuration
-
-### Custom Headers
-
-Configure HTTP headers for web requests.
-
-```go
-Headers: map[string]string{
-    "User-Agent": "Hermes/1.0 (+https://example.com/bot)",
-    "Accept": "text/html,application/xhtml+xml",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Referer": "https://google.com/",
-    "Cookie": "session=abc123; preferences=xyz789",
-}
-```
-
-#### Common Header Patterns
-
-**Bot Identification:**
-
-```go
-Headers: map[string]string{
-    "User-Agent": "Hermes Bot/1.0 (+https://yoursite.com/bot-info)",
-    "From": "bot@yoursite.com",
-}
-```
-
-**Browser Simulation:**
-
-```go
-Headers: map[string]string{
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate",
-    "DNT": "1",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-}
-```
-
-**API Access:**
-
-```go
-Headers: map[string]string{
-    "Authorization": "Bearer " + token,
-    "X-API-Key": apiKey,
-    "Content-Type": "application/json",
-}
-```
-
-### Request Configuration
-
-```go
-type RequestConfig struct {
-    Timeout       time.Duration // Request timeout
-    MaxRedirects  int          // Maximum redirects to follow
-    RetryAttempts int          // Number of retry attempts
-    RetryDelay    time.Duration // Delay between retries
-}
-```
-
-**Default Configuration:**
-
-```go
-RequestConfig{
-    Timeout:       30 * time.Second,
-    MaxRedirects:  10,
-    RetryAttempts: 3,
-    RetryDelay:    1 * time.Second,
-}
-```
-
-## Performance Configuration
-
-### High Throughput Configuration
-
-```go
-type HighThroughputConfig struct {
-    MaxConcurrency    int           // Maximum concurrent operations
-    PoolSize         int           // Object pool size
-    WorkerCount      int           // Number of worker goroutines
-    QueueSize        int           // Worker queue size
-    EnableProfiling  bool          // Enable performance profiling
-}
-```
-
-**Production Configuration:**
-
-```go
-config := HighThroughputConfig{
-    MaxConcurrency:   100,
-    PoolSize:        1000,
-    WorkerCount:     runtime.NumCPU() * 2,
-    QueueSize:       10000,
-    EnableProfiling: false,
-}
-```
-
-**Development Configuration:**
-
-```go
-config := HighThroughputConfig{
-    MaxConcurrency:   10,
-    PoolSize:        100,
-    WorkerCount:     4,
-    QueueSize:       1000,
-    EnableProfiling: true,
-}
-```
-
-### Memory Management
-
-```go
-type MemoryConfig struct {
-    EnablePooling     bool // Enable object pooling
-    PoolMaxSize      int  // Maximum pool size
-    GCPercent        int  // Garbage collection percentage
-    MaxMemoryUsage   int64 // Maximum memory usage in bytes
-}
-```
-
-### Batch Processing Configuration
-
-```go
-type BatchOptions struct {
-    Concurrency     int           // Number of concurrent requests
-    Timeout         time.Duration // Timeout per request
-    RetryAttempts   int          // Retry attempts for failed requests
-    ProgressCallback func(completed, total int) // Progress callback
-}
-```
-
-**Example:**
-
-```go
-batchOpts := &parser.BatchOptions{
-    Concurrency: 10,
-    Timeout: 30 * time.Second,
-    RetryAttempts: 2,
-    ProgressCallback: func(completed, total int) {
-        fmt.Printf("Progress: %d/%d (%.1f%%)\n", 
-            completed, total, float64(completed)/float64(total)*100)
-    },
-}
-```
-
-## Security Configuration
-
-### URL Validation
-
-```go
-type SecurityConfig struct {
-    AllowedProtocols []string // Allowed URL protocols
-    AllowedDomains   []string // Allowed domains (whitelist)
-    BlockedDomains   []string // Blocked domains (blacklist)
-    MaxURLLength     int      // Maximum URL length
-    ValidateSSL      bool     // Validate SSL certificates
-}
-```
-
-**Secure Configuration:**
-
-```go
-config := SecurityConfig{
-    AllowedProtocols: []string{"https"},
-    AllowedDomains:   []string{"example.com", "*.example.com"},
-    BlockedDomains:   []string{"malicious.com", "spam.com"},
-    MaxURLLength:     2048,
-    ValidateSSL:      true,
-}
-```
-
-### Content Sanitization
-
-```go
-type SanitizationConfig struct {
-    RemoveScripts    bool     // Remove script tags
-    RemoveStyles     bool     // Remove style tags
-    AllowedTags      []string // Allowed HTML tags
-    AllowedAttrs     []string // Allowed HTML attributes
-    MaxContentLength int      // Maximum content length
-}
-```
-
-## Environment Variables
-
-Hermes supports configuration via environment variables:
-
-### Core Settings
-
-```bash
-# Parser settings
-HERMES_CONTENT_TYPE=markdown
-HERMES_FETCH_ALL_PAGES=true
-HERMES_FALLBACK=true
-
-# HTTP settings
-HERMES_TIMEOUT=30s
-HERMES_MAX_REDIRECTS=10
-HERMES_USER_AGENT="Hermes/1.0"
-
-# Performance settings
-HERMES_MAX_CONCURRENCY=100
-HERMES_POOL_SIZE=1000
-HERMES_WORKER_COUNT=8
-
-# Security settings
-HERMES_VALIDATE_SSL=true
-HERMES_MAX_URL_LENGTH=2048
-```
-
-### Loading Environment Configuration
-
-```go
-func LoadConfigFromEnv() *ParserOptions {
-    opts := DefaultParserOptions()
-    
-    if contentType := os.Getenv("HERMES_CONTENT_TYPE"); contentType != "" {
-        opts.ContentType = contentType
-    }
-    
-    if fetchAll := os.Getenv("HERMES_FETCH_ALL_PAGES"); fetchAll == "false" {
-        opts.FetchAllPages = false
-    }
-    
-    if fallback := os.Getenv("HERMES_FALLBACK"); fallback == "false" {
-        opts.Fallback = false
-    }
-    
-    if userAgent := os.Getenv("HERMES_USER_AGENT"); userAgent != "" {
-        if opts.Headers == nil {
-            opts.Headers = make(map[string]string)
-        }
-        opts.Headers["User-Agent"] = userAgent
-    }
-    
-    return opts
-}
-```
-
-## Configuration Validation
-
-### Validation Functions
-
-```go
-func ValidateParserOptions(opts *ParserOptions) error {
-    if opts == nil {
-        return errors.New("parser options cannot be nil")
-    }
-    
-    // Validate content type
-    validTypes := []string{"html", "markdown", "text"}
-    if !contains(validTypes, opts.ContentType) {
-        return fmt.Errorf("invalid content type: %s", opts.ContentType)
-    }
-    
-    // Validate headers
-    if opts.Headers != nil {
-        for key, value := range opts.Headers {
-            if key == "" || value == "" {
-                return errors.New("header key and value cannot be empty")
-            }
-        }
-    }
-    
-    return nil
-}
-```
-
-### Configuration Examples
-
-**Complete Production Configuration:**
-
-```go
-config := &parser.ParserOptions{
-    FetchAllPages: true,
-    Fallback: true,
-    ContentType: "html",
-    Headers: map[string]string{
-        "User-Agent": "Hermes/1.0 (+https://yoursite.com/bot)",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate",
-        "DNT": "1",
-        "Connection": "keep-alive",
-    },
-    Extend: map[string]parser.ExtractorFunc{
-        "social_shares": extractSocialShares,
-        "reading_time": calculateReadingTime,
-        "word_count": countWords,
-    },
-}
-
-// Validate configuration
-if err := ValidateParserOptions(config); err != nil {
-    log.Fatal("Invalid configuration:", err)
-}
-
-// Create parser with configuration
-parser := parser.New(config)
-```
-
-**Minimal Configuration:**
-
-```go
-config := &parser.ParserOptions{
-    ContentType: "markdown",
-}
-
-parser := parser.New(config)
-```
-
-**Testing Configuration:**
-
-```go
-config := &parser.ParserOptions{
-    FetchAllPages: false,
-    Fallback: false,
-    ContentType: "html",
-    Headers: map[string]string{
-        "User-Agent": "Hermes-Test/1.0",
-    },
-}
-```

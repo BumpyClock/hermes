@@ -1,43 +1,39 @@
 # Hermes Documentation
 
-Welcome to the comprehensive documentation for Hermes, a high-performance Go web content extraction library.
+Welcome to the Hermes documentation. Hermes is a high-performance Go library and CLI for extracting clean, structured content from web pages.
 
-## 📖 Table of Contents
+## Table of Contents
 
 ### Getting Started
+
 - [Installation & Setup](guides/installation.md) - Quick start guide and installation instructions
-- [Basic Usage](guides/basic-usage.md) - Your first steps with Hermes
+- [Basic Usage](guides/basic-usage.md) - First steps with the Go API and CLI
 - [CLI Usage](guides/cli-usage.md) - Command line interface documentation
 
 ### API Reference
-- [Hermes API](api/hermes.md) - Core Hermes interface and methods
-- [Extractors](api/extractors.md) - Custom and generic extractors
-- [Configuration](api/configuration.md) - Parser options and settings
-- [Results](api/results.md) - Result structures and formatting
+
+- [Hermes API](api/hermes.md) - Public Go API (client, options, errors)
+- [Configuration](api/configuration.md) - Client options and behaviors
+- [Results](api/results.md) - Result fields and helpers
 
 ### Architecture & Design
+
 - [Architecture Overview](architecture/overview.md) - System design and components
 
-### Guides & Tutorials
-- [CLI Usage](guides/cli-usage.md) - Detailed CLI commands and flags
-- [Basic Usage](guides/basic-usage.md) - Common patterns and examples
-
-### Development
-- See repository README for development setup, testing, and build commands
-
 ### Examples
-- [Basic Examples](examples/basic.md) - Practical usage examples
 
-## 🚀 Quick Start
+- [Basic Examples](examples/basic.md) - Practical usage examples with the Go client
+
+## Quick Start
 
 ```bash
-# Install Hermes
+# Install the CLI
 go install github.com/BumpyClock/hermes/cmd/hermes@latest
 
-# Parse a URL
+# Parse a URL via CLI
 hermes parse https://example.com/article
 
-# Use as library
+# Use as a library in Go modules
 go get github.com/BumpyClock/hermes
 ```
 
@@ -45,14 +41,22 @@ go get github.com/BumpyClock/hermes
 package main
 
 import (
+    "context"
     "fmt"
     "log"
-    "github.com/BumpyClock/hermes/pkg/parser"
+    "time"
+
+    "github.com/BumpyClock/hermes"
 )
 
 func main() {
-    p := parser.New()
-    result, err := p.Parse("https://example.com/article", nil)
+    client := hermes.New(
+        hermes.WithTimeout(30 * time.Second),
+        hermes.WithUserAgent("MyApp/1.0"),
+    )
+
+    ctx := context.Background()
+    result, err := client.Parse(ctx, "https://example.com/article")
     if err != nil {
         log.Fatal(err)
     }
@@ -61,33 +65,21 @@ func main() {
 }
 ```
 
-## 🏗️ Architecture at a Glance
+## Architecture at a Glance
 
-Hermes is built with a modular architecture:
+Hermes uses a modular internal architecture with a small public surface (client, options, results). See [Architecture Overview](architecture/overview.md) for details on extractors, cleaners, and the resource layer.
 
-- **Parser**: Main orchestrator for content extraction
-- **Extractors**: Site-specific and generic content extractors  
-- **Cleaners**: Content cleaning and normalization
-- **Resource Layer**: HTTP fetching and DOM preparation
-- **Utils**: DOM manipulation and text processing utilities
-
-## 📊 Performance
-
-- **2-3x faster** than JavaScript implementations
-- **50% less memory** usage
-- **150+ custom extractors** for major publications
-- **Multiple output formats** (HTML, Markdown, JSON, Text)
-
-## 📝 Documentation Standards
+## Documentation Standards
 
 All documentation follows these principles:
+
 - **Practical examples** for every feature
 - **Complete API coverage** with parameters and return values
 - **Architecture explanations** with diagrams where helpful
 - **Performance considerations** for production usage
 - **Migration guides** from other parsers
 
-## 🤝 Contributing to Documentation
+## Contributing to Documentation
 
 We welcome contributions to improve our documentation:
 

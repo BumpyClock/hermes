@@ -177,6 +177,7 @@ func main() {
 If you're upgrading from the old internal API, here are the key changes:
 
 ### Old API (v0.x)
+
 ```go
 import "github.com/BumpyClock/hermes/pkg/parser"
 
@@ -185,6 +186,7 @@ result, err := p.Parse(url, &parser.ParserOptions{...})
 ```
 
 ### New API (v1.0+)
+
 ```go
 import "github.com/BumpyClock/hermes"
 
