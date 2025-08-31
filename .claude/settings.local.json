@@ -48,7 +48,8 @@
       "Bash(./parser-go/bin/hermes parse:*)",
       "Bash(./test-go.sh:*)",
       "Bash(./test-comparison.sh:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "WebFetch(domain:www.vox.com)"
     ],
     "deny": [],
     "ask": [],
