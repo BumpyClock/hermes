@@ -260,7 +260,7 @@ func (s *Server) parseURL(w http.ResponseWriter, r *http.Request, targetURL, for
 		var code, message string
 		
 		if parseErr, ok := err.(*hermes.ParseError); ok {
-			code = string(parseErr.Code)
+			code = parseErr.Code.String()
 			message = parseErr.Err.Error()
 		} else {
 			code = "parse_error"

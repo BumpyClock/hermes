@@ -1,6 +1,7 @@
 package resource_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,7 @@ func TestResource_InternationalContent_UTF8(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
 	
@@ -75,7 +76,7 @@ func TestResource_InternationalContent_ISO88591(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
 	
@@ -105,7 +106,7 @@ func TestResource_InternationalContent_Windows1251(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
 	
@@ -158,7 +159,7 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 </body>
 </html>`
 
-			doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+			doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 			
 			if tt.expectError {
 				assert.Error(t, err)
@@ -191,7 +192,7 @@ func TestResource_LazyImages_International(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	
 	// Check that lazy images with international URLs were processed
@@ -223,7 +224,7 @@ func TestResource_MetaTags_International(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	
 	// Check that international content in meta tags is preserved
@@ -266,7 +267,7 @@ func BenchmarkResource_InternationalContent(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := r.Create("http://example.com", htmlContent, nil, nil)
+		_, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 		if err != nil {
 			b.Fatal(err)
 		}

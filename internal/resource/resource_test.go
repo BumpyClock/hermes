@@ -1,6 +1,7 @@
 package resource_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -27,7 +28,7 @@ func TestResource_Create_WithPreparedHTML(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
 	
@@ -53,7 +54,7 @@ func TestResource_Create_WithMetaNormalization(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	
 	// Check that property was converted to name
@@ -78,7 +79,7 @@ func TestResource_Create_WithLazyImages(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	
 	// Check that lazy images were converted
@@ -102,7 +103,7 @@ func TestResource_Create_CleansTags(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create("http://example.com", htmlContent, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	
 	// Check that unwanted tags were removed
@@ -121,7 +122,7 @@ func TestFetchResource_ValidatesResponse(t *testing.T) {
 	defer server.Close()
 
 	parsedURL, _ := url.Parse(server.URL)
-	result, err := resource.FetchResource(server.URL, parsedURL, nil)
+	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, nil)
 	
 	require.NoError(t, err)
 	assert.True(t, result.IsError())
@@ -139,7 +140,7 @@ func TestFetchResource_HandlesSuccess(t *testing.T) {
 	defer server.Close()
 
 	parsedURL, _ := url.Parse(server.URL)
-	result, err := resource.FetchResource(server.URL, parsedURL, nil)
+	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, nil)
 	
 	require.NoError(t, err)
 	assert.False(t, result.IsError())
@@ -164,7 +165,7 @@ func TestFetchResource_WithCustomHeaders(t *testing.T) {
 	}
 
 	parsedURL, _ := url.Parse(server.URL)
-	result, err := resource.FetchResource(server.URL, parsedURL, headers)
+	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, headers)
 	
 	require.NoError(t, err)
 	assert.False(t, result.IsError())
@@ -286,7 +287,7 @@ func TestEncodingDetection(t *testing.T) {
 </html>`
 
 	r := resource.NewResource()
-	doc, err := r.Create("http://example.com", utf8Content, nil, nil)
+	doc, err := r.Create(context.Background(), "http://example.com", utf8Content, nil, nil)
 	require.NoError(t, err)
 	
 	title := doc.Find("title").Text()
@@ -354,7 +355,7 @@ func BenchmarkResource_Create(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := r.Create("http://example.com", htmlContent, nil, nil)
+		_, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 		if err != nil {
 			b.Fatal(err)
 		}

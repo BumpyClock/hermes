@@ -1,6 +1,7 @@
 package resource_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -35,7 +36,7 @@ func TestHTTPClientGet(t *testing.T) {
 	defer server.Close()
 
 	client := resource.NewHTTPClient(nil)
-	resp, err := client.Get(server.URL)
+	resp, err := client.Get(context.Background(), server.URL)
 
 	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
@@ -60,7 +61,7 @@ func TestHTTPClientCustomHeaders(t *testing.T) {
 	}
 	
 	client := resource.NewHTTPClient(headers)
-	resp, err := client.Get(server.URL)
+	resp, err := client.Get(context.Background(), server.URL)
 
 	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
@@ -81,7 +82,7 @@ func TestHTTPClientRetry(t *testing.T) {
 	defer server.Close()
 
 	client := resource.NewHTTPClient(nil)
-	resp, err := client.GetWithRetry(server.URL, 3)
+	resp, err := client.GetWithRetry(context.Background(), server.URL, 3)
 
 	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
@@ -99,7 +100,7 @@ func TestHTTPClientTimeout(t *testing.T) {
 	// This test would require modifying the client timeout
 	// For now, just test that the client works normally
 	client := resource.NewHTTPClient(nil)
-	resp, err := client.Get(server.URL)
+	resp, err := client.Get(context.Background(), server.URL)
 
 	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
@@ -112,7 +113,7 @@ func TestHTTPClientError(t *testing.T) {
 	defer server.Close()
 
 	client := resource.NewHTTPClient(nil)
-	_, err := client.Get(server.URL)
+	_, err := client.Get(context.Background(), server.URL)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "404")
