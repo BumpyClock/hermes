@@ -12,7 +12,7 @@ import (
 var WwwThevergeComExtractor = &CustomExtractor{
 	Domain: "www.theverge.com",
 	
-	SupportedDomains: []string{"www.polygon.com"},
+	// Removed polygon.com support - dedicated extractor exists
 	
 	Title: &FieldExtractor{
 		Selectors: []interface{}{"h1"},

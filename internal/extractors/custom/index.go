@@ -188,10 +188,11 @@ func GetAllCustomExtractors() map[string]*CustomExtractor {
 		"MSNExtractor":                  GetWwwMsnComExtractor(),
 		"SlateExtractor":                GetWwwSlateComExtractor(),
 		
-		// Tech Sites Extractors - TECH PHASE COMPLETE ✅ (20 extractors)
+		// Tech Sites Extractors - TECH PHASE COMPLETE ✅ (21 extractors)
 		"WwwThevergeComExtractor":       GetWwwThevergeComExtractor(),
 		"WwwWiredComExtractor":          GetWwwWiredComExtractor(),
 		"WwwRockpapershotgunComExtractor": GetWwwRockpapershotgunComExtractor(),
+		"PolygonExtractor":              GetPolygonExtractor(),
 		"WwwEngadgetComExtractor":       GetWwwEngadgetComExtractor(),
 		"WwwCnetComExtractor":           GetWwwCnetComExtractor(),
 		"WwwPhoronixComExtractor":       GetWwwPhoronixComExtractor(),
