@@ -4,8 +4,8 @@
 package generic
 
 import (
-	"regexp"
-	"strings"
+    "regexp"
+    "strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/BumpyClock/hermes/internal/utils/dom"
@@ -14,6 +14,9 @@ import (
 // EXCERPT_META_SELECTORS defines the meta tag names to search for excerpt content
 // This matches the JavaScript constants exactly: ['og:description', 'twitter:description']
 var EXCERPT_META_SELECTORS = []string{"og:description", "twitter:description"}
+
+// Precompiled whitespace normalizer used by clean()
+var whitespaceRegex = regexp.MustCompile(`[\s\n]+`)
 
 // GenericExcerptExtractor implements excerpt extraction logic
 type GenericExcerptExtractor struct{}
@@ -63,10 +66,9 @@ func clean(content string, doc *goquery.Document, maxLength int) string {
 		return ""
 	}
 
-	// JavaScript: content.replace(/[\s\n]+/g, ' ').trim()
-	// Normalize all whitespace sequences to single spaces and trim
-	whitespaceRegex := regexp.MustCompile(`[\s\n]+`)
-	normalized := strings.TrimSpace(whitespaceRegex.ReplaceAllString(content, " "))
+    // JavaScript: content.replace(/[\s\n]+/g, ' ').trim()
+    // Normalize all whitespace sequences to single spaces and trim
+    normalized := strings.TrimSpace(whitespaceRegex.ReplaceAllString(content, " "))
 
 	if normalized == "" {
 		return ""

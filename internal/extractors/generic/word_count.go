@@ -43,8 +43,8 @@ func getWordCount(content string) int {
 		return 0
 	}
 	
-	// Split on whitespace and filter out empty strings to match JavaScript behavior
-	words := regexp.MustCompile(`\s+`).Split(strings.TrimSpace(normalizedText), -1)
+    // Split on whitespace and filter out empty strings to match JavaScript behavior
+    words := multipleSpacesRE.Split(strings.TrimSpace(normalizedText), -1)
 	
 	// Filter out any empty strings that may result from splitting
 	nonEmptyWords := make([]string, 0, len(words))

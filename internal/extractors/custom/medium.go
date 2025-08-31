@@ -4,9 +4,9 @@
 package custom
 
 import (
-	"regexp"
-	"strconv"
-	"strings"
+    "regexp"
+    "strconv"
+    "strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -43,7 +43,7 @@ var MediumCustomExtractor = &CustomExtractor{
 			"section span:first-of-type": &FunctionTransform{
 				Fn: func(selection *goquery.Selection) error {
 					text := selection.Text()
-					if len(text) == 1 && regexp.MustCompile(`^[a-zA-Z()]+$`).MatchString(text) {
+                    if len(text) == 1 && mediumDropCapAlphaRe.MatchString(text) {
 						selection.ReplaceWith(text)
 					}
 					return nil
@@ -98,7 +98,7 @@ var MediumCustomExtractor = &CustomExtractor{
 // transformMediumIframe handles Medium's lazy-loaded YouTube videos
 // JavaScript equivalent: iframe: $node => { ... }
 func transformMediumIframe(selection *goquery.Selection) error {
-	ytRe := regexp.MustCompile(`https://i\.embed\.ly/.+url=https://i\.ytimg\.com/vi/(\w+)/`)
+    ytRe := mediumYTThumbRe
 	
 	thumbnail, exists := selection.Attr("data-thumbnail")
 	if !exists {
@@ -178,7 +178,13 @@ func transformMediumImage(selection *goquery.Selection) error {
 	return nil
 }
 
+// Precompiled regex used by Medium transforms
+var (
+    mediumDropCapAlphaRe = regexp.MustCompile(`^[a-zA-Z()]+$`)
+    mediumYTThumbRe      = regexp.MustCompile(`https://i\.embed\.ly/.+url=https://i\.ytimg\.com/vi/(\w+)/`)
+)
+
 // GetMediumExtractor returns the Medium custom extractor
 func GetMediumExtractor() *CustomExtractor {
-	return MediumCustomExtractor
+    return MediumCustomExtractor
 }

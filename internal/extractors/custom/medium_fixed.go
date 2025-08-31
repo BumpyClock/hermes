@@ -4,8 +4,8 @@
 package custom
 
 import (
-	"regexp"
-	"strconv"
+    "regexp"
+    "strconv"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -42,12 +42,12 @@ var MediumCustomExtractorFixed = &CustomExtractor{
 			"section span:first-of-type": &FunctionTransform{
 				Fn: func(selection *goquery.Selection) error {
 					text := selection.Text()
-					if len(text) == 1 && regexp.MustCompile(`^[a-zA-Z()]+$`).MatchString(text) {
-						selection.ReplaceWith(text)
-					}
-					return nil
-				},
-			},
+                    if len(text) == 1 && mediumDropCapAlphaFixedRe.MatchString(text) {
+                        selection.ReplaceWith(text)
+                    }
+                    return nil
+                },
+            },
 			
 			// Remove smaller images (author photo 48px, leading sentence images 79px, etc.)
 			"img": &FunctionTransform{
@@ -104,7 +104,12 @@ func transformMediumImageFixed(selection *goquery.Selection) error {
 	return nil
 }
 
+// Precompiled regex used by Medium (fixed) transforms
+var (
+    mediumDropCapAlphaFixedRe = regexp.MustCompile(`^[a-zA-Z()]+$`)
+)
+
 // GetMediumExtractorFixed returns the Medium custom extractor
 func GetMediumExtractorFixed() *CustomExtractor {
-	return MediumCustomExtractorFixed
+    return MediumCustomExtractorFixed
 }

@@ -4,8 +4,8 @@
 package custom
 
 import (
-	"regexp"
-	"strings"
+    "regexp"
+    "strings"
 	
 	"github.com/PuerkitoBio/goquery"
 )
@@ -88,23 +88,25 @@ func transformRedditImagePreview(selection *goquery.Selection) error {
 	img := selection.Find("img")
 	bgImg, exists := selection.Attr("background-image")
 	
-	if img.Length() == 1 && exists {
-		// Extract URL from background-image CSS property
-		bgImgRegex := regexp.MustCompile(`\((.*?)\)`)
-		matches := bgImgRegex.FindStringSubmatch(bgImg)
-		if len(matches) > 1 {
-			// Remove quotes from URL
-			url := strings.ReplaceAll(matches[1], "'", "")
-			url = strings.ReplaceAll(url, "\"", "")
-			img.SetAttr("src", url)
-			selection.ReplaceWithSelection(img)
-		}
-	}
+    if img.Length() == 1 && exists {
+        // Extract URL from background-image CSS property
+        matches := redditBgImgRegex.FindStringSubmatch(bgImg)
+        if len(matches) > 1 {
+            // Remove quotes from URL
+            url := strings.ReplaceAll(matches[1], "'", "")
+            url = strings.ReplaceAll(url, "\"", "")
+            img.SetAttr("src", url)
+            selection.ReplaceWithSelection(img)
+        }
+    }
 	
 	return nil
 }
 
 // GetRedditExtractor returns the Reddit custom extractor
 func GetRedditExtractor() *CustomExtractor {
-	return RedditCustomExtractor
+    return RedditCustomExtractor
 }
+
+// Precompiled regex for background-image URL extraction
+var redditBgImgRegex = regexp.MustCompile(`\((.*?)\)`)
