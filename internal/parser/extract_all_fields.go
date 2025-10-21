@@ -16,6 +16,7 @@ import (
 	"github.com/BumpyClock/hermes/internal/cleaners"
 	"github.com/BumpyClock/hermes/internal/extractors/custom"
 	"github.com/BumpyClock/hermes/internal/extractors/generic"
+	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/security"
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
@@ -286,29 +287,10 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 			} else if videoData.URL != "" {
 				result.VideoURL = videoData.URL
 			}
-			
+
 			// Store full video metadata if we have any data
-			if videoData.URL != "" || videoData.SecureURL != "" {
-				result.VideoMetadata = make(map[string]interface{})
-				
-				if videoData.URL != "" {
-					result.VideoMetadata["url"] = videoData.URL
-				}
-				if videoData.SecureURL != "" {
-					result.VideoMetadata["secure_url"] = videoData.SecureURL
-				}
-				if videoData.Type != "" {
-					result.VideoMetadata["type"] = videoData.Type
-				}
-				if videoData.Width > 0 {
-					result.VideoMetadata["width"] = videoData.Width
-				}
-				if videoData.Height > 0 {
-					result.VideoMetadata["height"] = videoData.Height
-				}
-				if videoData.Duration > 0 {
-					result.VideoMetadata["duration"] = videoData.Duration
-				}
+			if metadata := buildVideoMetadata(videoData); metadata != nil {
+				result.VideoMetadata = metadata
 			}
 		}
 	}
@@ -627,27 +609,8 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		}
 		
 		// Store full video metadata if we have any data
-		if videoData.URL != "" || videoData.SecureURL != "" {
-			result.VideoMetadata = make(map[string]interface{})
-			
-			if videoData.URL != "" {
-				result.VideoMetadata["url"] = videoData.URL
-			}
-			if videoData.SecureURL != "" {
-				result.VideoMetadata["secure_url"] = videoData.SecureURL
-			}
-			if videoData.Type != "" {
-				result.VideoMetadata["type"] = videoData.Type
-			}
-			if videoData.Width > 0 {
-				result.VideoMetadata["width"] = videoData.Width
-			}
-			if videoData.Height > 0 {
-				result.VideoMetadata["height"] = videoData.Height
-			}
-			if videoData.Duration > 0 {
-				result.VideoMetadata["duration"] = videoData.Duration
-			}
+		if metadata := buildVideoMetadata(videoData); metadata != nil {
+			result.VideoMetadata = metadata
 		}
 	}
 	
@@ -678,14 +641,9 @@ func parseDate(dateStr string) (time.Time, error) {
 }
 
 // stripHTMLTags removes HTML tags from content for text output
+// Delegates to dom.StripTags for consistent behavior
 func stripHTMLTags(content string) string {
-	// Create a temporary document to extract text
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(content))
-	if err != nil {
-		// If parsing fails, return original content
-		return content
-	}
-	return doc.Text()
+	return dom.StripTags(content)
 }
 
 // convertToMarkdown converts HTML content to Markdown using html-to-markdown library
@@ -788,6 +746,42 @@ func resolveImageTemplateURL(src string, imgElement *goquery.Selection) string {
 	resolved = strings.ReplaceAll(resolved, "{format}", defaultFormat)
 	
 	return resolved
+}
+
+// buildVideoMetadata creates a metadata map from VideoMetadata struct
+// Centralizes the logic for converting video data to the result format
+func buildVideoMetadata(videoData *generic.VideoMetadata) map[string]interface{} {
+	if videoData == nil {
+		return nil
+	}
+
+	// Only build metadata if we have at least one URL
+	if videoData.URL == "" && videoData.SecureURL == "" {
+		return nil
+	}
+
+	metadata := make(map[string]interface{})
+
+	if videoData.URL != "" {
+		metadata["url"] = videoData.URL
+	}
+	if videoData.SecureURL != "" {
+		metadata["secure_url"] = videoData.SecureURL
+	}
+	if videoData.Type != "" {
+		metadata["type"] = videoData.Type
+	}
+	if videoData.Width > 0 {
+		metadata["width"] = videoData.Width
+	}
+	if videoData.Height > 0 {
+		metadata["height"] = videoData.Height
+	}
+	if videoData.Duration > 0 {
+		metadata["duration"] = videoData.Duration
+	}
+
+	return metadata
 }
 
 // calculateWordCount calculates the number of words in text content

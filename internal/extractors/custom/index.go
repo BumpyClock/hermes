@@ -3,9 +3,25 @@
 
 package custom
 
-// GetAllCustomExtractors returns all registered custom extractors
-// JavaScript equivalent: export * from './blogspot.com'; export * from './medium.com'; etc.
-func GetAllCustomExtractors() map[string]*CustomExtractor {
+import "sync"
+
+// Package-level cache for extractors and domain mappings
+var (
+	allExtractors     map[string]*CustomExtractor
+	domainToExtractor map[string]*CustomExtractor
+	extractorOnce     sync.Once
+)
+
+// initializeExtractors builds the extractor maps once and caches them
+func initializeExtractors() {
+	extractorOnce.Do(func() {
+		allExtractors = buildAllExtractors()
+		domainToExtractor = buildDomainMap(allExtractors)
+	})
+}
+
+// buildAllExtractors creates the complete extractor map
+func buildAllExtractors() map[string]*CustomExtractor {
 	extractors := map[string]*CustomExtractor{
 		// Content Platform Extractors - PHASE 7 COMPLETE ✅ (15 extractors)
 		"MediumExtractor":         GetMediumExtractor(),
@@ -239,6 +255,32 @@ func GetAllCustomExtractors() map[string]*CustomExtractor {
 	return extractors
 }
 
+// buildDomainMap creates a domain-to-extractor lookup map for O(1) access
+func buildDomainMap(extractors map[string]*CustomExtractor) map[string]*CustomExtractor {
+	domainMap := make(map[string]*CustomExtractor)
+
+	for _, extractor := range extractors {
+		// Add primary domain
+		if extractor.Domain != "" {
+			domainMap[extractor.Domain] = extractor
+		}
+
+		// Add all supported domains
+		for _, domain := range extractor.SupportedDomains {
+			domainMap[domain] = extractor
+		}
+	}
+
+	return domainMap
+}
+
+// GetAllCustomExtractors returns all registered custom extractors
+// Uses cached map for performance (built once on first call)
+func GetAllCustomExtractors() map[string]*CustomExtractor {
+	initializeExtractors()
+	return allExtractors
+}
+
 // GetAllCustomExtractorsList returns a list of all custom extractor names
 func GetAllCustomExtractorsList() []string {
 	extractors := GetAllCustomExtractors()
@@ -252,23 +294,11 @@ func GetAllCustomExtractorsList() []string {
 }
 
 // GetCustomExtractorByDomain returns a custom extractor for a specific domain
+// Uses O(1) cached lookup map for optimal performance
 func GetCustomExtractorByDomain(domain string) (*CustomExtractor, bool) {
-	extractors := GetAllCustomExtractors()
-	
-	for _, extractor := range extractors {
-		if extractor.Domain == domain {
-			return extractor, true
-		}
-		
-		// Check supported domains
-		for _, supportedDomain := range extractor.SupportedDomains {
-			if supportedDomain == domain {
-				return extractor, true
-			}
-		}
-	}
-	
-	return nil, false
+	initializeExtractors()
+	extractor, found := domainToExtractor[domain]
+	return extractor, found
 }
 
 // CountCustomExtractors returns the total number of custom extractors

@@ -64,10 +64,7 @@ func TestStripTags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			doc, err := goquery.NewDocumentFromReader(strings.NewReader("<html><body></body></html>"))
-			require.NoError(t, err)
-			
-			result := StripTags(tt.input, doc)
+			result := StripTags(tt.input)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

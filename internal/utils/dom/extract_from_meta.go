@@ -11,25 +11,26 @@ import (
 )
 
 // StripTags removes all HTML tags from a string of text
-// This is a faithful port of the JavaScript stripTags function
-func StripTags(text string, doc *goquery.Document) string {
+// Returns plain text content with all HTML tags removed
+// If the result is empty, returns the original text (JavaScript behavior)
+func StripTags(text string) string {
 	if text == "" {
 		return text
 	}
 
-	// Wrapping text in html element prevents errors when text has no html
-	wrappedHTML := fmt.Sprintf("<span>%s</span>", text)
-	selection, err := goquery.NewDocumentFromReader(strings.NewReader(wrappedHTML))
+	// Parse the HTML content directly
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(text))
 	if err != nil {
-		// If parsing fails, return original text (JavaScript behavior)
+		// If parsing fails, return original text
 		return text
 	}
 
-	cleanText := selection.Find("span").Text()
+	cleanText := doc.Text()
 	if cleanText == "" {
+		// If extraction results in empty string, return original (JavaScript behavior)
 		return text
 	}
-	
+
 	return cleanText
 }
 
@@ -81,7 +82,7 @@ func ExtractFromMeta(doc *goquery.Document, metaNames []string, cachedNames []st
 			// Meta values that contain HTML should be stripped, as they
 			// weren't subject to cleaning previously
 			if cleanTags {
-				metaValue = StripTags(metaValue, doc)
+				metaValue = StripTags(metaValue)
 			}
 			
 			return &metaValue

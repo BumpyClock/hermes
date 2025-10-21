@@ -46,7 +46,7 @@ func CleanDek(dek string, doc *goquery.Document, excerpt string) *string {
 	}
 
 	// Strip HTML tags from the dek
-	dekText := dom.StripTags(dek, doc)
+	dekText := dom.StripTags(dek)
 
 	// Plain text links shouldn't exist in the dek. If we have some, it's
 	// not a good dek - bail.
