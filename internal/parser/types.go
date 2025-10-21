@@ -16,7 +16,6 @@ type Parser interface {
 
 // ParserOptions configures the parser behavior
 type ParserOptions struct {
-	FetchAllPages        bool              // Fetch and merge multi-page articles
 	Fallback             bool              // Use generic extractor as fallback
 	ContentType          string            // Output format: "html", "markdown", "text"
 	Headers              map[string]string         // Custom HTTP headers
@@ -116,9 +115,8 @@ type ExtractorFunc func(*goquery.Document, string) (interface{}, error)
 // DefaultParserOptions returns default parser options
 func DefaultParserOptions() *ParserOptions {
 	return &ParserOptions{
-		FetchAllPages: true,
-		Fallback:      true,
-		ContentType:   "html",
+		Fallback:    true,
+		ContentType: "html",
 	}
 }
 

@@ -174,7 +174,6 @@ func (c *Client) wrapParseError(err error, ctx context.Context, op, url string) 
 // This centralizes the option building logic to avoid duplication
 func (c *Client) buildParserOptions() *parser.ParserOptions {
 	return &parser.ParserOptions{
-		FetchAllPages:        false,
 		ContentType:          c.contentType,
 		Headers:              map[string]string{"User-Agent": c.userAgent},
 		HTTPClient:           c.httpClient,

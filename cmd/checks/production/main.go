@@ -78,10 +78,9 @@ func main() {
 	// Test 6: Configuration options
 	fmt.Println("\n6. Testing configuration options:")
 	result, err = p.ParseHTML(testHTML, "https://example.com/config", &parser.ParserOptions{
-		FetchAllPages: false,
-		Fallback:      true,
-		ContentType:   "html",
-		Headers:       map[string]string{"User-Agent": "Test-Parser"},
+		Fallback:    true,
+		ContentType: "html",
+		Headers:     map[string]string{"User-Agent": "Test-Parser"},
 	})
 	if err != nil {
 		fmt.Printf("   ❌ Failed with custom options: %v\n", err)

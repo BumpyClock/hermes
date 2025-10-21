@@ -96,10 +96,9 @@ func TestParserOptions(t *testing.T) {
 
 	// Test custom options
 	opts := parser.ParserOptions{
-		FetchAllPages: false,
-		Fallback:      false,
-		ContentType:   "markdown",
-		Headers:       map[string]string{"User-Agent": "test"},
+		Fallback:    false,
+		ContentType: "markdown",
+		Headers:     map[string]string{"User-Agent": "test"},
 	}
 	p = parser.New(&opts)
 	assert.NotNil(t, p)

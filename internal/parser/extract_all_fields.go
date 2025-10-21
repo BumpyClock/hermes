@@ -44,7 +44,7 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	}
 	// Enable fallback by default if no explicit preference is given
 	// This is detected by checking if ALL options are zero values (empty struct)
-	if opts.ContentType == "html" && !opts.Fallback && opts.Headers == nil && !opts.FetchAllPages {
+	if opts.ContentType == "html" && !opts.Fallback && opts.Headers == nil {
 		// Likely an empty ParserOptions{}, so enable fallback for better UX
 		opts.Fallback = true
 	}
