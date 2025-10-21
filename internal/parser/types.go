@@ -220,16 +220,3 @@ func (r *Result) FormatMarkdown() string {
 	
 	return sb.String()
 }
-
-// PoolStats is deprecated - kept for backward compatibility
-// Object pooling has been removed in favor of simplicity
-type PoolStats struct {
-	// All fields are deprecated and return zero values
-	ResultsCreated   int64
-	ResultsReused    int64
-	BuffersCreated   int64
-	BuffersReused    int64
-	ParsersCreated   int64
-	ParsersReused    int64
-	LastReset        time.Time
-}

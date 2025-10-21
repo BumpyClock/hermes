@@ -251,16 +251,8 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	}
 	if content := contentExtractor.Extract(contentParams, contentOpts); content != "" {
 		// Apply content type conversion with security sanitization
-		switch strings.ToLower(opts.ContentType) {
-		case "text":
-			result.Content = text.NormalizeSpaces(stripHTMLTags(content))
-		case "markdown":
-			result.Content = convertToMarkdown(content)
-		default: // "html" or anything else
-			// Sanitize HTML content to prevent XSS attacks
-			result.Content = security.SanitizeHTML(content)
-		}
-		
+		result.Content = formatContent(content, opts.ContentType)
+
 		// Extract excerpt if content exists
 		if result.Content != "" {
 			result.Excerpt = text.ExcerptContent(result.Content, 160)
@@ -476,15 +468,8 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 			// If we found content, process it and break
 			if contentHTML != "" && strings.TrimSpace(contentHTML) != "" {
 				// Apply content type conversion with security sanitization
-				switch strings.ToLower(opts.ContentType) {
-				case "text":
-					result.Content = text.NormalizeSpaces(stripHTMLTags(contentHTML))
-				case "markdown":
-					result.Content = convertToMarkdown(contentHTML)
-				default: // "html" or anything else
-					result.Content = security.SanitizeHTML(contentHTML)
-				}
-				
+				result.Content = formatContent(contentHTML, opts.ContentType)
+
 				// Extract excerpt if content exists
 				if result.Content != "" {
 					result.Excerpt = text.ExcerptContent(result.Content, 160)
@@ -588,15 +573,8 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 				CleanConditionally:      true,
 			}
 			if content := contentExtractor.Extract(contentParams, contentOpts); content != "" {
-				switch strings.ToLower(opts.ContentType) {
-				case "text":
-					result.Content = text.NormalizeSpaces(stripHTMLTags(content))
-				case "markdown":
-					result.Content = convertToMarkdown(content)
-				default:
-					result.Content = security.SanitizeHTML(content)
-				}
-				
+				result.Content = formatContent(content, opts.ContentType)
+
 				if result.Content != "" {
 					result.Excerpt = text.ExcerptContent(result.Content, 160)
 					result.WordCount = calculateWordCount(result.Content)
@@ -758,6 +736,18 @@ func convertToMarkdown(content string) string {
 	}
 	
 	return markdown
+}
+
+// formatContent applies the specified content type transformation and security sanitization
+func formatContent(content string, contentType string) string {
+	switch strings.ToLower(contentType) {
+	case "text":
+		return text.NormalizeSpaces(stripHTMLTags(content))
+	case "markdown":
+		return convertToMarkdown(content)
+	default: // "html" or anything else
+		return security.SanitizeHTML(content)
+	}
 }
 
 // resolveImageTemplateURL resolves template placeholders in responsive image URLs

@@ -90,22 +90,6 @@ func (h *Hermes) ParseHTMLWithContext(ctx context.Context, html string, targetUR
 	return h.parseHTMLWithoutOptimizationContext(ctx, html, targetURL, opts)
 }
 
-// ReturnResult is deprecated - no longer needed without object pooling
-func (h *Hermes) ReturnResult(result *Result) {
-	// No-op - object pooling has been removed
-}
-
-// GetStats is deprecated - no longer tracks statistics
-func (h *Hermes) GetStats() *PoolStats {
-	// Return empty stats for backward compatibility
-	return &PoolStats{}
-}
-
-// ResetStats is deprecated - no longer tracks statistics
-func (h *Hermes) ResetStats() {
-	// No-op - statistics tracking has been removed
-}
-
 // parseWithoutOptimization performs basic parsing without optimization layers
 // Used internally by the optimization framework to avoid circular dependencies
 // DEPRECATED: This method uses context.Background() which prevents proper cancellation.

@@ -96,15 +96,7 @@ func (c *Client) Parse(ctx context.Context, url string) (*Result, error) {
 	// Parse the URL with context support
 	internalResult, err := c.parser.ParseWithContext(ctx, url, opts)
 	if err != nil {
-		// Use proper error classification instead of string matching
-		code := ErrorCode(parser.ClassifyErrorCode(err, ctx, "Parse"))
-		// Wrap error with type information
-		return nil, &ParseError{
-			Code: code,
-			URL:  url,
-			Op:   "Parse",
-			Err:  err,
-		}
+		return nil, c.wrapParseError(err, ctx, "Parse", url)
 	}
 	
 	// Map internal result to public result
@@ -159,20 +151,23 @@ func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, erro
 	// Parse the HTML with context support
 	internalResult, err := c.parser.ParseHTMLWithContext(ctx, html, url, opts)
 	if err != nil {
-		// Use proper error classification instead of hardcoded ErrExtract
-		code := ErrorCode(parser.ClassifyErrorCode(err, ctx, "ParseHTML"))
-		// Wrap error with type information
-		return nil, &ParseError{
-			Code: code,
-			URL:  url,
-			Op:   "ParseHTML",
-			Err:  err,
-		}
+		return nil, c.wrapParseError(err, ctx, "ParseHTML", url)
 	}
 	
 	// Map internal result to public result
 	result := mapInternalResult(internalResult)
 	return result, nil
+}
+
+// wrapParseError wraps an error with ParseError including classification
+func (c *Client) wrapParseError(err error, ctx context.Context, op, url string) *ParseError {
+	code := ErrorCode(parser.ClassifyErrorCode(err, ctx, op))
+	return &ParseError{
+		Code: code,
+		URL:  url,
+		Op:   op,
+		Err:  err,
+	}
 }
 
 // buildParserOptions creates parser options with client configuration
