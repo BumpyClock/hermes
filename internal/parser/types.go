@@ -117,6 +117,7 @@ func DefaultParserOptions() *ParserOptions {
 	return &ParserOptions{
 		Fallback:    true,
 		ContentType: "html",
+		Headers:     make(map[string]string),
 	}
 }
 

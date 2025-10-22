@@ -6,6 +6,7 @@ package parser
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 	"sync"
@@ -698,12 +699,18 @@ func convertToMarkdown(content string) string {
 
 // formatContent applies the specified content type transformation and security sanitization
 func formatContent(content string, contentType string) string {
-	switch strings.ToLower(contentType) {
+	normalized := strings.ToLower(contentType)
+	switch normalized {
 	case "text":
 		return text.NormalizeSpaces(stripHTMLTags(content))
 	case "markdown":
 		return convertToMarkdown(content)
-	default: // "html" or anything else
+	case "html", "":
+		// Empty string defaults to HTML (expected behavior)
+		return security.SanitizeHTML(content)
+	default:
+		// Log unexpected content type for debugging
+		log.Printf("WARNING: Unexpected contentType '%s', defaulting to HTML sanitization", contentType)
 		return security.SanitizeHTML(content)
 	}
 }

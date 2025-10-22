@@ -18,7 +18,15 @@ func StripTags(text string) string {
 		return text
 	}
 
-	// Parse the HTML content directly
+	// Fast-path: if no HTML tags present, return as-is
+	if strings.IndexByte(text, '<') == -1 {
+		return text
+	}
+
+	// Parse the HTML content directly to extract text
+	// Previously, content was wrapped in a <span> tag to prevent parsing errors,
+	// but this is unnecessary as goquery handles text fragments correctly.
+	// If parsing fails, we return the original text as a fallback.
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(text))
 	if err != nil {
 		// If parsing fails, return original text

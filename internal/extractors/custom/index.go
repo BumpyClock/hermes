@@ -3,7 +3,13 @@
 
 package custom
 
-import "sync"
+import (
+	"fmt"
+	"log"
+	"sort"
+	"strings"
+	"sync"
+)
 
 // Package-level cache for extractors and domain mappings
 var (
@@ -256,18 +262,39 @@ func buildAllExtractors() map[string]*CustomExtractor {
 }
 
 // buildDomainMap creates a domain-to-extractor lookup map for O(1) access
+// Normalizes domains to lowercase and detects conflicts during initialization
 func buildDomainMap(extractors map[string]*CustomExtractor) map[string]*CustomExtractor {
 	domainMap := make(map[string]*CustomExtractor)
+	var conflicts []string
 
-	for _, extractor := range extractors {
-		// Add primary domain
+	for extractorName, extractor := range extractors {
+		// Add primary domain (normalized to lowercase)
 		if extractor.Domain != "" {
-			domainMap[extractor.Domain] = extractor
+			domain := strings.ToLower(extractor.Domain)
+			if existing, found := domainMap[domain]; found {
+				conflicts = append(conflicts, fmt.Sprintf("domain '%s' claimed by both '%s' and extractor containing domain '%s'",
+					domain, extractorName, existing.Domain))
+			}
+			domainMap[domain] = extractor
 		}
 
-		// Add all supported domains
-		for _, domain := range extractor.SupportedDomains {
+		// Add all supported domains (normalized to lowercase)
+		for _, supportedDomain := range extractor.SupportedDomains {
+			domain := strings.ToLower(supportedDomain)
+			if existing, found := domainMap[domain]; found {
+				conflicts = append(conflicts, fmt.Sprintf("domain '%s' claimed by both '%s' and extractor containing domain '%s'",
+					domain, extractorName, existing.Domain))
+			}
 			domainMap[domain] = extractor
+		}
+	}
+
+	// Log conflicts if any detected (sorted for determinism)
+	if len(conflicts) > 0 {
+		sort.Strings(conflicts)
+		log.Printf("WARNING: Domain conflicts detected in custom extractors:\n")
+		for _, conflict := range conflicts {
+			log.Printf("  - %s\n", conflict)
 		}
 	}
 
@@ -275,10 +302,15 @@ func buildDomainMap(extractors map[string]*CustomExtractor) map[string]*CustomEx
 }
 
 // GetAllCustomExtractors returns all registered custom extractors
-// Uses cached map for performance (built once on first call)
+// Returns a shallow copy to prevent external mutation of the internal cache
 func GetAllCustomExtractors() map[string]*CustomExtractor {
 	initializeExtractors()
-	return allExtractors
+	// Return a shallow copy to prevent external mutation
+	copy := make(map[string]*CustomExtractor, len(allExtractors))
+	for key, value := range allExtractors {
+		copy[key] = value
+	}
+	return copy
 }
 
 // GetAllCustomExtractorsList returns a list of all custom extractor names
@@ -295,9 +327,12 @@ func GetAllCustomExtractorsList() []string {
 
 // GetCustomExtractorByDomain returns a custom extractor for a specific domain
 // Uses O(1) cached lookup map for optimal performance
+// Domain matching is case-insensitive
 func GetCustomExtractorByDomain(domain string) (*CustomExtractor, bool) {
 	initializeExtractors()
-	extractor, found := domainToExtractor[domain]
+	// Normalize domain to lowercase for case-insensitive matching
+	normalizedDomain := strings.ToLower(domain)
+	extractor, found := domainToExtractor[normalizedDomain]
 	return extractor, found
 }
 
