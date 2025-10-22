@@ -8,7 +8,29 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/net/html"
 )
+
+// removeComments recursively removes all HTML comment nodes from the tree
+// Traverses the entire node tree starting from the given node and removes comment nodes at all levels
+func removeComments(node *html.Node) {
+	// Traverse children and collect comments to remove
+	// We can't remove during iteration as it modifies the linked list
+	var toRemove []*html.Node
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		if child.Type == html.CommentNode {
+			toRemove = append(toRemove, child)
+		} else {
+			// Recursively process non-comment nodes
+			removeComments(child)
+		}
+	}
+
+	// Remove all comment nodes found
+	for _, comment := range toRemove {
+		node.RemoveChild(comment)
+	}
+}
 
 // StripTags removes all HTML tags from a string of text
 // Returns plain text content with all HTML tags removed
@@ -38,13 +60,11 @@ func StripTags(text string) string {
 	// These elements don't contribute to visible content
 	doc.Find("script, style, noscript, head, meta, link").Remove()
 
-	// Remove HTML comments
-	// goquery doesn't provide a direct way to remove comments, so we traverse nodes
-	doc.Find("*").Contents().Each(func(i int, s *goquery.Selection) {
-		if s.Nodes != nil && len(s.Nodes) > 0 && s.Nodes[0].Type == 8 { // Type 8 is comment node
-			s.Remove()
-		}
-	})
+	// Remove HTML comments at all levels using recursive traversal
+	// Start from the document root to catch top-level comments
+	if doc.Nodes != nil && len(doc.Nodes) > 0 {
+		removeComments(doc.Nodes[0])
+	}
 
 	cleanText := doc.Text()
 	if cleanText == "" {
