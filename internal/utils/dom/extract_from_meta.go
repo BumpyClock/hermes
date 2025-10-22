@@ -12,6 +12,7 @@ import (
 
 // StripTags removes all HTML tags from a string of text
 // Returns plain text content with all HTML tags removed
+// Removes non-content elements (script, style, noscript, head, meta, link) and HTML comments
 // If the result is empty, returns the original text (JavaScript behavior)
 func StripTags(text string) string {
 	if text == "" {
@@ -32,6 +33,18 @@ func StripTags(text string) string {
 		// If parsing fails, return original text
 		return text
 	}
+
+	// Remove non-content elements before extracting text
+	// These elements don't contribute to visible content
+	doc.Find("script, style, noscript, head, meta, link").Remove()
+
+	// Remove HTML comments
+	// goquery doesn't provide a direct way to remove comments, so we traverse nodes
+	doc.Find("*").Contents().Each(func(i int, s *goquery.Selection) {
+		if s.Nodes != nil && len(s.Nodes) > 0 && s.Nodes[0].Type == 8 { // Type 8 is comment node
+			s.Remove()
+		}
+	})
 
 	cleanText := doc.Text()
 	if cleanText == "" {

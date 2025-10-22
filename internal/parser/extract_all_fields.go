@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +22,10 @@ import (
 	"github.com/BumpyClock/hermes/internal/utils/security"
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
+
+// parserDebugEnabled controls whether debug logging is enabled
+// Set via HERMES_PARSER_DEBUG=1 environment variable
+var parserDebugEnabled = os.Getenv("HERMES_PARSER_DEBUG") == "1"
 
 // extractAllFields orchestrates the complete extraction pipeline
 // DEPRECATED: This method uses context.Background() which prevents proper cancellation.
@@ -698,19 +703,29 @@ func convertToMarkdown(content string) string {
 }
 
 // formatContent applies the specified content type transformation and security sanitization
+// Trims inputs, supports common content type aliases, and returns sanitized output
 func formatContent(content string, contentType string) string {
+	// Trim both inputs
+	content = strings.TrimSpace(content)
+	contentType = strings.TrimSpace(contentType)
+
+	// Normalize content type and handle common aliases
 	normalized := strings.ToLower(contentType)
+
+	// Map aliases to canonical types
 	switch normalized {
-	case "text":
+	case "text", "text/plain", "txt":
 		return text.NormalizeSpaces(stripHTMLTags(content))
-	case "markdown":
+	case "markdown", "md", "text/markdown":
 		return convertToMarkdown(content)
-	case "html", "":
+	case "html", "text/html", "":
 		// Empty string defaults to HTML (expected behavior)
 		return security.SanitizeHTML(content)
 	default:
-		// Log unexpected content type for debugging
-		log.Printf("WARNING: Unexpected contentType '%s', defaulting to HTML sanitization", contentType)
+		// Log unexpected content type only when debug is enabled
+		if parserDebugEnabled {
+			log.Printf("WARNING: Unexpected contentType '%s', defaulting to HTML sanitization", contentType)
+		}
 		return security.SanitizeHTML(content)
 	}
 }

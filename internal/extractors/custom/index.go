@@ -263,29 +263,48 @@ func buildAllExtractors() map[string]*CustomExtractor {
 
 // buildDomainMap creates a domain-to-extractor lookup map for O(1) access
 // Normalizes domains to lowercase and detects conflicts during initialization
+// Iterates extractors in sorted order to ensure deterministic conflict resolution (first-seen wins)
 func buildDomainMap(extractors map[string]*CustomExtractor) map[string]*CustomExtractor {
 	domainMap := make(map[string]*CustomExtractor)
 	var conflicts []string
 
-	for extractorName, extractor := range extractors {
+	// Get sorted extractor names for deterministic iteration
+	extractorNames := make([]string, 0, len(extractors))
+	for name := range extractors {
+		extractorNames = append(extractorNames, name)
+	}
+	sort.Strings(extractorNames)
+
+	// Process extractors in sorted order
+	for _, extractorName := range extractorNames {
+		extractor := extractors[extractorName]
+
 		// Add primary domain (normalized to lowercase)
 		if extractor.Domain != "" {
 			domain := strings.ToLower(extractor.Domain)
 			if existing, found := domainMap[domain]; found {
-				conflicts = append(conflicts, fmt.Sprintf("domain '%s' claimed by both '%s' and extractor containing domain '%s'",
-					domain, extractorName, existing.Domain))
+				// Conflict detected - keep first-seen extractor, log the conflict
+				existingName := getExtractorName(extractors, existing)
+				conflicts = append(conflicts, fmt.Sprintf("domain '%s' claimed by both '%s' (kept) and '%s' (skipped)",
+					domain, existingName, extractorName))
+			} else {
+				// No conflict - add to map
+				domainMap[domain] = extractor
 			}
-			domainMap[domain] = extractor
 		}
 
 		// Add all supported domains (normalized to lowercase)
 		for _, supportedDomain := range extractor.SupportedDomains {
 			domain := strings.ToLower(supportedDomain)
 			if existing, found := domainMap[domain]; found {
-				conflicts = append(conflicts, fmt.Sprintf("domain '%s' claimed by both '%s' and extractor containing domain '%s'",
-					domain, extractorName, existing.Domain))
+				// Conflict detected - keep first-seen extractor, log the conflict
+				existingName := getExtractorName(extractors, existing)
+				conflicts = append(conflicts, fmt.Sprintf("domain '%s' claimed by both '%s' (kept) and '%s' (skipped)",
+					domain, existingName, extractorName))
+			} else {
+				// No conflict - add to map
+				domainMap[domain] = extractor
 			}
-			domainMap[domain] = extractor
 		}
 	}
 
@@ -299,6 +318,16 @@ func buildDomainMap(extractors map[string]*CustomExtractor) map[string]*CustomEx
 	}
 
 	return domainMap
+}
+
+// getExtractorName finds the name of an extractor in the map
+func getExtractorName(extractors map[string]*CustomExtractor, target *CustomExtractor) string {
+	for name, extractor := range extractors {
+		if extractor == target {
+			return name
+		}
+	}
+	return "unknown"
 }
 
 // GetAllCustomExtractors returns all registered custom extractors
