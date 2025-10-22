@@ -149,9 +149,7 @@ func cleanTitle(title string, url string, doc *goquery.Selection) string {
 	}
 
 	// strip any html tags in the title text and normalize spaces
-	// Create a document for StripTags function
-	tempDoc, _ := goquery.NewDocumentFromReader(strings.NewReader("<html></html>"))
-	cleaned := dom.StripTags(title, tempDoc)
+	cleaned := dom.StripTags(title)
 	return text.NormalizeSpaces(strings.TrimSpace(cleaned))
 }
 

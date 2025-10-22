@@ -5,7 +5,6 @@ package cleaners
 
 import (
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -356,7 +355,7 @@ func removeEmptyInSelection(selection *goquery.Selection) {
 			// Check if it only contains br tags or whitespace
 			html, _ := elem.Html()
 			cleanHTML := strings.TrimSpace(html)
-			if cleanHTML == "" || regexp.MustCompile(`^(\s|<br\s*\/?>)*$`).MatchString(cleanHTML) {
+			if cleanHTML == "" || EMPTY_HTML_RE.MatchString(cleanHTML) {
 				elem.Remove()
 			}
 		}

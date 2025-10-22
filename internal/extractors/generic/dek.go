@@ -9,6 +9,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
+	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
 
@@ -129,7 +130,7 @@ func (e *GenericDekExtractor) cleanDek(dek, excerpt string) string {
 	}
 	
 	// Strip HTML tags if present
-	dekText := e.stripTags(dek)
+	dekText := dom.StripTags(dek)
 	
 	// Sanity check length (5-1000 characters)
 	if len(dekText) > 1000 || len(dekText) < 5 {
@@ -153,28 +154,4 @@ func (e *GenericDekExtractor) cleanDek(dek, excerpt string) string {
 	
 	// Normalize whitespace and trim
 	return text.NormalizeSpaces(strings.TrimSpace(dekText))
-}
-
-// stripTags removes HTML tags from text while preserving content
-func (e *GenericDekExtractor) stripTags(html string) string {
-	if html == "" {
-		return ""
-	}
-	
-	// Wrap in span to ensure valid HTML parsing (avoid nesting issues)
-	wrapped := "<span>" + html + "</span>"
-	
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(wrapped))
-	if err != nil {
-		// If parsing fails, return original text
-		return html
-	}
-	
-	text := doc.Find("span").First().Text()
-	if text == "" {
-		// If extraction results in empty string, return original
-		return html
-	}
-	
-	return text
 }

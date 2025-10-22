@@ -74,3 +74,10 @@ var TITLE_SPLITTERS_RE = regexp.MustCompile(`(: | - | \| )`)
 // DOMAIN_ENDINGS_RE matches common domain endings
 // Matches the JavaScript regex: /.com$|.net$|.org$|.co.uk$/g
 var DOMAIN_ENDINGS_RE = regexp.MustCompile(`\.com$|\.net$|\.org$|\.co\.uk$`)
+
+// CLEAN CONTENT CONSTANTS
+
+// EMPTY_HTML_RE matches HTML that only contains whitespace and/or br tags
+// Used to detect and remove empty paragraph elements during content cleaning
+// Supports: Unicode whitespace (\p{Zs}), NBSP, case-insensitive br tags with attributes
+var EMPTY_HTML_RE = regexp.MustCompile(`(?i)^([\s\p{Zs}\x{00A0}]|<br[^>]*\/?>)*$`)

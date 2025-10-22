@@ -19,7 +19,7 @@ import (
 // This is a faithful port of the JavaScript cleanTitle function
 func CleanTitle(title string, url string, doc *goquery.Document) string {
 	// First strip HTML tags to clean the title for processing
-	cleaned := dom.StripTags(title, doc)
+	cleaned := dom.StripTags(title)
 	cleaned = strings.TrimSpace(cleaned)
 
 	// If title has |, :, or - in it, see if we can clean it up.

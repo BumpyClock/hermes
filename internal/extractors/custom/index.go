@@ -3,9 +3,31 @@
 
 package custom
 
-// GetAllCustomExtractors returns all registered custom extractors
-// JavaScript equivalent: export * from './blogspot.com'; export * from './medium.com'; etc.
-func GetAllCustomExtractors() map[string]*CustomExtractor {
+import (
+	"fmt"
+	"log"
+	"sort"
+	"strings"
+	"sync"
+)
+
+// Package-level cache for extractors and domain mappings
+var (
+	allExtractors     map[string]*CustomExtractor
+	domainToExtractor map[string]*CustomExtractor
+	extractorOnce     sync.Once
+)
+
+// initializeExtractors builds the extractor maps once and caches them
+func initializeExtractors() {
+	extractorOnce.Do(func() {
+		allExtractors = buildAllExtractors()
+		domainToExtractor = buildDomainMap(allExtractors)
+	})
+}
+
+// buildAllExtractors creates the complete extractor map
+func buildAllExtractors() map[string]*CustomExtractor {
 	extractors := map[string]*CustomExtractor{
 		// Content Platform Extractors - PHASE 7 COMPLETE ✅ (15 extractors)
 		"MediumExtractor":         GetMediumExtractor(),
@@ -239,6 +261,85 @@ func GetAllCustomExtractors() map[string]*CustomExtractor {
 	return extractors
 }
 
+// buildDomainMap creates a domain-to-extractor lookup map for O(1) access
+// Normalizes domains to lowercase and detects conflicts during initialization
+// Iterates extractors in sorted order to ensure deterministic conflict resolution (first-seen wins)
+// Guards against nil extractors by skipping them
+func buildDomainMap(extractors map[string]*CustomExtractor) map[string]*CustomExtractor {
+	domainMap := make(map[string]*CustomExtractor)
+	// ownerNames maps domain to the extractor name that owns it (for O(1) conflict lookups)
+	ownerNames := make(map[string]string)
+	var conflicts []string
+
+	// Get sorted extractor names for deterministic iteration
+	extractorNames := make([]string, 0, len(extractors))
+	for name := range extractors {
+		extractorNames = append(extractorNames, name)
+	}
+	sort.Strings(extractorNames)
+
+	// Process extractors in sorted order, skipping nil extractors
+	for _, extractorName := range extractorNames {
+		extractor := extractors[extractorName]
+
+		// Skip nil extractors
+		if extractor == nil {
+			continue
+		}
+
+		// Add primary domain (normalized to lowercase)
+		if extractor.Domain != "" {
+			domain := strings.ToLower(extractor.Domain)
+			if existingName, found := ownerNames[domain]; found {
+				// Conflict detected - keep first-seen extractor, log the conflict
+				conflicts = append(conflicts, fmt.Sprintf("domain '%s' claimed by both '%s' (kept) and '%s' (skipped)",
+					domain, existingName, extractorName))
+			} else {
+				// No conflict - add to maps
+				domainMap[domain] = extractor
+				ownerNames[domain] = extractorName
+			}
+		}
+
+		// Add all supported domains (normalized to lowercase)
+		for _, supportedDomain := range extractor.SupportedDomains {
+			domain := strings.ToLower(supportedDomain)
+			if existingName, found := ownerNames[domain]; found {
+				// Conflict detected - keep first-seen extractor, log the conflict
+				conflicts = append(conflicts, fmt.Sprintf("domain '%s' claimed by both '%s' (kept) and '%s' (skipped)",
+					domain, existingName, extractorName))
+			} else {
+				// No conflict - add to maps
+				domainMap[domain] = extractor
+				ownerNames[domain] = extractorName
+			}
+		}
+	}
+
+	// Log conflicts if any detected (sorted for determinism)
+	if len(conflicts) > 0 {
+		sort.Strings(conflicts)
+		log.Printf("WARNING: Domain conflicts detected in custom extractors:\n")
+		for _, conflict := range conflicts {
+			log.Printf("  - %s\n", conflict)
+		}
+	}
+
+	return domainMap
+}
+
+// GetAllCustomExtractors returns all registered custom extractors
+// Returns a shallow copy to prevent external mutation of the internal cache
+func GetAllCustomExtractors() map[string]*CustomExtractor {
+	initializeExtractors()
+	// Return a shallow copy to prevent external mutation
+	copy := make(map[string]*CustomExtractor, len(allExtractors))
+	for key, value := range allExtractors {
+		copy[key] = value
+	}
+	return copy
+}
+
 // GetAllCustomExtractorsList returns a list of all custom extractor names
 func GetAllCustomExtractorsList() []string {
 	extractors := GetAllCustomExtractors()
@@ -252,23 +353,14 @@ func GetAllCustomExtractorsList() []string {
 }
 
 // GetCustomExtractorByDomain returns a custom extractor for a specific domain
+// Uses O(1) cached lookup map for optimal performance
+// Domain matching is case-insensitive
 func GetCustomExtractorByDomain(domain string) (*CustomExtractor, bool) {
-	extractors := GetAllCustomExtractors()
-	
-	for _, extractor := range extractors {
-		if extractor.Domain == domain {
-			return extractor, true
-		}
-		
-		// Check supported domains
-		for _, supportedDomain := range extractor.SupportedDomains {
-			if supportedDomain == domain {
-				return extractor, true
-			}
-		}
-	}
-	
-	return nil, false
+	initializeExtractors()
+	// Normalize domain to lowercase for case-insensitive matching
+	normalizedDomain := strings.ToLower(domain)
+	extractor, found := domainToExtractor[normalizedDomain]
+	return extractor, found
 }
 
 // CountCustomExtractors returns the total number of custom extractors

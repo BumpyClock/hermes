@@ -8,28 +8,70 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/net/html"
 )
 
+// removeComments recursively removes all HTML comment nodes from the tree
+// Traverses the entire node tree starting from the given node and removes comment nodes at all levels
+func removeComments(node *html.Node) {
+	// Traverse children and collect comments to remove
+	// We can't remove during iteration as it modifies the linked list
+	var toRemove []*html.Node
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		if child.Type == html.CommentNode {
+			toRemove = append(toRemove, child)
+		} else {
+			// Recursively process non-comment nodes
+			removeComments(child)
+		}
+	}
+
+	// Remove all comment nodes found
+	for _, comment := range toRemove {
+		node.RemoveChild(comment)
+	}
+}
+
 // StripTags removes all HTML tags from a string of text
-// This is a faithful port of the JavaScript stripTags function
-func StripTags(text string, doc *goquery.Document) string {
+// Returns plain text content with all HTML tags removed
+// Removes non-content elements (script, style, noscript, head, meta, link) and HTML comments
+// If the result is empty, returns the original text (JavaScript behavior)
+func StripTags(text string) string {
 	if text == "" {
 		return text
 	}
 
-	// Wrapping text in html element prevents errors when text has no html
-	wrappedHTML := fmt.Sprintf("<span>%s</span>", text)
-	selection, err := goquery.NewDocumentFromReader(strings.NewReader(wrappedHTML))
-	if err != nil {
-		// If parsing fails, return original text (JavaScript behavior)
+	// Fast-path: if no HTML tags present, return as-is
+	if strings.IndexByte(text, '<') == -1 {
 		return text
 	}
 
-	cleanText := selection.Find("span").Text()
-	if cleanText == "" {
+	// Parse the HTML content directly to extract text
+	// Previously, content was wrapped in a <span> tag to prevent parsing errors,
+	// but this is unnecessary as goquery handles text fragments correctly.
+	// If parsing fails, we return the original text as a fallback.
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(text))
+	if err != nil {
+		// If parsing fails, return original text
 		return text
 	}
-	
+
+	// Remove non-content elements before extracting text
+	// These elements don't contribute to visible content
+	doc.Find("script, style, noscript, head, meta, link").Remove()
+
+	// Remove HTML comments at all levels using recursive traversal
+	// Start from the document root to catch top-level comments
+	if doc.Nodes != nil && len(doc.Nodes) > 0 {
+		removeComments(doc.Nodes[0])
+	}
+
+	cleanText := doc.Text()
+	if cleanText == "" {
+		// If extraction results in empty string, return original (JavaScript behavior)
+		return text
+	}
+
 	return cleanText
 }
 
@@ -81,7 +123,7 @@ func ExtractFromMeta(doc *goquery.Document, metaNames []string, cachedNames []st
 			// Meta values that contain HTML should be stripped, as they
 			// weren't subject to cleaning previously
 			if cleanTags {
-				metaValue = StripTags(metaValue, doc)
+				metaValue = StripTags(metaValue)
 			}
 			
 			return &metaValue

@@ -29,7 +29,7 @@ import (
 //   if (TEXT_LINK_RE.test(dekText)) return null;
 //   return normalizeSpaces(dekText.trim());
 // }
-func CleanDek(dek string, doc *goquery.Document, excerpt string) *string {
+func CleanDek(dek string, _ *goquery.Document, excerpt string) *string {
 	// Sanity check that we didn't get too short or long of a dek
 	if len(dek) > 1000 || len(dek) < 5 {
 		return nil
@@ -46,7 +46,7 @@ func CleanDek(dek string, doc *goquery.Document, excerpt string) *string {
 	}
 
 	// Strip HTML tags from the dek
-	dekText := dom.StripTags(dek, doc)
+	dekText := dom.StripTags(dek)
 
 	// Plain text links shouldn't exist in the dek. If we have some, it's
 	// not a good dek - bail.

@@ -6,7 +6,9 @@ package parser
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -16,9 +18,14 @@ import (
 	"github.com/BumpyClock/hermes/internal/cleaners"
 	"github.com/BumpyClock/hermes/internal/extractors/custom"
 	"github.com/BumpyClock/hermes/internal/extractors/generic"
+	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/security"
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
+
+// parserDebugEnabled controls whether debug logging is enabled
+// Set via HERMES_PARSER_DEBUG=1 environment variable
+var parserDebugEnabled = os.Getenv("HERMES_PARSER_DEBUG") == "1"
 
 // extractAllFields orchestrates the complete extraction pipeline
 // DEPRECATED: This method uses context.Background() which prevents proper cancellation.
@@ -43,7 +50,7 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	}
 	// Enable fallback by default if no explicit preference is given
 	// This is detected by checking if ALL options are zero values (empty struct)
-	if opts.ContentType == "html" && !opts.Fallback && opts.Headers == nil && !opts.FetchAllPages {
+	if opts.ContentType == "html" && !opts.Fallback && opts.Headers == nil {
 		// Likely an empty ParserOptions{}, so enable fallback for better UX
 		opts.Fallback = true
 	}
@@ -251,16 +258,8 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	}
 	if content := contentExtractor.Extract(contentParams, contentOpts); content != "" {
 		// Apply content type conversion with security sanitization
-		switch strings.ToLower(opts.ContentType) {
-		case "text":
-			result.Content = text.NormalizeSpaces(stripHTMLTags(content))
-		case "markdown":
-			result.Content = convertToMarkdown(content)
-		default: // "html" or anything else
-			// Sanitize HTML content to prevent XSS attacks
-			result.Content = security.SanitizeHTML(content)
-		}
-		
+		result.Content = formatContent(content, opts.ContentType)
+
 		// Extract excerpt if content exists
 		if result.Content != "" {
 			result.Excerpt = text.ExcerptContent(result.Content, 160)
@@ -294,29 +293,10 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 			} else if videoData.URL != "" {
 				result.VideoURL = videoData.URL
 			}
-			
+
 			// Store full video metadata if we have any data
-			if videoData.URL != "" || videoData.SecureURL != "" {
-				result.VideoMetadata = make(map[string]interface{})
-				
-				if videoData.URL != "" {
-					result.VideoMetadata["url"] = videoData.URL
-				}
-				if videoData.SecureURL != "" {
-					result.VideoMetadata["secure_url"] = videoData.SecureURL
-				}
-				if videoData.Type != "" {
-					result.VideoMetadata["type"] = videoData.Type
-				}
-				if videoData.Width > 0 {
-					result.VideoMetadata["width"] = videoData.Width
-				}
-				if videoData.Height > 0 {
-					result.VideoMetadata["height"] = videoData.Height
-				}
-				if videoData.Duration > 0 {
-					result.VideoMetadata["duration"] = videoData.Duration
-				}
+			if metadata := buildVideoMetadata(videoData); metadata != nil {
+				result.VideoMetadata = metadata
 			}
 		}
 	}
@@ -476,15 +456,8 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 			// If we found content, process it and break
 			if contentHTML != "" && strings.TrimSpace(contentHTML) != "" {
 				// Apply content type conversion with security sanitization
-				switch strings.ToLower(opts.ContentType) {
-				case "text":
-					result.Content = text.NormalizeSpaces(stripHTMLTags(contentHTML))
-				case "markdown":
-					result.Content = convertToMarkdown(contentHTML)
-				default: // "html" or anything else
-					result.Content = security.SanitizeHTML(contentHTML)
-				}
-				
+				result.Content = formatContent(contentHTML, opts.ContentType)
+
 				// Extract excerpt if content exists
 				if result.Content != "" {
 					result.Excerpt = text.ExcerptContent(result.Content, 160)
@@ -588,15 +561,8 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 				CleanConditionally:      true,
 			}
 			if content := contentExtractor.Extract(contentParams, contentOpts); content != "" {
-				switch strings.ToLower(opts.ContentType) {
-				case "text":
-					result.Content = text.NormalizeSpaces(stripHTMLTags(content))
-				case "markdown":
-					result.Content = convertToMarkdown(content)
-				default:
-					result.Content = security.SanitizeHTML(content)
-				}
-				
+				result.Content = formatContent(content, opts.ContentType)
+
 				if result.Content != "" {
 					result.Excerpt = text.ExcerptContent(result.Content, 160)
 					result.WordCount = calculateWordCount(result.Content)
@@ -649,27 +615,8 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		}
 		
 		// Store full video metadata if we have any data
-		if videoData.URL != "" || videoData.SecureURL != "" {
-			result.VideoMetadata = make(map[string]interface{})
-			
-			if videoData.URL != "" {
-				result.VideoMetadata["url"] = videoData.URL
-			}
-			if videoData.SecureURL != "" {
-				result.VideoMetadata["secure_url"] = videoData.SecureURL
-			}
-			if videoData.Type != "" {
-				result.VideoMetadata["type"] = videoData.Type
-			}
-			if videoData.Width > 0 {
-				result.VideoMetadata["width"] = videoData.Width
-			}
-			if videoData.Height > 0 {
-				result.VideoMetadata["height"] = videoData.Height
-			}
-			if videoData.Duration > 0 {
-				result.VideoMetadata["duration"] = videoData.Duration
-			}
+		if metadata := buildVideoMetadata(videoData); metadata != nil {
+			result.VideoMetadata = metadata
 		}
 	}
 	
@@ -700,14 +647,9 @@ func parseDate(dateStr string) (time.Time, error) {
 }
 
 // stripHTMLTags removes HTML tags from content for text output
+// Delegates to dom.StripTags for consistent behavior
 func stripHTMLTags(content string) string {
-	// Create a temporary document to extract text
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(content))
-	if err != nil {
-		// If parsing fails, return original content
-		return content
-	}
-	return doc.Text()
+	return dom.StripTags(content)
 }
 
 // convertToMarkdown converts HTML content to Markdown using html-to-markdown library
@@ -760,6 +702,34 @@ func convertToMarkdown(content string) string {
 	return markdown
 }
 
+// formatContent applies the specified content type transformation and security sanitization
+// Trims inputs, supports common content type aliases, and returns sanitized output
+func formatContent(content string, contentType string) string {
+	// Trim both inputs
+	content = strings.TrimSpace(content)
+	contentType = strings.TrimSpace(contentType)
+
+	// Normalize content type and handle common aliases
+	normalized := strings.ToLower(contentType)
+
+	// Map aliases to canonical types
+	switch normalized {
+	case "text", "text/plain", "txt":
+		return text.NormalizeSpaces(stripHTMLTags(content))
+	case "markdown", "md", "text/markdown":
+		return convertToMarkdown(content)
+	case "html", "text/html", "":
+		// Empty string defaults to HTML (expected behavior)
+		return security.SanitizeHTML(content)
+	default:
+		// Log unexpected content type only when debug is enabled
+		if parserDebugEnabled {
+			log.Printf("WARNING: Unexpected contentType '%s', defaulting to HTML sanitization", contentType)
+		}
+		return security.SanitizeHTML(content)
+	}
+}
+
 // resolveImageTemplateURL resolves template placeholders in responsive image URLs
 func resolveImageTemplateURL(src string, imgElement *goquery.Selection) string {
 	// Check if URL contains template placeholders
@@ -798,6 +768,42 @@ func resolveImageTemplateURL(src string, imgElement *goquery.Selection) string {
 	resolved = strings.ReplaceAll(resolved, "{format}", defaultFormat)
 	
 	return resolved
+}
+
+// buildVideoMetadata creates a metadata map from VideoMetadata struct
+// Centralizes the logic for converting video data to the result format
+func buildVideoMetadata(videoData *generic.VideoMetadata) map[string]interface{} {
+	if videoData == nil {
+		return nil
+	}
+
+	// Only build metadata if we have at least one URL
+	if videoData.URL == "" && videoData.SecureURL == "" {
+		return nil
+	}
+
+	metadata := make(map[string]interface{})
+
+	if videoData.URL != "" {
+		metadata["url"] = videoData.URL
+	}
+	if videoData.SecureURL != "" {
+		metadata["secure_url"] = videoData.SecureURL
+	}
+	if videoData.Type != "" {
+		metadata["type"] = videoData.Type
+	}
+	if videoData.Width > 0 {
+		metadata["width"] = videoData.Width
+	}
+	if videoData.Height > 0 {
+		metadata["height"] = videoData.Height
+	}
+	if videoData.Duration > 0 {
+		metadata["duration"] = videoData.Duration
+	}
+
+	return metadata
 }
 
 // calculateWordCount calculates the number of words in text content

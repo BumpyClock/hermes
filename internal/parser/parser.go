@@ -90,22 +90,6 @@ func (h *Hermes) ParseHTMLWithContext(ctx context.Context, html string, targetUR
 	return h.parseHTMLWithoutOptimizationContext(ctx, html, targetURL, opts)
 }
 
-// ReturnResult is deprecated - no longer needed without object pooling
-func (h *Hermes) ReturnResult(result *Result) {
-	// No-op - object pooling has been removed
-}
-
-// GetStats is deprecated - no longer tracks statistics
-func (h *Hermes) GetStats() *PoolStats {
-	// Return empty stats for backward compatibility
-	return &PoolStats{}
-}
-
-// ResetStats is deprecated - no longer tracks statistics
-func (h *Hermes) ResetStats() {
-	// No-op - statistics tracking has been removed
-}
-
 // parseWithoutOptimization performs basic parsing without optimization layers
 // Used internally by the optimization framework to avoid circular dependencies
 // DEPRECATED: This method uses context.Background() which prevents proper cancellation.
@@ -179,16 +163,3 @@ func (h *Hermes) parseHTMLWithoutOptimizationContext(ctx context.Context, html, 
 	// Use the real extraction logic with context
 	return h.extractAllFieldsWithContext(ctx, doc, targetURL, parsedURL, *opts)
 }
-
-
-// TODO: Implement multi-page article collection and merging
-// The FetchAllPages configuration option exists but doesn't trigger actual merging.
-// Infrastructure exists in pkg/extractors/collect_all_pages.go but needs integration.
-// func (h *Hermes) collectAllPages(result *Result, extractor Extractor, opts ParserOptions) (*Result, error) {
-// 	// Multi-page collection not implemented - would require:
-// 	// 1. Next page URL detection from content (✓ partially implemented)
-// 	// 2. Recursive fetching and content aggregation (needs implementation)
-// 	// 3. Deduplication and proper content merging (needs implementation)
-// 	// 4. Integration with main extraction pipeline (needs implementation)
-// 	return result, nil
-// }
