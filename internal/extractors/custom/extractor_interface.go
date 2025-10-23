@@ -77,63 +77,6 @@ func (ft *FunctionTransform) Transform(selection *goquery.Selection) error {
 	return ft.Fn(selection)
 }
 
-// ExtractorRegistry holds all custom extractors
-type ExtractorRegistry struct {
-	extractors map[string]*CustomExtractor
-}
-
-// NewExtractorRegistry creates a new registry
-func NewExtractorRegistry() *ExtractorRegistry {
-	return &ExtractorRegistry{
-		extractors: make(map[string]*CustomExtractor),
-	}
-}
-
-// Register adds a custom extractor to the registry
-func (r *ExtractorRegistry) Register(extractor *CustomExtractor) {
-	r.extractors[extractor.Domain] = extractor
-	
-	// Also register supported domains
-	for _, domain := range extractor.SupportedDomains {
-		r.extractors[domain] = extractor
-	}
-}
-
-// Get retrieves an extractor by domain
-func (r *ExtractorRegistry) Get(domain string) (*CustomExtractor, bool) {
-	extractor, exists := r.extractors[domain]
-	return extractor, exists
-}
-
-// List returns all registered domains
-func (r *ExtractorRegistry) List() []string {
-	domains := make([]string, 0, len(r.extractors))
-	for domain := range r.extractors {
-		domains = append(domains, domain)
-	}
-	return domains
-}
-
-// Count returns the number of registered extractors
-func (r *ExtractorRegistry) Count() int {
-	return len(r.extractors)
-}
-
-// GetAll returns all extractors (deduplicated by primary domain)
-func (r *ExtractorRegistry) GetAll() map[string]*CustomExtractor {
-	result := make(map[string]*CustomExtractor)
-	seen := make(map[*CustomExtractor]bool)
-	
-	for domain, extractor := range r.extractors {
-		if !seen[extractor] && domain == extractor.Domain {
-			result[domain] = extractor
-			seen[extractor] = true
-		}
-	}
-	
-	return result
-}
-
 // ExtractorOptions provides configuration for extraction operations
 type ExtractorOptions struct {
 	ContentType string

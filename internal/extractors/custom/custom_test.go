@@ -182,29 +182,36 @@ func TestStringTransform(t *testing.T) {
 }
 
 func TestExtractorRegistryOperations(t *testing.T) {
-	registry := NewExtractorRegistry()
-	
+	registry := NewRegistryManager()
+
 	// Register Medium extractor
 	medium := GetMediumExtractor()
-	registry.Register(medium)
-	
+	err := registry.Register(medium)
+	if err != nil {
+		t.Fatalf("Failed to register extractor: %v", err)
+	}
+
 	// Should be able to retrieve it
-	retrieved, exists := registry.Get("medium.com")
+	retrieved, exists := registry.GetByDomain("medium.com")
 	if !exists {
 		t.Error("Failed to retrieve registered extractor")
 	}
-	
+
 	if retrieved.Domain != "medium.com" {
 		t.Error("Retrieved wrong extractor")
 	}
-	
+
 	// Test count
-	if registry.Count() == 0 {
-		t.Error("Registry count should be > 0")
+	primary, total := registry.Count()
+	if primary == 0 {
+		t.Error("Registry primary count should be > 0")
 	}
-	
+	if total == 0 {
+		t.Error("Registry total count should be > 0")
+	}
+
 	// Test list
-	domains := registry.List()
+	domains := registry.ListDomains()
 	if len(domains) == 0 {
 		t.Error("Registry list should not be empty")
 	}
