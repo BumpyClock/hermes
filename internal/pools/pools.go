@@ -1,4 +1,4 @@
-// ABOUTME: This file implements sync.Pool for reusing expensive objects like goquery documents and HTTP response bodies.
+// ABOUTME: This file implements sync.Pool for reusing expensive objects like HTTP response bodies and string builders.
 // It reduces garbage collection pressure and improves performance in high-throughput parsing scenarios.
 package pools
 
@@ -8,14 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-
-	"github.com/PuerkitoBio/goquery"
 )
-
-// DocumentPool manages a pool of goquery.Document objects for reuse
-type DocumentPool struct {
-	pool sync.Pool
-}
 
 // ResponseBodyPool manages a pool of response body readers for reuse
 type ResponseBodyPool struct {
@@ -34,55 +27,10 @@ type StringBuilderPool struct {
 
 // Global pool instances for efficient object reuse
 var (
-	GlobalDocumentPool      = NewDocumentPool()
 	GlobalResponseBodyPool  = NewResponseBodyPool()
 	GlobalBufferPool        = NewBufferPool()
 	GlobalStringBuilderPool = NewStringBuilderPool()
 )
-
-// NewDocumentPool creates a new DocumentPool with proper initialization
-func NewDocumentPool() *DocumentPool {
-	return &DocumentPool{
-		pool: sync.Pool{
-			New: func() interface{} {
-				// We can't pre-create a Document as it needs HTML content
-				// Return nil and handle creation in Get()
-				return nil
-			},
-		},
-	}
-}
-
-// Get retrieves a goquery.Document from the pool or creates a new one
-func (dp *DocumentPool) Get(htmlContent io.Reader) (*goquery.Document, error) {
-	// Try to get from pool first
-	if pooled := dp.pool.Get(); pooled != nil {
-		if doc, ok := pooled.(*goquery.Document); ok {
-			// Reset the document by creating a new one with the content
-			// Since goquery documents can't be easily reset, we'll create new ones
-			// but still benefit from the pool for GC pressure reduction
-			newDoc, err := goquery.NewDocumentFromReader(htmlContent)
-			if err != nil {
-				dp.pool.Put(doc) // Return the pooled doc on error
-				return nil, err
-			}
-			return newDoc, nil
-		}
-	}
-
-	// Create new document if pool is empty or failed
-	return goquery.NewDocumentFromReader(htmlContent)
-}
-
-// Put returns a goquery.Document to the pool for reuse
-func (dp *DocumentPool) Put(doc *goquery.Document) {
-	if doc != nil {
-		// Clear any modifications made to the document
-		// Note: goquery documents can't be easily reset, so we just put it back
-		// The main benefit is reducing GC pressure on the Document struct itself
-		dp.pool.Put(doc)
-	}
-}
 
 // NewResponseBodyPool creates a new ResponseBodyPool
 func NewResponseBodyPool() *ResponseBodyPool {

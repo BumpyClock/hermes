@@ -186,7 +186,7 @@ func mapInternalResult(internal *parser.Result) *Result {
 	if internal == nil {
 		return nil
 	}
-	
+
 	return &Result{
 		URL:           internal.URL,
 		Title:         internal.Title,
@@ -201,12 +201,16 @@ func mapInternalResult(internal *parser.Result) *Result {
 		Direction:     internal.Direction,
 		TotalPages:    internal.TotalPages,
 		RenderedPages: internal.RenderedPages,
+		NextPageURL:   internal.NextPageURL,
 		SiteName:      internal.SiteName,
+		SiteTitle:     internal.SiteTitle,
+		SiteImage:     internal.SiteImage,
 		Description:   internal.Description,
 		Language:      internal.Language,
 		ThemeColor:    internal.ThemeColor,
 		Favicon:       internal.Favicon,
 		VideoURL:      internal.VideoURL,
 		VideoMetadata: internal.VideoMetadata,
+		Extended:      internal.Extended,
 	}
 }

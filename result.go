@@ -15,29 +15,37 @@ type Result struct {
 	Content       string     `json:"content"`
 	Author        string     `json:"author,omitempty"`
 	DatePublished *time.Time `json:"date_published,omitempty"`
-	
+
 	// Media and metadata
 	LeadImageURL  string `json:"lead_image_url,omitempty"`
 	Dek           string `json:"dek,omitempty"`
 	Domain        string `json:"domain"`
 	Excerpt       string `json:"excerpt,omitempty"`
-	
+
 	// Content metrics
 	WordCount     int    `json:"word_count"`
 	Direction     string `json:"direction,omitempty"`
 	TotalPages    int    `json:"total_pages,omitempty"`
 	RenderedPages int    `json:"rendered_pages,omitempty"`
-	
+
+	// Pagination
+	NextPageURL   string `json:"next_page_url,omitempty"`
+
 	// Site information
 	SiteName    string `json:"site_name,omitempty"`
+	SiteTitle   string `json:"site_title,omitempty"`
+	SiteImage   string `json:"site_image,omitempty"`
 	Description string `json:"description,omitempty"`
 	Language    string `json:"language,omitempty"`
 	ThemeColor  string `json:"theme_color,omitempty"`
 	Favicon     string `json:"favicon,omitempty"`
-	
+
 	// Video metadata
 	VideoURL      string                 `json:"video_url,omitempty"`
 	VideoMetadata map[string]interface{} `json:"video_metadata,omitempty"`
+
+	// Custom fields (for site-specific extended extraction)
+	Extended      map[string]interface{} `json:"extended,omitempty"`
 }
 
 // FormatMarkdown formats the result as Markdown with metadata header.
