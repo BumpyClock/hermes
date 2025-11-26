@@ -22,15 +22,18 @@ func (extractor *GenericSiteNameExtractor) Extract(selection *goquery.Selection,
 
 	// Check each meta tag in priority order
 	for _, tagName := range metaTags {
-		// Try meta[property="..."]
-		content := selection.Find("meta[property=\"" + tagName + "\"]").AttrOr("content", "")
-		if content != "" {
+		// Meta tags are normalized to name/value by NormalizeMetaTags; prefer value then content.
+		if content := selection.Find("meta[name=\""+tagName+"\"]").AttrOr("value", ""); content != "" {
 			return strings.TrimSpace(content)
 		}
-
-		// Try meta[name="..."]
-		content = selection.Find("meta[name=\"" + tagName + "\"]").AttrOr("content", "")
-		if content != "" {
+		if content := selection.Find("meta[name=\""+tagName+"\"]").AttrOr("content", ""); content != "" {
+			return strings.TrimSpace(content)
+		}
+		// Backward compatibility in case normalization changes
+		if content := selection.Find("meta[property=\""+tagName+"\"]").AttrOr("content", ""); content != "" {
+			return strings.TrimSpace(content)
+		}
+		if content := selection.Find("meta[property=\""+tagName+"\"]").AttrOr("value", ""); content != "" {
 			return strings.TrimSpace(content)
 		}
 	}

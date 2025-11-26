@@ -22,15 +22,18 @@ func (extractor *GenericSiteImageExtractor) Extract(selection *goquery.Selection
 
 	// Check each meta tag in priority order
 	for _, tagName := range metaTags {
-		// Try meta[property="..."]
-		content := selection.Find("meta[property=\"" + tagName + "\"]").AttrOr("content", "")
-		if content != "" && extractor.isValidImageURL(content) {
+		// Meta tags are normalized to name/value; prefer value then content
+		if content := selection.Find("meta[name=\""+tagName+"\"]").AttrOr("value", ""); content != "" && extractor.isValidImageURL(content) {
 			return strings.TrimSpace(content)
 		}
-
-		// Try meta[name="..."]
-		content = selection.Find("meta[name=\"" + tagName + "\"]").AttrOr("content", "")
-		if content != "" && extractor.isValidImageURL(content) {
+		if content := selection.Find("meta[name=\""+tagName+"\"]").AttrOr("content", ""); content != "" && extractor.isValidImageURL(content) {
+			return strings.TrimSpace(content)
+		}
+		// Backward compat for unnormalized property tags
+		if content := selection.Find("meta[property=\""+tagName+"\"]").AttrOr("content", ""); content != "" && extractor.isValidImageURL(content) {
+			return strings.TrimSpace(content)
+		}
+		if content := selection.Find("meta[property=\""+tagName+"\"]").AttrOr("value", ""); content != "" && extractor.isValidImageURL(content) {
 			return strings.TrimSpace(content)
 		}
 	}
@@ -49,11 +52,11 @@ func (extractor *GenericSiteImageExtractor) isValidImageURL(url string) bool {
 	if url == "" {
 		return false
 	}
-	
+
 	// Basic validation - has protocol or starts with /
 	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") || strings.HasPrefix(url, "//") || strings.HasPrefix(url, "/") {
 		return true
 	}
-	
+
 	return false
 }

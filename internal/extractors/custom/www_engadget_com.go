@@ -1,66 +1,61 @@
-// ABOUTME: Engadget custom extractor with complex figure selector patterns
-// ABOUTME: 100% JavaScript-compatible port of src/extractors/custom/www.engadget.com/index.js
+// ABOUTME: Engadget custom extractor for www.engadget.com
+// ABOUTME: Updated 2025 for new Next.js site structure with data-article-body container
 
 package custom
 
 // WwwEngadgetComExtractor provides the custom extraction rules for www.engadget.com
-// JavaScript equivalent: export const WwwEngadgetComExtractor = { ... }
 var WwwEngadgetComExtractor = &CustomExtractor{
 	Domain: "www.engadget.com",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[name=\"og:title\"]", "value"},
+			[]string{"meta[property=\"og:title\"]", "content"},
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
-			"a.th-meta[data-ylk*=\"subsec:author\"]",
+			"a[data-ylk*=\"elm:author\"]",
 		},
 	},
-	
-	// Engadget stories have publish dates, but the only representation of them on the page
-	// is in a format like "2h ago". There are also these tags with blank values:
-	// <meta class="swiftype" name="published_at" data-type="date" value="">
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
-			// Empty in JavaScript
+			[]string{"meta[property=\"article:published_time\"]", "content"},
 		},
 	},
-	
+
 	Dek: &FieldExtractor{
 		Selectors: []interface{}{
-			"div[class*=\"o-title_mark\"] div",
+			[]string{"meta[property=\"og:description\"]", "content"},
+			[]string{"meta[name=\"description\"]", "content"},
 		},
 	},
-	
-	// Engadget stories do have lead images specified by an og:image meta tag, but selecting
-	// the value attribute of that tag fails. I believe the "&#x2111;" sequence of characters
-	// is triggering this inability to select the attribute value.
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
-			// Empty in JavaScript
+			[]string{"meta[property=\"og:image\"]", "content"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
-				[]interface{}{
-					// Some figures will be inside div.article-text, but some header figures/images
-					// will not.
-					"#page_body figure:not(div.article-text figure)",
-					"div.article-text",
-				},
+				"div[data-article-body=\"true\"]",
+				"article",
 			},
 		},
-		
-		// Transform functions (empty in JavaScript)
+
+		// Clean out ads, commerce modules, and non-content elements
+		Clean: []string{
+			".productModule",
+			".commerce",
+			"[class*=\"Advertisement\"]",
+			"nav",
+			"footer",
+		},
+
 		Transforms: map[string]TransformFunction{},
-		
-		// Clean selectors (empty in JavaScript)
-		Clean: []string{},
 	},
 }
 

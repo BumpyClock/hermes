@@ -15,26 +15,28 @@ type Result struct {
 	Content       string     `json:"content"`
 	Author        string     `json:"author,omitempty"`
 	DatePublished *time.Time `json:"date_published,omitempty"`
-	
+
 	// Media and metadata
-	LeadImageURL  string `json:"lead_image_url,omitempty"`
-	Dek           string `json:"dek,omitempty"`
-	Domain        string `json:"domain"`
-	Excerpt       string `json:"excerpt,omitempty"`
-	
+	LeadImageURL string `json:"lead_image_url,omitempty"`
+	Dek          string `json:"dek,omitempty"`
+	Domain       string `json:"domain"`
+	Excerpt      string `json:"excerpt,omitempty"`
+
 	// Content metrics
 	WordCount     int    `json:"word_count"`
 	Direction     string `json:"direction,omitempty"`
 	TotalPages    int    `json:"total_pages,omitempty"`
 	RenderedPages int    `json:"rendered_pages,omitempty"`
-	
+
 	// Site information
 	SiteName    string `json:"site_name,omitempty"`
+	SiteTitle   string `json:"site_title,omitempty"`
+	SiteImage   string `json:"site_image,omitempty"`
 	Description string `json:"description,omitempty"`
 	Language    string `json:"language,omitempty"`
 	ThemeColor  string `json:"theme_color,omitempty"`
 	Favicon     string `json:"favicon,omitempty"`
-	
+
 	// Video metadata
 	VideoURL      string                 `json:"video_url,omitempty"`
 	VideoMetadata map[string]interface{} `json:"video_metadata,omitempty"`
@@ -46,68 +48,74 @@ type Result struct {
 // Example output:
 //
 //	# Article Title
-//	
+//
 //	## Metadata
 //	**Author:** John Doe
 //	**Date:** 2024-01-01
 //	**URL:** https://example.com/article
-//	
+//
 //	## Content
 //	Article content here...
 func (r *Result) FormatMarkdown() string {
 	var sb strings.Builder
-	
+
 	// Title
 	if r.Title != "" {
 		sb.WriteString("# ")
 		sb.WriteString(r.Title)
 		sb.WriteString("\n\n")
 	}
-	
+
 	// Metadata section
-	hasMetadata := r.Author != "" || r.DatePublished != nil || r.URL != "" || r.SiteName != ""
+	hasMetadata := r.Author != "" || r.DatePublished != nil || r.URL != "" || r.SiteName != "" || r.SiteTitle != ""
 	if hasMetadata {
 		sb.WriteString("## Metadata\n\n")
-		
+
 		if r.Author != "" {
 			sb.WriteString("**Author:** ")
 			sb.WriteString(r.Author)
 			sb.WriteString("\n")
 		}
-		
+
 		if r.DatePublished != nil {
 			sb.WriteString("**Date:** ")
 			sb.WriteString(r.DatePublished.Format("2006-01-02"))
 			sb.WriteString("\n")
 		}
-		
+
 		if r.URL != "" {
 			sb.WriteString("**URL:** ")
 			sb.WriteString(r.URL)
 			sb.WriteString("\n")
 		}
-		
+
 		if r.SiteName != "" {
 			sb.WriteString("**Site:** ")
 			sb.WriteString(r.SiteName)
 			sb.WriteString("\n")
 		}
-		
+
+		if r.SiteTitle != "" {
+			sb.WriteString("**Site Title:** ")
+			sb.WriteString(r.SiteTitle)
+			sb.WriteString("\n")
+		}
+
 		if r.Language != "" {
 			sb.WriteString("**Language:** ")
 			sb.WriteString(r.Language)
 			sb.WriteString("\n")
 		}
-		
+
 		if r.WordCount > 0 {
 			sb.WriteString("**Word Count:** ")
 			sb.WriteString(fmt.Sprintf("%d", r.WordCount))
 			sb.WriteString("\n")
 		}
-		
+
 		sb.WriteString("\n")
 	}
-	
+
 	// Description/Excerpt
 	if r.Description != "" {
 		sb.WriteString("## Description\n\n")
@@ -118,13 +126,13 @@ func (r *Result) FormatMarkdown() string {
 		sb.WriteString(r.Excerpt)
 		sb.WriteString("\n\n")
 	}
-	
+
 	// Main content
 	if r.Content != "" {
 		sb.WriteString("## Content\n\n")
 		sb.WriteString(r.Content)
 	}
-	
+
 	return sb.String()
 }
 
