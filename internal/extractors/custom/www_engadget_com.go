@@ -1,5 +1,6 @@
 // ABOUTME: Engadget custom extractor for www.engadget.com
 // ABOUTME: Updated 2025 for new Next.js site structure with data-article-body container
+// ABOUTME: Note: Hermes normalizes meta tags (property->name, content->value)
 
 package custom
 
@@ -7,9 +8,10 @@ package custom
 var WwwEngadgetComExtractor = &CustomExtractor{
 	Domain: "www.engadget.com",
 
+	// Note: Hermes normalizes meta tags: property->name, content->value
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[property=\"og:title\"]", "content"},
+			[]string{"meta[name=\"og:title\"]", "value"},
 		},
 	},
 
@@ -21,20 +23,20 @@ var WwwEngadgetComExtractor = &CustomExtractor{
 
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[property=\"article:published_time\"]", "content"},
+			[]string{"meta[name=\"article:published_time\"]", "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[property=\"og:description\"]", "content"},
-			[]string{"meta[name=\"description\"]", "content"},
+			[]string{"meta[name=\"og:description\"]", "value"},
+			[]string{"meta[name=\"description\"]", "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
-			[]string{"meta[property=\"og:image\"]", "content"},
+			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
 

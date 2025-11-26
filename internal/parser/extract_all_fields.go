@@ -390,6 +390,14 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 						break
 					}
 				}
+			} else if selectorArray, ok := selector.([]string); ok && len(selectorArray) >= 2 {
+				// Handle array selectors like ["meta[property='og:title']", "content"]
+				if titleEl := doc.Find(selectorArray[0]).First(); titleEl.Length() > 0 {
+					if title := strings.TrimSpace(titleEl.AttrOr(selectorArray[1], "")); title != "" {
+						result.Title = cleaners.CleanTitle(title, targetURL, doc)
+						break
+					}
+				}
 			}
 		}
 	}
