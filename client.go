@@ -14,11 +14,13 @@ import (
 // It manages its own HTTP client for connection pooling and can be shared across goroutines.
 type Client struct {
 	httpClient           *http.Client
+	httpClientProvided   bool
+	timeoutConfigured    bool
 	userAgent            string
 	timeout              time.Duration
 	allowPrivateNetworks bool
 	contentType          string
-	
+
 	// Internal parser instance
 	parser *parser.Hermes
 }
@@ -35,18 +37,18 @@ type Client struct {
 func New(opts ...Option) *Client {
 	// Default configuration
 	c := &Client{
-		userAgent: "Hermes/1.0",
-		timeout:   30 * time.Second,
+		userAgent:            "Hermes/1.0",
+		timeout:              30 * time.Second,
 		allowPrivateNetworks: false,
-		contentType: "html",
+		contentType:          "html",
 	}
-	
+
 	// Apply options
 	for _, opt := range opts {
 		opt(c)
 	}
-	
-	// Create HTTP client if not provided
+
+	// Create HTTP client if not provided. Options record intent; constructor owns final assembly.
 	if c.httpClient == nil {
 		c.httpClient = &http.Client{
 			Timeout: c.timeout,
@@ -58,13 +60,15 @@ func New(opts ...Option) *Client {
 				// Re-enable HTTP/2 by default (remove old workaround)
 			},
 		}
+	} else if c.timeoutConfigured || !c.httpClientProvided {
+		c.httpClient.Timeout = c.timeout
 	}
-	
+
 	// Create internal parser
 	// Note: HTTP client will be passed through headers/options
 	// until we can refactor the parser to accept it directly
 	c.parser = parser.New()
-	
+
 	return c
 }
 
@@ -89,16 +93,16 @@ func (c *Client) Parse(ctx context.Context, url string) (*Result, error) {
 			Err:  fmt.Errorf("empty URL"),
 		}
 	}
-	
+
 	// Create parser options with client configuration
 	opts := c.buildParserOptions()
-	
+
 	// Parse the URL with context support
 	internalResult, err := c.parser.ParseWithContext(ctx, url, opts)
 	if err != nil {
 		return nil, c.wrapParseError(err, ctx, "Parse", url)
 	}
-	
+
 	// Map internal result to public result
 	result := mapInternalResult(internalResult)
 	return result, nil
@@ -121,7 +125,7 @@ func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, erro
 			Err:  fmt.Errorf("empty URL"),
 		}
 	}
-	
+
 	if html == "" {
 		return nil, &ParseError{
 			Code: ErrInvalidURL,
@@ -130,12 +134,12 @@ func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, erro
 			Err:  fmt.Errorf("empty HTML content"),
 		}
 	}
-	
+
 	// Validate URL format
 	validationOpts := validation.DefaultValidationOptions()
 	validationOpts.AllowPrivateNetworks = c.allowPrivateNetworks
 	validationOpts.AllowLocalhost = c.allowPrivateNetworks // Localhost should be allowed when private networks are allowed
-	
+
 	if err := validation.ValidateURL(ctx, url, validationOpts); err != nil {
 		return nil, &ParseError{
 			Code: ErrInvalidURL,
@@ -144,22 +148,22 @@ func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, erro
 			Err:  err,
 		}
 	}
-	
+
 	// Create parser options with client configuration
 	opts := c.buildParserOptions()
-	
+
 	// Parse the HTML with context support
 	internalResult, err := c.parser.ParseHTMLWithContext(ctx, html, url, opts)
 	if err != nil {
 		return nil, c.wrapParseError(err, ctx, "ParseHTML", url)
 	}
-	
+
 	// Map internal result to public result
 	result := mapInternalResult(internalResult)
 	return result, nil
 }
 
-// wrapParseError wraps an error with ParseError including classification
+// wrapParseError wraps an error with ParseError including classification.
 func (c *Client) wrapParseError(err error, ctx context.Context, op, url string) *ParseError {
 	code := ErrorCode(parser.ClassifyErrorCode(err, ctx, op))
 	return &ParseError{
@@ -171,7 +175,7 @@ func (c *Client) wrapParseError(err error, ctx context.Context, op, url string) 
 }
 
 // buildParserOptions creates parser options with client configuration
-// This centralizes the option building logic to avoid duplication
+// This centralizes the option building logic to avoid duplication.
 func (c *Client) buildParserOptions() *parser.ParserOptions {
 	return &parser.ParserOptions{
 		ContentType:          c.contentType,
@@ -181,12 +185,12 @@ func (c *Client) buildParserOptions() *parser.ParserOptions {
 	}
 }
 
-// mapInternalResult converts the internal parser.Result to our public Result type
+// mapInternalResult converts the internal parser.Result to our public Result type.
 func mapInternalResult(internal *parser.Result) *Result {
 	if internal == nil {
 		return nil
 	}
-	
+
 	return &Result{
 		URL:           internal.URL,
 		Title:         internal.Title,

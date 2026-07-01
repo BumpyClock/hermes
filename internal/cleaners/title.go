@@ -16,7 +16,7 @@ import (
 // Title cleaning constants are now provided in constants.go
 
 // CleanTitle cleans and normalizes title text by removing site names, HTML tags, and extra whitespace
-// This is a faithful port of the JavaScript cleanTitle function
+// This is a faithful port of the JavaScript cleanTitle function.
 func CleanTitle(title string, url string, doc *goquery.Document) string {
 	// First strip HTML tags to clean the title for processing
 	cleaned := dom.StripTags(title)
@@ -67,39 +67,39 @@ func ResolveSplitTitle(title, url string) string {
 }
 
 // SplitTitleWithSeparators splits title while preserving separators
-// This mimics JavaScript's split behavior with capturing groups
+// This mimics JavaScript's split behavior with capturing groups.
 func SplitTitleWithSeparators(title string) []string {
 	var result []string
 	lastIndex := 0
-	
+
 	// Find all separator matches
 	matches := TITLE_SPLITTERS_RE.FindAllStringIndex(title, -1)
-	
+
 	for _, match := range matches {
 		start, end := match[0], match[1]
-		
+
 		// Add the text before the separator
 		if start > lastIndex {
 			result = append(result, title[lastIndex:start])
 		}
-		
+
 		// Add the separator itself
 		result = append(result, title[start:end])
 		lastIndex = end
 	}
-	
+
 	// Add any remaining text after the last separator
 	if lastIndex < len(title) {
 		result = append(result, title[lastIndex:])
 	}
-	
+
 	return result
 }
 
 // ExtractBreadcrumbTitle extracts the most relevant title from breadcrumb-style titles
 // This must be a very breadcrumbed title, like:
 // The Best Gadgets on Earth : Bits : Blogs : NYTimes.com
-// NYTimes - Blogs - Bits - The Best Gadgets on Earth
+// NYTimes - Blogs - Bits - The Best Gadgets on Earth.
 func ExtractBreadcrumbTitle(splitTitle []string, text string) string {
 	if len(splitTitle) >= 6 {
 		// Look to see if we can find a breadcrumb splitter that happens
@@ -200,7 +200,7 @@ func CleanDomainFromTitle(splitTitle []string, urlStr string) string {
 }
 
 // LevenshteinRatio calculates the Levenshtein similarity ratio between two strings
-// This is compatible with the JavaScript wuzzy.levenshtein function
+// This is compatible with the JavaScript wuzzy.levenshtein function.
 func LevenshteinRatio(s1, s2 string) float64 {
 	if s1 == s2 {
 		return 1.0
@@ -224,7 +224,7 @@ func LevenshteinRatio(s1, s2 string) float64 {
 	return ratio
 }
 
-// levenshteinDistance computes the Levenshtein distance between two strings
+// levenshteinDistance computes the Levenshtein distance between two strings.
 func levenshteinDistance(s1, s2 string) int {
 	if len(s1) == 0 {
 		return len(s2)
@@ -266,7 +266,7 @@ func levenshteinDistance(s1, s2 string) int {
 	return matrix[len(s1)][len(s2)]
 }
 
-// minInt returns the minimum of three integers
+// minInt returns the minimum of three integers.
 func minInt(a, b, c int) int {
 	if a < b && a < c {
 		return a

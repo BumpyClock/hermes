@@ -13,28 +13,28 @@ import (
 // The algorithm exactly matches JavaScript:
 // 1. Iterate through all BR elements
 // 2. If next element is also BR, set collapsing=true and remove current BR
-// 3. If collapsing and current BR is NOT followed by another BR, call paragraphize on that last BR
+// 3. If collapsing and current BR is NOT followed by another BR, call paragraphize on that last BR.
 func BrsToPs(doc *goquery.Document) *goquery.Document {
 	collapsing := false
-	
+
 	// JavaScript: $('br').each((index, element) => {
 	// We need to collect all BR elements first to avoid mutation issues during iteration
 	var brElements []*goquery.Selection
 	doc.Find("br").Each(func(index int, element *goquery.Selection) {
 		brElements = append(brElements, element)
 	})
-	
+
 	for _, element := range brElements {
 		// Skip if element was already removed
 		if element.Length() == 0 {
 			continue
 		}
-		
+
 		// JavaScript: const nextElement = $element.next().get(0);
 		// We need to check the actual next sibling, not just next element sibling
 		// because text nodes between BRs should break the consecutive chain
 		isNextBr := false
-		
+
 		parent := element.Parent()
 		if parent.Length() > 0 {
 			// Find the position of this BR in parent's contents
@@ -46,17 +46,18 @@ func BrsToPs(doc *goquery.Document) *goquery.Document {
 					brIndex = i
 				}
 			})
-			
+
 			// Check if the immediate next sibling is a BR
 			if brIndex != -1 && brIndex+1 < len(allContents) {
 				nextSibling := allContents[brIndex+1]
 				tagName := strings.ToLower(goquery.NodeName(nextSibling))
-				
+
 				// Only consider it consecutive if the next sibling is immediately a BR
 				// or if it's whitespace-only text followed by a BR
-				if tagName == "br" {
+				switch tagName {
+				case "br":
 					isNextBr = true
-				} else if tagName == "#text" {
+				case "#text":
 					text := nextSibling.Text()
 					if strings.TrimSpace(text) == "" {
 						// Check if the sibling after the whitespace is a BR
@@ -70,7 +71,7 @@ func BrsToPs(doc *goquery.Document) *goquery.Document {
 				}
 			}
 		}
-		
+
 		if isNextBr {
 			// JavaScript: collapsing = true; $element.remove();
 			collapsing = true
@@ -82,7 +83,7 @@ func BrsToPs(doc *goquery.Document) *goquery.Document {
 		}
 		// Note: Single BRs are left alone (no action taken)
 	}
-	
+
 	return doc
 }
 
@@ -92,21 +93,21 @@ func BrsToPs(doc *goquery.Document) *goquery.Document {
 // When br=true:
 // 1. Create new P element
 // 2. Move all following inline siblings into the P until hitting a block element
-// 3. Replace the BR with the P
+// 3. Replace the BR with the P.
 func paragraphize(node *goquery.Selection, br bool) {
 	if !br || node.Length() == 0 {
 		return
 	}
-	
+
 	// JavaScript: const p = $('<p></p>');
 	// Create the paragraph before the BR
 	node.BeforeHtml("<p></p>")
 	p := node.Prev()
-	
+
 	if p.Length() == 0 || !p.Is("p") {
 		return
 	}
-	
+
 	// JavaScript: let sibling = node.nextSibling;
 	// We need to work with parent.Contents() to get both element and text nodes
 	parent := node.Parent()
@@ -114,7 +115,7 @@ func paragraphize(node *goquery.Selection, br bool) {
 		node.Remove()
 		return
 	}
-	
+
 	// Find the position of our BR node in the parent's contents
 	var brIndex = -1
 	var allContents []*goquery.Selection
@@ -124,32 +125,34 @@ func paragraphize(node *goquery.Selection, br bool) {
 			brIndex = i
 		}
 	})
-	
+
 	if brIndex == -1 {
 		node.Remove()
 		return
 	}
-	
+
 	// Collect following siblings (both text and element nodes)
 	var contentParts []string
-	
+
 	// JavaScript: while (sibling && !(sibling.tagName && BLOCK_LEVEL_TAGS_RE.test(sibling.tagName)))
+collectSiblings:
 	for i := brIndex + 1; i < len(allContents); i++ {
 		sibling := allContents[i]
 		tagName := strings.ToLower(goquery.NodeName(sibling))
-		
+
 		// For text nodes, goquery.NodeName returns "#text"
-		if tagName == "#text" {
+		switch {
+		case tagName == "#text":
 			// Text content
 			text := sibling.Text()
 			if strings.TrimSpace(text) != "" {
 				contentParts = append(contentParts, text)
 				sibling.Remove()
 			}
-		} else if BLOCK_LEVEL_TAGS_RE.MatchString(tagName) {
+		case BLOCK_LEVEL_TAGS_RE.MatchString(tagName):
 			// Stop at block level elements
-			break
-		} else {
+			break collectSiblings
+		default:
 			// Element content (inline elements)
 			html, err := goquery.OuterHtml(sibling)
 			if err == nil && html != "" {
@@ -158,16 +161,17 @@ func paragraphize(node *goquery.Selection, br bool) {
 			}
 		}
 	}
-	
+
 	// Add all collected content to the paragraph
-	if len(contentParts) > 0 {
-		fullContent := strings.Join(contentParts, "")
-		p.SetHtml(fullContent)
-	} else {
-		// If no content, add a space to create a visible paragraph
-		p.SetText(" ")
+	if len(contentParts) == 0 {
+		p.Remove()
+		node.Remove()
+		return
 	}
-	
+
+	fullContent := strings.Join(contentParts, "")
+	p.SetHtml(fullContent)
+
 	// JavaScript: $node.replaceWith(p); $node.remove();
 	// Remove the BR since the paragraph now replaces it
 	node.Remove()

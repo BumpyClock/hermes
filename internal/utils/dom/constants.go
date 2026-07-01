@@ -2,11 +2,11 @@ package dom
 
 import "regexp"
 
-// Spacer images to be removed
+// Spacer images to be removed.
 var SPACER_RE = regexp.MustCompile(`(?i)transparent|spacer|blank`)
 
 // The class we will use to mark elements we want to keep
-// but would normally remove
+// but would normally remove.
 const KEEP_CLASS = "hermes-parser-keep"
 
 var KEEP_SELECTORS = []string{
@@ -31,7 +31,7 @@ var STRIP_OUTPUT_TAGS = []string{
 	"object",
 }
 
-// cleanAttributes
+// cleanAttributes.
 var REMOVE_ATTRS = []string{"style", "align"}
 
 func GetRemoveAttrSelectors() []string {
@@ -60,7 +60,7 @@ var WHITELIST_ATTRS = []string{
 
 var WHITELIST_ATTRS_RE = regexp.MustCompile(`(?i)^(src|srcset|sizes|type|href|class|id|alt|xlink:href|width|height)$`)
 
-// removeEmpty
+// removeEmpty.
 var REMOVE_EMPTY_TAGS = []string{"p"}
 
 func GetRemoveEmptySelectors() []string {
@@ -73,7 +73,7 @@ func GetRemoveEmptySelectors() []string {
 
 var REMOVE_EMPTY_SELECTORS = "p:empty"
 
-// cleanTags
+// cleanTags.
 var CLEAN_CONDITIONALLY_TAGS = []string{
 	"ul",
 	"ol",
@@ -85,7 +85,7 @@ var CLEAN_CONDITIONALLY_TAGS = []string{
 
 var CLEAN_CONDITIONALLY_TAGS_LIST = "ul,ol,table,div,button,form"
 
-// cleanHeaders
+// cleanHeaders.
 var HEADER_TAGS = []string{"h2", "h3", "h4", "h5", "h6"}
 var HEADER_TAG_LIST = "h2,h3,h4,h5,h6"
 
@@ -121,7 +121,7 @@ var UNLIKELY_CANDIDATES_BLACKLIST = []string{
 	"outbrain",
 	"pager",
 	"pagination",
-	"predicta", // readwriteweb inline ad box
+	"predicta",                  // readwriteweb inline ad box
 	"presence_control_external", // lifehacker.com container full of false positives
 	"popup",
 	"printfriendly",
@@ -243,10 +243,10 @@ var POSITIVE_SCORE_HINTS = []string{
 	`\\Bcopy`,
 }
 
-// The above list, joined into a matching regular expression
+// The above list, joined into a matching regular expression.
 var POSITIVE_SCORE_RE = regexp.MustCompile(`(?i)article|articlecontent|instapaper_body|blog|body|content|entry-content-asset|entry|hentry|main|Normal|page|pagination|permalink|post|story|text|[-_]copy|\\Bcopy`)
 
-// Readability publisher-specific guidelines
+// Readability publisher-specific guidelines.
 var READABILITY_ASSET = regexp.MustCompile(`(?i)entry-content-asset`)
 
 // A list of strings that denote a negative scoring for this content as being
@@ -311,7 +311,7 @@ var NEGATIVE_SCORE_HINTS = []string{
 	"widget",
 }
 
-// The above list, joined into a matching regular expression
+// The above list, joined into a matching regular expression.
 var NEGATIVE_SCORE_RE = regexp.MustCompile(`(?i)adbox|advert|author|bio|bookmark|bottom|byline|clear|com-|combx|comment|comment\\B|contact|copy|credit|crumb|date|deck|excerpt|featured|foot|footer|footnote|graf|head|info|infotext|instapaper_ignore|jump|linebreak|link|masthead|media|meta|modal|outbrain|promo|pr_|related|respond|roundcontent|scroll|secondary|share|shopping|shoutbox|side|sidebar|sponsor|stamp|sub|summary|tags|tools|widget`)
 
 // Additional scoring constants
@@ -343,7 +343,7 @@ var EXTRANEOUS_LINK_HINTS = []string{
 
 var EXTRANEOUS_LINK_HINTS_RE = regexp.MustCompile(`(?i)print|archive|comment|discuss|e-mail|email|share|reply|all|login|sign|single|adx|entry-unrelated`)
 
-// Match any phrase that looks like it could be page, or paging, or pagination
+// Match any phrase that looks like it could be page, or paging, or pagination.
 var PAGE_RE = regexp.MustCompile(`(?i)pag(e|ing|inat)`)
 
 // Match any link text/classname/id that looks like it could mean the next
@@ -359,7 +359,7 @@ var CAP_LINK_TEXT_RE = regexp.MustCompile(`(?i)(first|last|end)`)
 // page.
 var PREV_LINK_TEXT_RE = regexp.MustCompile(`(?i)(prev|earl|old|new|<|«)`)
 
-// Match 2 or more consecutive <br> tags
+// Match 2 or more consecutive <br> tags.
 var BR_TAGS_RE = regexp.MustCompile(`(?i)(<br[^>]*>[ \n\r\t]*){2,}`)
 
 // Match 1 BR tag.

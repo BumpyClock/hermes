@@ -2,6 +2,7 @@ package hermes_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,25 +67,6 @@ func TestParseHTMLInvalidInputs(t *testing.T) {
 func TestParserInterface(t *testing.T) {
 	// Verify that Client implements Parser interface
 	var _ hermes.Parser = (*hermes.Client)(nil)
-}
-
-func TestErrorTypes(t *testing.T) {
-	// Test error code string representations
-	codes := []hermes.ErrorCode{
-		hermes.ErrInvalidURL,
-		hermes.ErrFetch,
-		hermes.ErrTimeout,
-		hermes.ErrSSRF,
-		hermes.ErrExtract,
-		hermes.ErrContext,
-	}
-
-	for _, code := range codes {
-		str := code.String()
-		if str == "unknown error" {
-			t.Errorf("Unexpected string for error code %d", code)
-		}
-	}
 }
 
 func TestParseError(t *testing.T) {
@@ -185,21 +167,8 @@ func TestResultFormatMarkdown(t *testing.T) {
 	}
 
 	for _, expected := range expectedStrings {
-		if !contains(markdown, expected) {
+		if !strings.Contains(markdown, expected) {
 			t.Errorf("Expected markdown to contain '%s'", expected)
 		}
 	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && len(substr) == 0 || (len(substr) > 0 && findSubstring(s, substr) >= 0))
-}
-
-func findSubstring(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // removeComments recursively removes all HTML comment nodes from the tree
-// Traverses the entire node tree starting from the given node and removes comment nodes at all levels
+// Traverses the entire node tree starting from the given node and removes comment nodes at all levels.
 func removeComments(node *html.Node) {
 	// Traverse children and collect comments to remove
 	// We can't remove during iteration as it modifies the linked list
@@ -35,7 +35,7 @@ func removeComments(node *html.Node) {
 // StripTags removes all HTML tags from a string of text
 // Returns plain text content with all HTML tags removed
 // Removes non-content elements (script, style, noscript, head, meta, link) and HTML comments
-// If the result is empty, returns the original text (JavaScript behavior)
+// If the result is empty, returns the original text (JavaScript behavior).
 func StripTags(text string) string {
 	if text == "" {
 		return text
@@ -62,7 +62,7 @@ func StripTags(text string) string {
 
 	// Remove HTML comments at all levels using recursive traversal
 	// Start from the document root to catch top-level comments
-	if doc.Nodes != nil && len(doc.Nodes) > 0 {
+	if len(doc.Nodes) > 0 {
 		removeComments(doc.Nodes[0])
 	}
 
@@ -119,13 +119,13 @@ func ExtractFromMeta(doc *goquery.Document, metaNames []string, cachedNames []st
 		// If we have zero values, the meta tags had no values
 		if len(values) == 1 {
 			metaValue := values[0]
-			
+
 			// Meta values that contain HTML should be stripped, as they
 			// weren't subject to cleaning previously
 			if cleanTags {
 				metaValue = StripTags(metaValue)
 			}
-			
+
 			return &metaValue
 		}
 	}

@@ -5,27 +5,28 @@ package custom
 
 import (
 	"fmt"
+
 	"github.com/PuerkitoBio/goquery"
 )
 
 // NewsNationalgeographicComExtractor provides the custom extraction rules for news.nationalgeographic.com
-// JavaScript equivalent: export const NewsNationalgeographicComExtractor = { ... }
+// JavaScript equivalent: export const NewsNationalgeographicComExtractor = { ... }.
 var NewsNationalgeographicComExtractor = &CustomExtractor{
 	Domain: "news.nationalgeographic.com",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h1",
 			"h1.main-title",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			".byline-component__contributors b span",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"article:published_time\"]", "value"},
@@ -33,19 +34,19 @@ var NewsNationalgeographicComExtractor = &CustomExtractor{
 		// JavaScript: format: 'ddd MMM DD HH:mm:ss zz YYYY', timezone: 'EST'
 		// Note: Go handles timezone conversion automatically during parsing
 	},
-	
+
 	Dek: &FieldExtractor{
 		Selectors: []interface{}{
 			".article__deck",
 		},
 	},
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
@@ -53,7 +54,7 @@ var NewsNationalgeographicComExtractor = &CustomExtractor{
 				".content",
 			},
 		},
-		
+
 		// Transform functions for News National Geographic-specific content
 		// JavaScript: transforms: { '.parsys.content': ($node, $) => { ... } }
 		Transforms: map[string]TransformFunction{
@@ -69,15 +70,15 @@ var NewsNationalgeographicComExtractor = &CustomExtractor{
 				},
 			},
 		},
-		
-		// Clean selectors - remove unwanted elements  
+
+		// Clean selectors - remove unwanted elements
 		Clean: []string{
 			".pull-quote.pull-quote--large",
 		},
 	},
 }
 
-// GetNewsNationalgeographicComExtractor returns the News National Geographic custom extractor
+// GetNewsNationalgeographicComExtractor returns the News National Geographic custom extractor.
 func GetNewsNationalgeographicComExtractor() *CustomExtractor {
 	return NewsNationalgeographicComExtractor
 }

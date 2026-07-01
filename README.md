@@ -13,25 +13,7 @@ A high-performance Go web content extraction library inspired by the [Postlight 
 
 ## Installation
 
-### As a Go Module
-
-```bash
-go get github.com/BumpyClock/hermes@latest
-```
-
-### CLI Tool
-
-```bash
-go install github.com/BumpyClock/hermes/cmd/hermes@latest
-```
-
-### Build from Source
-
-```bash
-git clone https://github.com/BumpyClock/hermes
-cd hermes
-make build
-```
+See [Installation & Setup](docs/guides/installation.md) for module, CLI, and source-build steps.
 
 ## Usage
 
@@ -174,16 +156,7 @@ func main() {
 
 ## Migration from v0.x to v1.0
 
-If you're upgrading from the old internal API, here are the key changes:
-
-### Old API (v0.x)
-
-```go
-import "github.com/BumpyClock/hermes/pkg/parser"
-
-p := parser.New()
-result, err := p.Parse(url, &parser.ParserOptions{...})
-```
+If you're upgrading from older internal APIs, use the public root package.
 
 ### New API (v1.0+)
 
@@ -196,7 +169,7 @@ result, err := client.Parse(ctx, url)
 
 ### Key Changes
 
-1. **Package Import**: Use root package instead of `/pkg/parser`
+1. **Package Import**: Use root package `github.com/BumpyClock/hermes`
 2. **Context Required**: All methods now require `context.Context` first parameter
 3. **Functional Options**: Use `hermes.WithXxx()` options instead of struct fields
 4. **Error Types**: New `*hermes.ParseError` type with error codes
@@ -239,7 +212,7 @@ if err != nil {
 
 ### Prerequisites
 
-- Go 1.24.6 or later
+- Go version declared in `go.mod`
 - Make (optional)
 
 ### Setup
@@ -248,13 +221,10 @@ if err != nil {
 # Clone and setup
 git clone https://github.com/BumpyClock/hermes
 cd hermes
-make dev-setup
+make deps
 
 # Run tests
 make test
-
-# Run with fixtures
-make run-fixtures
 
 # Lint code
 make lint
@@ -276,7 +246,7 @@ Our carefully selected Go dependencies provide the best performance and maintain
 
 ### Testing
 
-The project includes comprehensive unit tests. Compatibility tests with the JavaScript version are planned. The `make test-compatibility` target currently references a non-existent package and will be enabled once the compatibility suite is added.
+The project includes comprehensive unit tests. Compatibility checks with the JavaScript version are tracked in the benchmark harness.
 
 ```bash
 # Run all tests
@@ -330,25 +300,6 @@ Hermes aims for high compatibility with the JavaScript version:
 - Next page URL detection is implemented
 
 Note: Use the `next_page_url` field for manual pagination handling when needed.
-
-## TODOs
-
-### Multi-page Article Collection
-
-The multi-page article collection feature is partially implemented but needs integration:
-
-- [ ] **Integration**: Connect `collect_all_pages.go` with main parser pipeline
-- [ ] **Configuration**: Wire `FetchAllPages` option to trigger actual multi-page merging
-- [ ] **Pipeline**: Implement call to `CollectAllPages` when `NextPageURL` is detected
-- [ ] **Testing**: Add comprehensive multi-page extraction tests
-
-**Files requiring work:**
-
-- `pkg/parser/parser.go` - Uncomment and implement `collectAllPages` method
-- `pkg/extractors/collect_all_pages.go` - Already implemented, needs integration
-- `pkg/parser/extract_all_fields.go` - Add multi-page logic to extraction pipeline
-
-**Current Status:** Next page URL detection works; automatic fetching/merging does not.
 
 ## Contributing
 

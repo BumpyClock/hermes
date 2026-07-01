@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
 	"github.com/BumpyClock/hermes"
 )
 
 var (
 	outputFormat string
 	outputFile   string
-	headers      string
 	timeout      time.Duration
 	concurrency  int
 	timing       bool
@@ -37,7 +37,6 @@ func main() {
 
 	parseCmd.Flags().StringVarP(&outputFormat, "format", "f", "json", "Output format (json|html|markdown|text)")
 	parseCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file (default: stdout)")
-	parseCmd.Flags().StringVar(&headers, "headers", "", "Custom headers as JSON")
 	parseCmd.Flags().DurationVar(&timeout, "timeout", 30*time.Second, "Timeout per URL")
 	parseCmd.Flags().IntVar(&concurrency, "concurrency", 10, "Maximum concurrent requests")
 	parseCmd.Flags().BoolVar(&timing, "timing", false, "Show timing information for each URL")
@@ -62,19 +61,11 @@ func main() {
 func runParse(cmd *cobra.Command, args []string) error {
 	urls := args
 
-	// Parse custom headers if provided
-	customHeaders := make(map[string]string)
-	if headers != "" {
-		if err := json.Unmarshal([]byte(headers), &customHeaders); err != nil {
-			return fmt.Errorf("invalid headers JSON: %w", err)
-		}
-	}
-
 	// Create hermes client with options
 	clientOptions := []hermes.Option{
 		hermes.WithTimeout(timeout),
 	}
-	
+
 	// Set content type based on output format for the parser
 	// This determines how the content is extracted, not just how it's formatted
 	switch outputFormat {
@@ -87,13 +78,7 @@ func runParse(cmd *cobra.Command, args []string) error {
 	default:
 		clientOptions = append(clientOptions, hermes.WithContentType("html"))
 	}
-	
-	// Add custom headers if provided
-	if len(customHeaders) > 0 {
-		// TODO: Add header support to hermes.Option - for now we'll skip this
-		// Will add hermes.WithHeaders() in future enhancement
-	}
-	
+
 	client := hermes.New(clientOptions...)
 
 	// Use batch processing for concurrent parsing
@@ -105,7 +90,7 @@ func runParse(cmd *cobra.Command, args []string) error {
 	// Filter out failed results for output
 	var successfulResults []ParseResult
 	var totalParseTime time.Duration
-	
+
 	for _, result := range results {
 		if result.Error != nil {
 			if timing {
@@ -113,10 +98,10 @@ func runParse(cmd *cobra.Command, args []string) error {
 			}
 			continue
 		}
-		
+
 		totalParseTime += result.ParseTime
 		successfulResults = append(successfulResults, result)
-		
+
 		if timing {
 			fmt.Fprintf(os.Stderr, "Parsed %s in %v\n", result.URL, result.ParseTime)
 		}
@@ -141,7 +126,7 @@ func runParse(cmd *cobra.Command, args []string) error {
 	return formatOutput(successfulResults, len(urls) == 1)
 }
 
-// ParseResult holds the result of parsing a single URL
+// ParseResult holds the result of parsing a single URL.
 type ParseResult struct {
 	URL       string
 	Result    *hermes.Result
@@ -149,7 +134,7 @@ type ParseResult struct {
 	Error     error
 }
 
-// batchParse processes multiple URLs concurrently using semaphore pattern
+// batchParse processes multiple URLs concurrently using semaphore pattern.
 func batchParse(client *hermes.Client, urls []string) ([]ParseResult, error) {
 	results := make([]ParseResult, len(urls))
 	sem := make(chan struct{}, concurrency) // Semaphore for concurrency control
@@ -184,7 +169,7 @@ func batchParse(client *hermes.Client, urls []string) ([]ParseResult, error) {
 	return results, nil
 }
 
-// formatOutput formats the successful results according to the output format
+// formatOutput formats the successful results according to the output format.
 func formatOutput(results []ParseResult, singleURL bool) error {
 	var output []byte
 	var err error
@@ -205,14 +190,10 @@ func formatOutput(results []ParseResult, singleURL bool) error {
 		// Multiple URLs - create JSON array with metadata
 		var allResults []interface{}
 		for _, result := range results {
-			// Content is already in the requested format from the parser
-			convertedContent := result.Result.Content
-
 			allResults = append(allResults, map[string]interface{}{
-				"url":             result.URL,
-				"parseTime":       result.ParseTime.String(),
-				"result":          result.Result,
-				"convertedContent": convertedContent,
+				"url":       result.URL,
+				"parseTime": result.ParseTime.String(),
+				"result":    result.Result,
 			})
 		}
 		output, err = json.MarshalIndent(allResults, "", "  ")
@@ -224,6 +205,7 @@ func formatOutput(results []ParseResult, singleURL bool) error {
 
 	// Write output
 	if outputFile != "" {
+		//nolint:gosec // CLI output files are user-facing artifacts, so standard readable permissions are intentional.
 		return os.WriteFile(outputFile, output, 0644)
 	}
 

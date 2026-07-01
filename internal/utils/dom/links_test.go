@@ -43,7 +43,7 @@ func TestMakeLinksAbsolute(t *testing.T) {
 			</body></html>`,
 			baseURL: "https://example.com",
 			checks: map[string]string{
-				`a[href="https://other.com/page"]`:           "https://other.com/page",
+				`a[href="https://other.com/page"]`:             "https://other.com/page",
 				`img[src="https://cdn.example.com/image.png"]`: "https://cdn.example.com/image.png",
 			},
 		},
@@ -55,7 +55,7 @@ func TestMakeLinksAbsolute(t *testing.T) {
 			</body></html>`,
 			baseURL: "https://example.com",
 			checks: map[string]string{
-				`a[href="javascript:void(0)"]`:    "javascript:void(0)",
+				`a[href="javascript:void(0)"]`:      "javascript:void(0)",
 				`a[href="mailto:test@example.com"]`: "mailto:test@example.com",
 			},
 		},
@@ -420,7 +420,7 @@ func TestMakeLinksAbsolute_SrcsetEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		result := dom.MakeLinksAbsolute(doc, "https://example.com")
-		
+
 		// Should still convert relative URLs even without descriptors
 		img := result.Find("img")
 		srcset, _ := img.Attr("srcset")
@@ -439,7 +439,7 @@ func TestMakeLinksAbsolute_SrcsetEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		result := dom.MakeLinksAbsolute(doc, "https://example.com")
-		
+
 		// Should use base tag URL instead of provided URL
 		img := result.Find("img")
 		srcset, _ := img.Attr("srcset")
@@ -459,18 +459,18 @@ func TestMakeLinksAbsolute_SrcsetEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		result := dom.MakeLinksAbsolute(doc, "https://example.com")
-		
+
 		// Should convert srcset in source elements
 		sources := result.Find("source")
-		
+
 		// First source (mobile)
 		srcset1, _ := sources.Eq(0).Attr("srcset")
 		assert.Equal(t, "https://example.com/mobile.jpg 1x, https://example.com/mobile-2x.jpg 2x", srcset1)
-		
+
 		// Second source (desktop)
 		srcset2, _ := sources.Eq(1).Attr("srcset")
 		assert.Equal(t, "https://example.com/desktop.jpg 1x, https://example.com/desktop-2x.jpg 2x", srcset2)
-		
+
 		// Fallback img src
 		img := result.Find("img")
 		src, _ := img.Attr("src")

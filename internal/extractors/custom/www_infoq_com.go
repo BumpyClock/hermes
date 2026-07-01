@@ -4,22 +4,22 @@
 package custom
 
 // WwwInfoqComExtractor provides the custom extraction rules for www.infoq.com
-// JavaScript equivalent: export const WwwInfoqComExtractor = { ... }
+// JavaScript equivalent: export const WwwInfoqComExtractor = { ... }.
 var WwwInfoqComExtractor = &CustomExtractor{
 	Domain: "www.infoq.com",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h1.heading",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			"div.widget.article__authors",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			".article__readTime.date",
@@ -28,19 +28,19 @@ var WwwInfoqComExtractor = &CustomExtractor{
 		// format: 'YYYY年MM月DD日' (from JavaScript)
 		// timezone: 'Asia/Tokyo' (from JavaScript)
 	},
-	
+
 	Dek: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:description\"]", "value"},
 		},
 	},
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
@@ -48,16 +48,10 @@ var WwwInfoqComExtractor = &CustomExtractor{
 			},
 			DefaultCleaner: false, // defaultCleaner: false in JavaScript
 		},
-		
-		// Transform functions (empty in JavaScript)
-		Transforms: map[string]TransformFunction{},
-		
-		// Clean selectors (empty in JavaScript)
-		Clean: []string{},
 	},
 }
 
-// GetWwwInfoqComExtractor returns the InfoQ custom extractor
+// GetWwwInfoqComExtractor returns the InfoQ custom extractor.
 func GetWwwInfoqComExtractor() *CustomExtractor {
 	return WwwInfoqComExtractor
 }

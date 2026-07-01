@@ -18,7 +18,7 @@ Thank you for your interest in contributing to Hermes! This guide covers everyth
 
 Before contributing, ensure you have:
 
-1. **Go 1.24.6 or later** installed
+1. **Go version from `go.mod`** installed
 2. **Git** for version control
 3. **Make** (optional, for convenience commands)
 4. **golangci-lint** for code quality checks
@@ -27,22 +27,26 @@ Before contributing, ensure you have:
 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/hermes.git
    cd hermes
    ```
 
 3. **Add upstream remote**:
+
    ```bash
    git remote add upstream https://github.com/BumpyClock/hermes.git
    ```
 
 4. **Install dependencies**:
+
    ```bash
    make deps
    ```
 
 5. **Verify setup**:
+
    ```bash
    make test
    make lint
@@ -94,6 +98,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation only changes
@@ -104,6 +109,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 - `chore`: Changes to the build process or auxiliary tools
 
 **Examples:**
+
 ```bash
 feat(parser): add support for custom timeout configuration
 
@@ -157,11 +163,11 @@ Use clear, descriptive names:
 
 ```go
 // Good
-extractorRegistry := custom.NewExtractorRegistry()
+extractorCatalog := custom.GetAllCustomExtractors()
 contentCleaner := cleaners.NewContentCleaner()
 
 // Avoid - unclear abbreviations
-reg := custom.NewExtractorRegistry()
+exts := custom.GetAllCustomExtractors()
 cc := cleaners.NewContentCleaner()
 ```
 
@@ -199,51 +205,30 @@ golangci-lint run --fix
 Follow the standard Go testing conventions:
 
 ```go
-func TestParser_Parse(t *testing.T) {
+func TestClient_ParseHTML(t *testing.T) {
     tests := []struct {
-        name        string
-        url         string
-        // options appropriate to the API under test
-        want        *Result
-        wantErr     bool
-        wantErrType error
+        name    string
+        html    string
+        want    string
+        wantErr bool
     }{
         {
-            name: "successful extraction with default options",
-            url:  "https://example.com/article",
-            options: nil,
-            want: &Result{
-                Title: "Example Article",
-                WordCount: 150,
-            },
-            wantErr: false,
-        },
-        {
-            name: "invalid URL returns error",
-            url:  "not-a-valid-url",
-            options: nil,
-            want: nil,
-            wantErr: true,
-            wantErrType: &url.Error{},
+            name: "article title",
+            html: `<html><head><title>Example Article</title></head><body><article><p>Body text.</p></article></body></html>`,
+            want: "Example Article",
         },
     }
-    
+
+    client := hermes.New()
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
-            p := New()
-            got, err := p.Parse(tt.url, tt.options)
-            
+            got, err := client.ParseHTML(context.Background(), tt.html, "https://example.com/article")
             if tt.wantErr {
                 assert.Error(t, err)
-                if tt.wantErrType != nil {
-                    assert.IsType(t, tt.wantErrType, err)
-                }
                 return
             }
-            
             assert.NoError(t, err)
-            assert.Equal(t, tt.want.Title, got.Title)
-            assert.Equal(t, tt.want.WordCount, got.WordCount)
+            assert.Equal(t, tt.want, got.Title)
         })
     }
 }
@@ -252,6 +237,7 @@ func TestParser_Parse(t *testing.T) {
 ### Test Categories
 
 #### Unit Tests
+
 - Test individual functions and methods
 - Use mocks for external dependencies
 - Fast execution (< 100ms per test)
@@ -261,14 +247,14 @@ func TestExtractor_ExtractTitle(t *testing.T) {
     html := `<html><head><title>Test Title</title></head></html>`
     doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
     
-    extractor := &GenericExtractor{}
-    title := extractor.ExtractTitle(doc, "https://example.com")
-    
+    title := generic.GenericTitleExtractor.Extract(doc.Selection, "https://example.com", nil)
+
     assert.Equal(t, "Test Title", title)
 }
 ```
 
 #### Integration Tests
+
 - Test component interactions
 - Use real HTTP requests (with fixtures when possible)
 - Tagged with `// +build integration`
@@ -282,35 +268,33 @@ func TestParser_RealWorldExtraction(t *testing.T) {
         t.Skip("skipping integration test in short mode")
     }
     
-    p := New()
-    result, err := p.Parse("https://www.theguardian.com/technology", nil)
-    
+    client := hermes.New()
+    result, err := client.Parse(context.Background(), "https://www.theguardian.com/technology")
+
     assert.NoError(t, err)
-    assert.False(t, result.IsError())
     assert.NotEmpty(t, result.Title)
     assert.Greater(t, result.WordCount, 100)
 }
 ```
 
 #### Benchmark Tests
+
 - Measure performance characteristics
 - Include memory allocation metrics
 
 ```go
-func BenchmarkParser_Parse(b *testing.B) {
-    p := New()
-    url := "https://httpbin.org/html"
-    
-    b.ResetTimer()
+func BenchmarkClient_ParseHTML(b *testing.B) {
+    client := hermes.New()
+    html := `<html><head><title>Bench</title></head><body><article><p>Body text for benchmark.</p></article></body></html>`
+
     b.ReportAllocs()
-    
     for i := 0; i < b.N; i++ {
-        result, err := p.Parse(url, nil)
+        result, err := client.ParseHTML(context.Background(), html, "https://example.com/bench")
         if err != nil {
             b.Fatal(err)
         }
-        if result.IsError() {
-            b.Fatal(result.Message)
+        if result.Title == "" {
+            b.Fatal("empty title")
         }
     }
 }
@@ -376,12 +360,14 @@ Provide examples that compile against the current `hermes` package when adding o
 ### Before Submitting
 
 1. **Sync with upstream**:
+
    ```bash
    git fetch upstream
    git rebase upstream/main
    ```
 
 2. **Run quality checks**:
+
    ```bash
    make test
    make lint
@@ -467,7 +453,7 @@ What actually happened.
 
 ## Environment
 - OS: [e.g. macOS 12.0]
-- Go version: [e.g. 1.24.6]
+- Go version: [output of `go version`]
 - Hermes version: [e.g. v0.1.0]
 
 ## Additional Context
@@ -488,6 +474,7 @@ func main() {
     _, _ = client.Parse(context.Background(), "https://example.com")
 }
 ```
+
 ```
 
 ### Feature Requests
@@ -531,18 +518,21 @@ For questions and support:
 We welcome contributions in these areas:
 
 ### High Priority
+
 - **Custom extractors** for new websites
 - **Performance optimizations**
 - **Bug fixes**
 - **Test coverage improvements**
 
 ### Medium Priority
+
 - **Documentation improvements**
 - **Example code**
 - **Build and CI improvements**
 - **Code refactoring**
 
 ### Future Features
+
 - **Plugin system** for custom extractors
 - **Configuration management**
 - **Advanced caching**
@@ -565,6 +555,7 @@ We follow the [Contributor Covenant Code of Conduct](https://www.contributor-cov
 ### Recognition
 
 Contributors are recognized in:
+
 - **CONTRIBUTORS.md** file
 - **Release notes** for significant contributions
 - **GitHub contributors** page

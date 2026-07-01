@@ -14,7 +14,7 @@ import (
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
 
-// Title extraction constants matching JavaScript behavior exactly
+// Title extraction constants matching JavaScript behavior exactly.
 var (
 	// An ordered list of meta tag names that denote likely article titles.
 	// All attributes should be lowercase for faster case-insensitive matching.
@@ -66,14 +66,14 @@ var (
 		"title",
 	}
 
-	// Regular expression for title separators
+	// Regular expression for title separators.
 	TITLE_SPLITTERS_RE = regexp.MustCompile(`(: | - | \| )`)
 
-	// Domain endings regex for cleaning
+	// Domain endings regex for cleaning.
 	DOMAIN_ENDINGS_RE = regexp.MustCompile(`\.com$|\.net$|\.org$|\.co\.uk$`)
 )
 
-// GenericTitleExtractor extracts article titles using multiple fallback strategies
+// GenericTitleExtractor extracts article titles using multiple fallback strategies.
 var GenericTitleExtractor = struct {
 	Extract func(doc *goquery.Selection, url string, metaCache []string) string
 }{
@@ -132,7 +132,7 @@ var GenericTitleExtractor = struct {
 	},
 }
 
-// cleanTitle cleans and normalizes the title text
+// cleanTitle cleans and normalizes the title text.
 func cleanTitle(title string, url string, doc *goquery.Selection) string {
 	// If title has |, :, or - in it, see if we can clean it up.
 	if TITLE_SPLITTERS_RE.MatchString(title) {
@@ -154,36 +154,36 @@ func cleanTitle(title string, url string, doc *goquery.Selection) string {
 }
 
 // splitTitleWithSeparators splits title while preserving separators
-// This mimics JavaScript's split behavior with capturing groups
+// This mimics JavaScript's split behavior with capturing groups.
 func splitTitleWithSeparators(title string) []string {
 	var result []string
 	lastIndex := 0
-	
+
 	// Find all separator matches
 	matches := TITLE_SPLITTERS_RE.FindAllStringIndex(title, -1)
-	
+
 	for _, match := range matches {
 		start, end := match[0], match[1]
-		
+
 		// Add the text before the separator
 		if start > lastIndex {
 			result = append(result, title[lastIndex:start])
 		}
-		
+
 		// Add the separator itself
 		result = append(result, title[start:end])
 		lastIndex = end
 	}
-	
+
 	// Add any remaining text after the last separator
 	if lastIndex < len(title) {
 		result = append(result, title[lastIndex:])
 	}
-	
+
 	return result
 }
 
-// resolveSplitTitle resolves whether any of the segments should be removed
+// resolveSplitTitle resolves whether any of the segments should be removed.
 func resolveSplitTitle(title, url string) string {
 	// Splits while preserving splitters - use FindAllString to get separators too
 	// This mimics JavaScript's behavior with capturing groups in regex
@@ -207,7 +207,7 @@ func resolveSplitTitle(title, url string) string {
 	return title
 }
 
-// extractBreadcrumbTitle extracts the most relevant title from breadcrumb-style titles
+// extractBreadcrumbTitle extracts the most relevant title from breadcrumb-style titles.
 func extractBreadcrumbTitle(splitTitle []string, text string) string {
 	// This must be a very breadcrumbed title, like:
 	// The Best Gadgets on Earth : Bits : Blogs : NYTimes.com
@@ -264,7 +264,7 @@ func extractBreadcrumbTitle(splitTitle []string, text string) string {
 	return ""
 }
 
-// cleanDomainFromTitle removes domain name matches from title segments
+// cleanDomainFromTitle removes domain name matches from title segments.
 func cleanDomainFromTitle(splitTitle []string, urlStr string) string {
 	if urlStr == "" || len(splitTitle) < 2 {
 		return ""
@@ -304,7 +304,7 @@ func cleanDomainFromTitle(splitTitle []string, urlStr string) string {
 }
 
 // levenshteinRatio calculates the Levenshtein similarity ratio between two strings
-// This is compatible with the JavaScript wuzzy.levenshtein function
+// This is compatible with the JavaScript wuzzy.levenshtein function.
 func levenshteinRatio(s1, s2 string) float64 {
 	if s1 == s2 {
 		return 1.0
@@ -328,7 +328,7 @@ func levenshteinRatio(s1, s2 string) float64 {
 	return ratio
 }
 
-// levenshteinDistance computes the Levenshtein distance between two strings
+// levenshteinDistance computes the Levenshtein distance between two strings.
 func levenshteinDistance(s1, s2 string) int {
 	if len(s1) == 0 {
 		return len(s2)
@@ -370,7 +370,7 @@ func levenshteinDistance(s1, s2 string) int {
 	return matrix[len(s1)][len(s2)]
 }
 
-// minInt returns the minimum of three integers
+// minInt returns the minimum of three integers.
 func minInt(a, b, c int) int {
 	if a < b && a < c {
 		return a

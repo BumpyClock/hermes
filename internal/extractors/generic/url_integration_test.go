@@ -10,7 +10,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// TestURLExtractorIntegration tests integration with realistic HTML
+// TestURLExtractorIntegration tests integration with realistic HTML.
 func TestURLExtractorIntegration(t *testing.T) {
 	// Realistic HTML from a news article
 	html := `
@@ -68,7 +68,7 @@ func TestURLExtractorIntegration(t *testing.T) {
 	}
 }
 
-// TestURLExtractorWithoutCanonical tests fallback to meta tags
+// TestURLExtractorWithoutCanonical tests fallback to meta tags.
 func TestURLExtractorWithoutCanonical(t *testing.T) {
 	html := `
 		<html>
@@ -103,7 +103,7 @@ func TestURLExtractorWithoutCanonical(t *testing.T) {
 	}
 }
 
-// TestURLExtractorEmptyDocument tests handling of minimal HTML
+// TestURLExtractorEmptyDocument tests handling of minimal HTML.
 func TestURLExtractorEmptyDocument(t *testing.T) {
 	html := `<html><head></head><body></body></html>`
 
@@ -125,7 +125,7 @@ func TestURLExtractorEmptyDocument(t *testing.T) {
 	}
 }
 
-// TestURLExtractorMalformedHTML tests robustness with bad HTML
+// TestURLExtractorMalformedHTML tests robustness with bad HTML.
 func TestURLExtractorMalformedHTML(t *testing.T) {
 	// Malformed HTML that parsers need to handle gracefully
 	html := `
@@ -154,7 +154,7 @@ func TestURLExtractorMalformedHTML(t *testing.T) {
 	}
 }
 
-// TestURLExtractorPerformanceRealWorld tests performance with realistic content
+// TestURLExtractorPerformanceRealWorld tests performance with realistic content.
 func TestURLExtractorPerformanceRealWorld(t *testing.T) {
 	// Large HTML document similar to real news sites
 	html := `
@@ -223,19 +223,19 @@ func TestURLExtractorPerformanceRealWorld(t *testing.T) {
 	// Run multiple times to check consistency
 	for i := 0; i < 10; i++ {
 		result := GenericUrlExtractor.Extract(doc.Selection, originalURL, metaCache)
-		
+
 		expectedURL := "https://news.example.com/2024/article"
 		if result.URL != expectedURL {
 			t.Errorf("Iteration %d: Expected URL %q, got %q", i, expectedURL, result.URL)
 		}
-		
+
 		if result.Domain != "news.example.com" {
 			t.Errorf("Iteration %d: Expected domain 'news.example.com', got %q", i, result.Domain)
 		}
 	}
 }
 
-// BenchmarkURLExtractorRealWorld benchmarks with realistic HTML
+// BenchmarkURLExtractorRealWorld benchmarks with realistic HTML.
 func BenchmarkURLExtractorRealWorld(b *testing.B) {
 	html := `
 		<!DOCTYPE html>

@@ -25,7 +25,7 @@ func WithContentType(contentType string) Option // "html" | "markdown" | "text"
 
 - WithHTTPClient: Provide a fully configured `*http.Client` (proxies, TLS, pools, timeouts).
 - WithTransport: Provide a custom `http.RoundTripper` if you are not supplying a full client.
-- WithTimeout: Set request timeout (also applied to the internal client if created by Hermes).
+- WithTimeout: Set request timeout on Hermes-created clients, or on a custom client when explicitly composed with `WithHTTPClient`.
 - WithUserAgent: Override the default `User-Agent` string.
 - WithAllowPrivateNetworks: Permit private network/localhost URLs (defaults to false for SSRF protection).
 - WithContentType: Select output format for the `Result.Content` field.
@@ -46,8 +46,6 @@ This option affects only the content body. All metadata fields are structured th
 - Use `WithTransport` to swap only the transport on the internally created client.
 - `WithUserAgent` sets the `User-Agent` header; other headers are not currently configurable at the client level.
 
-Note: The CLI accepts a `--headers` flag for future extensibility, but these headers are not currently applied by the client. See [CLI Usage](../guides/cli-usage.md) for details.
-
 ## Security
 
 - `WithAllowPrivateNetworks(false)` (default) blocks private IP ranges and localhost to mitigate SSRF.
@@ -56,6 +54,7 @@ Note: The CLI accepts a `--headers` flag for future extensibility, but these hea
 ## Examples
 
 Basic configuration:
+
 ```go
 client := hermes.New(
     hermes.WithTimeout(20*time.Second),
@@ -65,6 +64,7 @@ client := hermes.New(
 ```
 
 Custom HTTP client with proxy and TLS:
+
 ```go
 tr := &http.Transport{ /* custom TLS, proxy, pools */ }
 httpClient := &http.Client{ Transport: tr, Timeout: 45*time.Second }
@@ -75,9 +75,9 @@ client := hermes.New(
 ```
 
 Allow private networks (in a trusted, internal tool):
+
 ```go
 client := hermes.New(
     hermes.WithAllowPrivateNetworks(true),
 )
 ```
-

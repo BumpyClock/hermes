@@ -12,7 +12,7 @@ import (
 
 func TestResource_InternationalContent_UTF8(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	// UTF-8 content with various international characters
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -39,15 +39,15 @@ func TestResource_InternationalContent_UTF8(t *testing.T) {
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
-	
+
 	// Verify title with international characters
 	title := doc.Find("title").Text()
 	assert.Equal(t, "International Test - Français", title)
-	
+
 	// Verify h1 with mixed scripts
 	h1 := doc.Find("h1").Text()
 	assert.Equal(t, "Café París 東京", h1)
-	
+
 	// Verify specific international characters are preserved
 	content := doc.Find("body").Text()
 	assert.Contains(t, content, "ñáéíóú")
@@ -62,7 +62,7 @@ func TestResource_InternationalContent_UTF8(t *testing.T) {
 
 func TestResource_InternationalContent_ISO88591(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	// HTML that declares ISO-8859-1 encoding
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -79,19 +79,19 @@ func TestResource_InternationalContent_ISO88591(t *testing.T) {
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
-	
+
 	// Check that meta tag was normalized
 	metaContent, exists := doc.Find("meta[http-equiv]").Attr("value")
 	assert.True(t, exists)
 	assert.Contains(t, metaContent, "iso-8859-1")
-	
+
 	title := doc.Find("title").Text()
 	assert.Equal(t, "Test ISO-8859-1", title)
 }
 
 func TestResource_InternationalContent_Windows1251(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	// HTML with Windows-1251 (Cyrillic) encoding declaration
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -109,7 +109,7 @@ func TestResource_InternationalContent_Windows1251(t *testing.T) {
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
-	
+
 	// Since we're passing as a string, it should work
 	title := doc.Find("title").Text()
 	assert.Contains(t, title, "1251") // At least part should be preserved
@@ -129,7 +129,7 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 		},
 		{
 			name:    "ISO-8859-1",
-			charset: "iso-8859-1", 
+			charset: "iso-8859-1",
 			content: "Café París",
 		},
 		{
@@ -143,9 +143,9 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 			content: "Fallback content",
 		},
 	}
-	
+
 	r := resource.NewResource()
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			htmlContent := `<!DOCTYPE html>
@@ -160,13 +160,13 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 </html>`
 
 			doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				assert.NotNil(t, doc)
-				
+
 				// Should at least parse successfully
 				title := doc.Find("title").Text()
 				assert.Equal(t, "Test", title)
@@ -177,7 +177,7 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 
 func TestResource_LazyImages_International(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	// HTML with lazy images and international URLs
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -194,11 +194,11 @@ func TestResource_LazyImages_International(t *testing.T) {
 
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
-	
+
 	// Check that lazy images with international URLs were processed
 	images := doc.Find("img")
 	assert.Equal(t, 3, images.Length())
-	
+
 	// First image should have data-src converted to src
 	firstImg := images.First()
 	src, exists := firstImg.Attr("src")
@@ -208,7 +208,7 @@ func TestResource_LazyImages_International(t *testing.T) {
 
 func TestResource_MetaTags_International(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	// HTML with international OpenGraph and meta tags
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -226,25 +226,25 @@ func TestResource_MetaTags_International(t *testing.T) {
 
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
-	
+
 	// Check that international content in meta tags is preserved
 	ogTitle, exists := doc.Find("meta[name='og:title']").Attr("value")
 	assert.True(t, exists)
 	assert.Equal(t, "Café París - 東京レストラン", ogTitle)
-	
+
 	ogDesc, exists := doc.Find("meta[name='og:description']").Attr("value")
 	assert.True(t, exists)
 	assert.Contains(t, ogDesc, "París")
-	
+
 	author, exists := doc.Find("meta[name='article:author']").Attr("value")
 	assert.True(t, exists)
 	assert.Equal(t, "Jean-François Müller", author)
 }
 
-// Benchmark with international content
+// Benchmark with international content.
 func BenchmarkResource_InternationalContent(b *testing.B) {
 	r := resource.NewResource()
-	
+
 	htmlContent := `<!DOCTYPE html>
 <html>
 <head>

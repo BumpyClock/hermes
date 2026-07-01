@@ -31,9 +31,9 @@ func main() {
 
 	// Example URLs to try
 	urls := []string{
-		"https://httpbin.org/html",        // Simple test page
-		"https://example.com",             // Basic content
-		"https://httpbin.org/status/404",  // Error case
+		"https://httpbin.org/html",       // Simple test page
+		"https://example.com",            // Basic content
+		"https://httpbin.org/status/404", // Error case
 	}
 
 	for i, url := range urls {
@@ -67,25 +67,25 @@ func main() {
 	fmt.Println("\n🎉 Example completed!")
 }
 
-// displayResult formats and displays the extracted content
+// displayResult formats and displays the extracted content.
 func displayResult(result *hermes.Result) {
 	fmt.Printf("📰 Title: %s\n", truncate(result.Title, 60))
 	fmt.Printf("👤 Author: %s\n", result.Author)
 	fmt.Printf("🌐 Domain: %s\n", result.Domain)
 	fmt.Printf("📝 Word Count: %d\n", result.WordCount)
-	
+
 	if result.DatePublished != nil {
 		fmt.Printf("📅 Published: %s\n", result.DatePublished.Format("2006-01-02"))
 	}
-	
+
 	if result.LeadImageURL != "" {
 		fmt.Printf("🖼️  Lead Image: %s\n", truncate(result.LeadImageURL, 50))
 	}
-	
+
 	if result.Description != "" {
 		fmt.Printf("📄 Description: %s\n", truncate(result.Description, 100))
 	}
-	
+
 	if result.Content != "" {
 		fmt.Printf("📖 Content: %s...\n", truncate(result.Content, 200))
 	}
@@ -95,7 +95,7 @@ func displayResult(result *hermes.Result) {
 	}
 }
 
-// truncate shortens a string to the specified length with ellipsis
+// truncate shortens a string to the specified length with ellipsis.
 func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s

@@ -14,7 +14,7 @@ import (
 // - If segment is purely a number and it's in first/second position with < 3 chars: keep it
 // - If segment is "index" in first position: remove it
 // - If segment is < 3 chars in first/second position and first segment has no letters: remove it
-// - Otherwise: keep it
+// - Otherwise: keep it.
 func IsGoodSegment(segment string, index int, firstSegmentHasLetters bool) bool {
 	goodSegment := true
 
@@ -52,11 +52,12 @@ func IsGoodSegment(segment string, index int, firstSegmentHasLetters bool) bool 
 //   - string: The base URL with pagination data removed
 //
 // JavaScript equivalent:
-//   export default function articleBaseUrl(url, parsed) {
-//     const parsedUrl = parsed || URL.parse(url);
-//     const { protocol, host, path } = parsedUrl;
-//     ...
-//   }
+//
+//	export default function articleBaseUrl(url, parsed) {
+//	  const parsedUrl = parsed || URL.parse(url);
+//	  const { protocol, host, path } = parsedUrl;
+//	  ...
+//	}
 func ArticleBaseURL(urlStr string, parsedURL *url.URL) string {
 	var parsedUrl *url.URL
 	var err error
@@ -83,7 +84,7 @@ func ArticleBaseURL(urlStr string, parsedURL *url.URL) string {
 	var firstSegmentHasLetters bool
 	// Split path by '/' exactly like JavaScript (keeping empty segments)
 	segments := strings.Split(path, "/")
-	
+
 	// Reverse the segments to process from last to first (JavaScript does this)
 	var reversedSegments []string
 	for i := len(segments) - 1; i >= 0; i-- {
@@ -131,14 +132,14 @@ func ArticleBaseURL(urlStr string, parsedURL *url.URL) string {
 	// Build the final URL - JavaScript joins all segments including empty ones
 	// But we need to be careful about leading slashes
 	finalPath := strings.Join(finalSegments, "/")
-	
+
 	// Remove double slashes that might be created by empty segments
 	finalPath = strings.ReplaceAll(finalPath, "//", "/")
-	
+
 	// Ensure we start with a single slash if we have any path
 	if finalPath != "" && !strings.HasPrefix(finalPath, "/") {
 		finalPath = "/" + finalPath
 	}
-	
+
 	return protocol + "://" + host + finalPath
 }

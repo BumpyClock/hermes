@@ -4,24 +4,23 @@
 package generic
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GenericDescriptionExtractor extracts site descriptions
+// GenericDescriptionExtractor extracts site descriptions.
 type GenericDescriptionExtractor struct{}
 
-// Meta tags for description extraction, ordered by priority
+// Meta tags for description extraction, ordered by priority.
 var descriptionMetaTags = []string{
-	"description",       // Standard meta description
-	"og:description",    // Open Graph description
+	"description",         // Standard meta description
+	"og:description",      // Open Graph description
 	"twitter:description", // Twitter card description
-	"dc.description",    // Dublin Core description
+	"dc.description",      // Dublin Core description
 }
 
-// Extract extracts site description using priority-based strategies
+// Extract extracts site description using priority-based strategies.
 func (extractor *GenericDescriptionExtractor) Extract(selection *goquery.Selection, pageURL string, metaCache []string) string {
 	// Strategy 1: Try meta tags first
 	if description := extractor.extractFromMetaTags(selection); description != "" {
@@ -35,46 +34,16 @@ func (extractor *GenericDescriptionExtractor) Extract(selection *goquery.Selecti
 	return ""
 }
 
-// extractFromMetaTags extracts description from meta tags using priority order
+// extractFromMetaTags extracts description from meta tags using priority order.
 func (extractor *GenericDescriptionExtractor) extractFromMetaTags(selection *goquery.Selection) string {
-	// Check each meta tag in priority order
-	for _, tagName := range descriptionMetaTags {
-		// First try meta[name="..."] - after normalization, content becomes value
-		content := selection.Find("meta[name=\"" + tagName + "\"]").AttrOr("value", "")
-		if content != "" {
-			if extractor.isValidDescription(content) {
-				return strings.TrimSpace(content)
-			}
-		}
-
-		// For og/twitter tags, after normalization property becomes name
-		// So we already checked them above, no need for separate property check
-	}
-
-	return ""
+	return firstMetaValue(selection, descriptionMetaTags, extractor.isValidDescription)
 }
 
-// extractFromJSONLD extracts description from JSON-LD structured data
+// extractFromJSONLD extracts description from JSON-LD structured data.
 func (extractor *GenericDescriptionExtractor) extractFromJSONLD(selection *goquery.Selection) string {
 	var foundDescription string
 
-	// Find all JSON-LD script tags
-	selection.Find("script[type=\"application/ld+json\"]").Each(func(i int, s *goquery.Selection) {
-		if foundDescription != "" {
-			return // Already found a description
-		}
-
-		jsonText := strings.TrimSpace(s.Text())
-		if jsonText == "" {
-			return
-		}
-
-		var data map[string]interface{}
-		if err := json.Unmarshal([]byte(jsonText), &data); err != nil {
-			return // Skip invalid JSON
-		}
-
-		// Try to extract description based on @type
+	eachJSONLD(selection, func(data map[string]interface{}) bool {
 		if typeVal, ok := data["@type"].(string); ok {
 			var description string
 
@@ -84,7 +53,6 @@ func (extractor *GenericDescriptionExtractor) extractFromJSONLD(selection *goque
 					description = desc
 				}
 			case "Article", "NewsArticle":
-				// For articles, check if there's a publisher with description
 				if publisher, ok := data["publisher"].(map[string]interface{}); ok {
 					if desc, ok := publisher["description"].(string); ok {
 						description = desc
@@ -94,25 +62,27 @@ func (extractor *GenericDescriptionExtractor) extractFromJSONLD(selection *goque
 
 			if description != "" && extractor.isValidDescription(description) {
 				foundDescription = description
-				return
+				return false
 			}
 		}
+
+		return true
 	})
 
 	return foundDescription
 }
 
-// isValidDescription validates that the description is suitable as site metadata
+// isValidDescription validates that the description is suitable as site metadata.
 func (extractor *GenericDescriptionExtractor) isValidDescription(description string) bool {
 	description = strings.TrimSpace(description)
-	
+
 	// Must not be empty
 	if description == "" {
 		return false
 	}
 
 	// Should be reasonable length (not too short, not too long)
-	if len(description) < 10 || len(description) > 500 {
+	if len(description) < 10 || len(description) > 300 {
 		return false
 	}
 
@@ -140,13 +110,13 @@ func (extractor *GenericDescriptionExtractor) isValidDescription(description str
 	return true
 }
 
-// cleanDescription cleans and normalizes the description
+// cleanDescription cleans and normalizes the description.
 func (extractor *GenericDescriptionExtractor) cleanDescription(description string) string {
 	description = strings.TrimSpace(description)
-	
+
 	// Remove extra whitespace
 	description = strings.Join(strings.Fields(description), " ")
-	
+
 	// Remove common suffixes that are site-specific but not descriptive
 	suffixes := []string{
 		" - Read more",
@@ -154,13 +124,13 @@ func (extractor *GenericDescriptionExtractor) cleanDescription(description strin
 		" - Continue reading",
 		" | Continue reading",
 	}
-	
+
 	for _, suffix := range suffixes {
 		if strings.HasSuffix(description, suffix) {
 			description = strings.TrimSuffix(description, suffix)
 			break
 		}
 	}
-	
+
 	return strings.TrimSpace(description)
 }

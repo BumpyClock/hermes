@@ -20,12 +20,13 @@ import (
 //   - nil: if no page number found or page number >= 100
 //
 // JavaScript equivalent:
-//   export default function pageNumFromUrl(url) {
-//     const matches = url.match(PAGE_IN_HREF_RE);
-//     if (!matches) return null;
-//     const pageNum = parseInt(matches[6], 10);
-//     return pageNum < 100 ? pageNum : null;
-//   }
+//
+//	export default function pageNumFromUrl(url) {
+//	  const matches = url.match(PAGE_IN_HREF_RE);
+//	  if (!matches) return null;
+//	  const pageNum = parseInt(matches[6], 10);
+//	  return pageNum < 100 ? pageNum : null;
+//	}
 func PageNumFromURL(url string) *int {
 	// Find matches using the PAGE_IN_HREF_RE pattern
 	matches := PAGE_IN_HREF_RE.FindStringSubmatch(url)

@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-// TestContextCancellationImmediate tests immediate context cancellation
+// TestContextCancellationImmediate tests immediate context cancellation.
 func TestContextCancellationImmediate(t *testing.T) {
 	// Create a test server that would delay response
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This should never be reached
 		t.Error("Request should have been cancelled before reaching server")
 		time.Sleep(5 * time.Second)
-		w.Write([]byte(`<html><body>Should not see this</body></html>`))
+		_, _ = w.Write([]byte(`<html><body>Should not see this</body></html>`))
 	}))
 	defer ts.Close()
 
@@ -43,7 +43,7 @@ func TestContextCancellationImmediate(t *testing.T) {
 	t.Logf("✓ Context cancellation worked immediately: %v", elapsed)
 }
 
-// TestContextCancellationDuringFetch tests cancellation during HTTP fetch
+// TestContextCancellationDuringFetch tests cancellation during HTTP fetch.
 func TestContextCancellationDuringFetch(t *testing.T) {
 	// Create a test server that delays before responding
 	serverStarted := make(chan bool)
@@ -51,7 +51,7 @@ func TestContextCancellationDuringFetch(t *testing.T) {
 		serverStarted <- true
 		// Delay to allow cancellation
 		time.Sleep(2 * time.Second)
-		w.Write([]byte(`<html><body>Too late</body></html>`))
+		_, _ = w.Write([]byte(`<html><body>Too late</body></html>`))
 	}))
 	defer ts.Close()
 
@@ -59,7 +59,7 @@ func TestContextCancellationDuringFetch(t *testing.T) {
 
 	// Create a context that will be cancelled during fetch
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	// Start parsing in a goroutine
 	done := make(chan error)
 	go func() {
@@ -85,12 +85,12 @@ func TestContextCancellationDuringFetch(t *testing.T) {
 	t.Logf("✓ Context cancellation during fetch: %v", err)
 }
 
-// TestContextTimeout tests context timeout handling
+// TestContextTimeout tests context timeout handling.
 func TestContextTimeout(t *testing.T) {
 	// Create a test server that delays longer than our timeout
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(2 * time.Second) // Delay longer than our timeout
-		w.Write([]byte(`<html><body>Too slow</body></html>`))
+		_, _ = w.Write([]byte(`<html><body>Too slow</body></html>`))
 	}))
 	defer ts.Close()
 
@@ -123,13 +123,13 @@ func TestContextTimeout(t *testing.T) {
 	t.Logf("✓ Context timeout worked correctly: %v", elapsed)
 }
 
-// TestContextPropagation tests that context is properly propagated through layers
+// TestContextPropagation tests that context is properly propagated through layers.
 func TestContextPropagation(t *testing.T) {
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// The fact that we get here means context was propagated
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(`<html><head><title>Test</title></head><body>Content</body></html>`))
+		_, _ = w.Write([]byte(`<html><head><title>Test</title></head><body>Content</body></html>`))
 	}))
 	defer ts.Close()
 
@@ -151,14 +151,14 @@ func TestContextPropagation(t *testing.T) {
 	t.Logf("✓ Context propagated successfully through all layers")
 }
 
-// TestConcurrentContextCancellation tests concurrent requests with different contexts
+// TestConcurrentContextCancellation tests concurrent requests with different contexts.
 func TestConcurrentContextCancellation(t *testing.T) {
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(100 * time.Millisecond) // Small delay
-		w.Write([]byte(`<html><head><title>Test</title></head><body>Content</body></html>`))
+		_, _ = w.Write([]byte(`<html><head><title>Test</title></head><body>Content</body></html>`))
 	}))
-	defer ts.Close()
+	t.Cleanup(ts.Close)
 
 	client := New(WithAllowPrivateNetworks(true))
 
@@ -166,12 +166,12 @@ func TestConcurrentContextCancellation(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("concurrent_%d", i), func(t *testing.T) {
 			t.Parallel()
-			
+
 			if i%2 == 0 {
 				// Even iterations: use timeout context
 				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 				defer cancel()
-				
+
 				_, err := client.Parse(ctx, ts.URL)
 				if err == nil {
 					t.Error("Expected timeout error")

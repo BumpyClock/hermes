@@ -10,7 +10,7 @@ import (
 )
 
 // WwwGizmodoJpExtractor provides the custom extraction rules for www.gizmodo.jp
-// JavaScript equivalent: export const WwwGizmodoJpExtractor = { ... }
+// JavaScript equivalent: export const WwwGizmodoJpExtractor = { ... }.
 var WwwGizmodoJpExtractor = &CustomExtractor{
 	Domain: "www.gizmodo.jp",
 
@@ -31,8 +31,6 @@ var WwwGizmodoJpExtractor = &CustomExtractor{
 			[]string{"li.p-post-AssistTime time", "datetime"},
 		},
 	},
-
-	Dek: nil,
 
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
@@ -74,7 +72,7 @@ var WwwGizmodoJpExtractor = &CustomExtractor{
 	},
 }
 
-// GetWwwGizmodoJpExtractor returns the Gizmodo Japan custom extractor
+// GetWwwGizmodoJpExtractor returns the Gizmodo Japan custom extractor.
 func GetWwwGizmodoJpExtractor() *CustomExtractor {
 	return WwwGizmodoJpExtractor
 }

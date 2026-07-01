@@ -31,7 +31,7 @@ func TestDetectByHTML(t *testing.T) {
 			expected: "MediumExtractor",
 		},
 		{
-			name: "Blogger extractor detection", 
+			name: "Blogger extractor detection",
 			html: `<!DOCTYPE html>
 <html>
 <head>
@@ -163,8 +163,8 @@ func TestDetectByHTML(t *testing.T) {
 			expected: "MediumExtractor", // First match in selector order should win
 		},
 		{
-			name: "Empty HTML",
-			html: "",
+			name:     "Empty HTML",
+			html:     "",
 			expected: "", // No extractor should match
 		},
 		{
@@ -183,7 +183,7 @@ func TestDetectByHTML(t *testing.T) {
 			}
 
 			extractor := DetectByHTML(doc)
-			
+
 			if tt.expected == "" {
 				// Expect nil/no extractor
 				if extractor != nil {
@@ -205,10 +205,10 @@ func TestDetectByHTMLJavaScriptCompatibility(t *testing.T) {
 	// Test the exact JavaScript logic:
 	// const selector = Reflect.ownKeys(Detectors).find(s => $(s).length > 0);
 	// return Detectors[selector];
-	
+
 	t.Run("JavaScript selector matching behavior", func(t *testing.T) {
 		// Test that the selectors match exactly as they would in JavaScript/jQuery
-		
+
 		testCases := []struct {
 			name           string
 			selector       string
@@ -217,56 +217,56 @@ func TestDetectByHTMLJavaScriptCompatibility(t *testing.T) {
 			expectedLength int
 		}{
 			{
-				name:     "Medium selector exact match",
-				selector: `meta[name="al:ios:app_name"][value="Medium"]`,
-				html:     `<meta name="al:ios:app_name" value="Medium" />`,
-				shouldMatch: true,
+				name:           "Medium selector exact match",
+				selector:       `meta[name="al:ios:app_name"][value="Medium"]`,
+				html:           `<meta name="al:ios:app_name" value="Medium" />`,
+				shouldMatch:    true,
 				expectedLength: 1,
 			},
 			{
-				name:     "Blogger selector exact match", 
-				selector: `meta[name="generator"][value="blogger"]`,
-				html:     `<meta name="generator" value="blogger" />`,
-				shouldMatch: true,
+				name:           "Blogger selector exact match",
+				selector:       `meta[name="generator"][value="blogger"]`,
+				html:           `<meta name="generator" value="blogger" />`,
+				shouldMatch:    true,
 				expectedLength: 1,
 			},
 			{
-				name:     "Medium selector with extra attributes",
-				selector: `meta[name="al:ios:app_name"][value="Medium"]`,
-				html:     `<meta name="al:ios:app_name" value="Medium" id="app-meta" />`,
-				shouldMatch: true,
+				name:           "Medium selector with extra attributes",
+				selector:       `meta[name="al:ios:app_name"][value="Medium"]`,
+				html:           `<meta name="al:ios:app_name" value="Medium" id="app-meta" />`,
+				shouldMatch:    true,
 				expectedLength: 1,
 			},
 			{
-				name:     "Medium selector case sensitive value",
-				selector: `meta[name="al:ios:app_name"][value="Medium"]`,
-				html:     `<meta name="al:ios:app_name" value="medium" />`,
-				shouldMatch: false,
+				name:           "Medium selector case sensitive value",
+				selector:       `meta[name="al:ios:app_name"][value="Medium"]`,
+				html:           `<meta name="al:ios:app_name" value="medium" />`,
+				shouldMatch:    false,
 				expectedLength: 0,
 			},
 			{
-				name:     "Blogger selector case sensitive value",
-				selector: `meta[name="generator"][value="blogger"]`,
-				html:     `<meta name="generator" value="Blogger" />`,
-				shouldMatch: false,
+				name:           "Blogger selector case sensitive value",
+				selector:       `meta[name="generator"][value="blogger"]`,
+				html:           `<meta name="generator" value="Blogger" />`,
+				shouldMatch:    false,
 				expectedLength: 0,
 			},
 		}
-		
+
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				doc, err := goquery.NewDocumentFromReader(strings.NewReader(tc.html))
 				if err != nil {
 					t.Fatalf("Failed to parse HTML: %v", err)
 				}
-				
+
 				selection := doc.Find(tc.selector)
 				actualLength := selection.Length()
-				
+
 				if tc.shouldMatch && actualLength != tc.expectedLength {
 					t.Errorf("Selector %q should match %d elements, got %d", tc.selector, tc.expectedLength, actualLength)
 				}
-				
+
 				if !tc.shouldMatch && actualLength != 0 {
 					t.Errorf("Selector %q should not match any elements, got %d", tc.selector, actualLength)
 				}
@@ -287,12 +287,12 @@ func BenchmarkDetectByHTML(b *testing.B) {
     <p>Content here</p>
 </body>
 </html>`
-	
+
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
 	if err != nil {
 		b.Fatalf("Failed to parse HTML: %v", err)
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		DetectByHTML(doc)
@@ -300,7 +300,7 @@ func BenchmarkDetectByHTML(b *testing.B) {
 }
 
 // Helper function to get extractor name for testing
-// This will need to be implemented based on the actual extractor interface
+// This will need to be implemented based on the actual extractor interface.
 func getExtractorNameForTest(extractor interface{}) string {
 	// For now, return placeholder names
 	// In real implementation, this would inspect the actual extractor type
@@ -313,4 +313,3 @@ func getExtractorNameForTest(extractor interface{}) string {
 		return "UnknownExtractor"
 	}
 }
-

@@ -1,4 +1,4 @@
-// ABOUTME: Test file for ExtractFromMeta function 
+// ABOUTME: Test file for ExtractFromMeta function
 // ABOUTME: Validates meta tag extraction with 100% JavaScript compatibility
 
 package dom
@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test StripTags function first (dependency of ExtractFromMeta)
+// Test StripTags function first (dependency of ExtractFromMeta).
 func TestStripTags(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -82,7 +82,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"foo", "baz"}
 		cachedNames := []string{"foo", "bat"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		require.NotNil(t, result)
 		assert.Equal(t, "bar", *result)
@@ -100,7 +100,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"foo", "baz"}
 		cachedNames := []string{"foo", "bat"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		assert.Nil(t, result)
 	})
@@ -117,7 +117,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"foo", "baz"}
 		cachedNames := []string{"foo", "bat"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		require.NotNil(t, result)
 		assert.Equal(t, "bar", *result)
@@ -134,7 +134,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"description"}
 		cachedNames := []string{"description"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		require.NotNil(t, result)
 		assert.Equal(t, "hello world", *result)
@@ -151,7 +151,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"description"}
 		cachedNames := []string{"description"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, false)
 		require.NotNil(t, result)
 		assert.Equal(t, "<p>hello <strong>world</strong></p>", *result)
@@ -168,7 +168,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"baz", "qux"}
 		cachedNames := []string{"foo", "bat"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		assert.Nil(t, result)
 	})
@@ -184,7 +184,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"foo", "baz"}
 		cachedNames := []string{}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		assert.Nil(t, result)
 	})
@@ -200,7 +200,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"description"}
 		cachedNames := []string{"description"}
-		
+
 		// Updated behavior: now supports both 'value' and 'content' attributes
 		// This enables compatibility with standard HTML meta tags
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -220,7 +220,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"foo", "bar"}
 		cachedNames := []string{"bar", "foo"} // both are available, but foo comes first in metaNames
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		require.NotNil(t, result)
 		assert.Equal(t, "foo-value", *result) // Returns first match in metaNames order
@@ -241,7 +241,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"og:title"}
 		cachedNames := []string{"og:title"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		// Should find the name="og:title", not property="og:title"
 		require.NotNil(t, result)
@@ -262,7 +262,7 @@ func TestExtractFromMeta(t *testing.T) {
 		// Test prioritization - should return first match in metaNames order
 		metaNames := []string{"twitter:description", "description", "og:description"}
 		cachedNames := []string{"description", "twitter:description", "og:description"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		require.NotNil(t, result)
 		assert.Equal(t, "Twitter description", *result)
@@ -279,7 +279,7 @@ func TestExtractFromMeta(t *testing.T) {
 
 		metaNames := []string{"special"}
 		cachedNames := []string{"special"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		require.NotNil(t, result)
 		assert.Equal(t, "Value with \"quotes\" and & symbols", *result)
@@ -300,7 +300,7 @@ func TestExtractFromMeta(t *testing.T) {
 		// Look for the 50th meta tag
 		metaNames := []string{"test50", "test99", "test1"}
 		cachedNames := []string{"test1", "test50", "test99"}
-		
+
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
 		require.NotNil(t, result)
 		assert.Equal(t, "value50", *result) // Should find test50 first

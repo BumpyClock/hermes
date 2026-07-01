@@ -1,17 +1,10 @@
-.PHONY: build test lint clean install deps benchmark run-fixtures
-
-# Go version check
-GO_VERSION := 1.24.6
-CURRENT_GO := $(shell go version | cut -d' ' -f3 | sed 's/go//')
+.PHONY: build test lint clean install deps benchmark
 
 build:
 	go build -o bin/hermes cmd/hermes/main.go
 
 test:
-	go test -v -cover ./...
-
-test-compatibility:
-	go test -v ./internal/compatibility/...
+	go test -cover ./...
 
 lint:
 	golangci-lint run
@@ -30,20 +23,8 @@ deps:
 benchmark:
 	go test -bench=. -benchmem ./...
 
-run-fixtures:
-	@echo "Testing with fixtures..."
-	go test -v ./pkg/extractors/... -fixtures
-
-copy-fixtures:
-	@echo "Copying fixtures from JS project..."
-	cp -r ../fixtures/* internal/fixtures/
-
 docker-build:
 	docker build -t hermes:latest .
-
-# Development helpers
-dev-setup: deps copy-fixtures
-	@echo "Development environment ready"
 
 watch:
 	air -c .air.toml

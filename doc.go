@@ -76,15 +76,15 @@
 //
 //	var wg sync.WaitGroup
 //	sem := make(chan struct{}, 10) // Limit concurrency
-//	
+//
 //	for _, url := range urls {
 //	    wg.Add(1)
 //	    sem <- struct{}{}
-//	    
+//
 //	    go func(u string) {
 //	        defer wg.Done()
 //	        defer func() { <-sem }()
-//	        
+//
 //	        result, err := client.Parse(ctx, u)
 //	        // Handle result
 //	    }(url)

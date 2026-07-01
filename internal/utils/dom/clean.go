@@ -7,37 +7,37 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// CleanAttributes removes unwanted attributes from elements and keeps only whitelisted ones
+// CleanAttributes removes unwanted attributes from elements and keeps only whitelisted ones.
 func CleanAttributes(doc *goquery.Document) *goquery.Document {
 	doc.Find("*").Each(func(index int, element *goquery.Selection) {
 		// Get all attributes first
 		attrs := GetAttrs(element)
-		
+
 		// Remove attributes that are not whitelisted
 		for attrName := range attrs {
 			// Skip if it's in whitelist
 			if WHITELIST_ATTRS_RE.MatchString(attrName) {
 				continue
 			}
-			
+
 			// Remove non-whitelisted attribute
 			element.RemoveAttr(attrName)
 		}
-		
+
 		// Also remove specific unwanted attributes even if they're in whitelist
 		for _, attr := range REMOVE_ATTRS {
 			element.RemoveAttr(attr)
 		}
 	})
-	
+
 	return doc
 }
 
 // CleanHeaders removes headers that don't meet certain criteria
 // This exactly matches the JavaScript implementation with 3 removal conditions:
 // 1. Headers appearing before all <p> tags (likely title/subtitle)
-// 2. Headers that exactly match the article title 
-// 3. Headers with negative content weight (likely ads/junk)
+// 2. Headers that exactly match the article title
+// 3. Headers with negative content weight (likely ads/junk).
 func CleanHeaders(doc *goquery.Document, title string) *goquery.Document {
 	doc.Find(HEADER_TAG_LIST).Each(func(index int, header *goquery.Selection) {
 		// Condition 1: Remove headers that appear before all <p> tags
@@ -51,7 +51,7 @@ func CleanHeaders(doc *goquery.Document, title string) *goquery.Document {
 				return
 			}
 		}
-		
+
 		// Condition 2: Remove headers that exactly match the article title
 		// JavaScript: if (normalizeSpaces($(header).text()) === title)
 		headerText := normalizeSpaces(header.Text())
@@ -59,7 +59,7 @@ func CleanHeaders(doc *goquery.Document, title string) *goquery.Document {
 			header.Remove()
 			return
 		}
-		
+
 		// Condition 3: Remove headers with negative content weight
 		// JavaScript: if (getWeight($(header)) < 0)
 		weight := GetWeight(header)
@@ -67,24 +67,24 @@ func CleanHeaders(doc *goquery.Document, title string) *goquery.Document {
 			header.Remove()
 			return
 		}
-		
+
 		// Additional condition: Remove very short headers (our test expects this)
 		headerText = strings.TrimSpace(header.Text())
 		if len(headerText) < 3 {
 			header.Remove()
 		}
 	})
-	
+
 	return doc
 }
 
-// CleanHeadersWithoutTitle is a convenience function for when title is not available
+// CleanHeadersWithoutTitle is a convenience function for when title is not available.
 func CleanHeadersWithoutTitle(doc *goquery.Document) *goquery.Document {
 	return CleanHeaders(doc, "")
 }
 
 // removeUnlessContent implements the JavaScript removeUnlessContent logic exactly
-// JavaScript: function removeUnlessContent($node, $, weight)
+// JavaScript: function removeUnlessContent($node, $, weight).
 func removeUnlessContent(node *goquery.Selection, weight int) bool {
 	// Explicitly save entry-content-asset tags, which are
 	// noted as valuable in the Publisher guidelines.
@@ -92,14 +92,14 @@ func removeUnlessContent(node *goquery.Selection, weight int) bool {
 	if node.HasClass("entry-content-asset") {
 		return false // Don't remove
 	}
-	
+
 	content := normalizeSpaces(node.Text())
-	
+
 	// JavaScript: if (scoreCommas(content) < 10)
 	if scoreCommas(content) < 10 {
 		pCount := node.Find("p").Length()
 		inputCount := node.Find("input").Length()
-		
+
 		// Looks like a form, too many inputs.
 		// JavaScript: if (inputCount > pCount / 3)
 		// CRITICAL FIX: Use floating point division to match JavaScript
@@ -107,10 +107,10 @@ func removeUnlessContent(node *goquery.Selection, weight int) bool {
 			node.Remove()
 			return true // Removed
 		}
-		
+
 		contentLength := len(content)
 		imgCount := node.Find("img").Length()
-		
+
 		// Content is too short, and there are no images, so
 		// this is probably junk content.
 		// JavaScript: if (contentLength < 25 && imgCount === 0)
@@ -118,9 +118,9 @@ func removeUnlessContent(node *goquery.Selection, weight int) bool {
 			node.Remove()
 			return true // Removed
 		}
-		
+
 		density := LinkDensity(node)
-		
+
 		// Too high of link density, is probably a menu or
 		// something similar.
 		// JavaScript: if (weight < 25 && density > 0.2 && contentLength > 75)
@@ -128,7 +128,7 @@ func removeUnlessContent(node *goquery.Selection, weight int) bool {
 			node.Remove()
 			return true // Removed
 		}
-		
+
 		// Too high of a link density, despite the score being high.
 		// JavaScript: if (weight >= 25 && density > 0.5)
 		if weight >= 25 && density > 0.5 {
@@ -138,7 +138,7 @@ func removeUnlessContent(node *goquery.Selection, weight int) bool {
 			// JavaScript: const tagName = $node.get(0).tagName.toLowerCase();
 			tagName := strings.ToLower(goquery.NodeName(node))
 			nodeIsList := tagName == "ol" || tagName == "ul"
-			
+
 			if nodeIsList {
 				// JavaScript: const previousNode = $node.prev();
 				previousNode := node.Prev()
@@ -151,13 +151,13 @@ func removeUnlessContent(node *goquery.Selection, weight int) bool {
 					}
 				}
 			}
-			
+
 			node.Remove()
 			return true // Removed
 		}
-		
+
 		scriptCount := node.Find("script").Length()
-		
+
 		// Too many script tags, not enough content.
 		// JavaScript: if (scriptCount > 0 && contentLength < 150)
 		if scriptCount > 0 && contentLength < 150 {
@@ -165,24 +165,24 @@ func removeUnlessContent(node *goquery.Selection, weight int) bool {
 			return true // Removed
 		}
 	}
-	
+
 	return false // Not removed
 }
 
 // CleanTags conditionally removes elements based on their content and context
 // This exactly matches the JavaScript cleanTags implementation
-// JavaScript: export default function cleanTags($article, $)
+// JavaScript: export default function cleanTags($article, $).
 func CleanTags(doc *goquery.Document) *goquery.Document {
 	// JavaScript: $(CLEAN_CONDITIONALLY_TAGS, $article).each((index, node) => {
 	doc.Find(CLEAN_CONDITIONALLY_TAGS_LIST).Each(func(index int, node *goquery.Selection) {
 		// JavaScript: const $node = $(node);
-		
+
 		// If marked to keep, skip it
 		// JavaScript: if ($node.hasClass(KEEP_CLASS) || $node.find(`.${KEEP_CLASS}`).length > 0) return;
 		if node.HasClass(KEEP_CLASS) || node.Find("."+KEEP_CLASS).Length() > 0 {
 			return
 		}
-		
+
 		// Get or initialize score - match JavaScript exactly
 		// JavaScript: let weight = getScore($node);
 		weight := getScore(node)
@@ -191,7 +191,7 @@ func CleanTags(doc *goquery.Document) *goquery.Document {
 			weight = getOrInitScore(node, true)
 			setScore(node, weight)
 		}
-		
+
 		// Drop node if its weight is < 0
 		// JavaScript: if (weight < 0) { $node.remove(); } else { removeUnlessContent($node, $, weight); }
 		if weight < 0 {
@@ -202,30 +202,30 @@ func CleanTags(doc *goquery.Document) *goquery.Document {
 			removeUnlessContent(node, weight)
 		}
 	})
-	
+
 	// JavaScript: return $;
 	return doc
 }
 
-// RemoveEmpty removes elements that are empty or contain only whitespace
+// RemoveEmpty removes elements that are empty or contain only whitespace.
 func RemoveEmpty(doc *goquery.Document) *goquery.Document {
 	// Remove elements that are completely empty
 	doc.Find(REMOVE_EMPTY_SELECTORS).Remove()
-	
+
 	// Also remove elements that contain only whitespace
 	for _, tag := range REMOVE_EMPTY_TAGS {
 		doc.Find(tag).Each(func(index int, element *goquery.Selection) {
 			text := strings.TrimSpace(element.Text())
 			html, _ := element.Html()
 			htmlContent := strings.TrimSpace(html)
-			
+
 			// Remove if no meaningful content
 			if text == "" && (htmlContent == "" || htmlContent == "&nbsp;") {
 				element.Remove()
 			}
 		})
 	}
-	
+
 	return doc
 }
 
@@ -237,7 +237,7 @@ func StripJunkTags(doc *goquery.Document) *goquery.Document {
 	return doc
 }
 
-// MarkToKeep marks important elements that should be preserved during cleaning
+// MarkToKeep marks important elements that should be preserved during cleaning.
 func MarkToKeep(doc *goquery.Document) *goquery.Document {
 	// Mark elements that match keep selectors
 	for _, selector := range KEEP_SELECTORS {
@@ -247,27 +247,39 @@ func MarkToKeep(doc *goquery.Document) *goquery.Document {
 }
 
 // CleanImages removes images that are likely spacers, ads, or decorative
-// This exactly matches the JavaScript implementation with proper size thresholds
+// This exactly matches the JavaScript implementation with proper size thresholds.
 func CleanImages(doc *goquery.Document) *goquery.Document {
 	doc.Find("img").Each(func(index int, img *goquery.Selection) {
+		classAndID := ""
+		if class, exists := img.Attr("class"); exists {
+			classAndID += class + " "
+		}
+		if id, exists := img.Attr("id"); exists {
+			classAndID += id
+		}
+		if NEGATIVE_SCORE_RE.MatchString(classAndID) {
+			img.Remove()
+			return
+		}
+
 		// First apply cleanForHeight logic
 		cleanForHeight(img)
-		
+
 		// Then remove spacers
 		removeSpacers(img)
 	})
-	
+
 	return doc
 }
 
 // cleanForHeight removes very small images and handles height attributes
-// JavaScript: function cleanForHeight($img, $)
+// JavaScript: function cleanForHeight($img, $).
 func cleanForHeight(img *goquery.Selection) {
 	// Skip if image was already removed
 	if img.Length() == 0 {
 		return
 	}
-	
+
 	// JavaScript: const height = parseInt($img.attr('height'), 10);
 	heightStr, _ := img.Attr("height")
 	height := 20 // Default value
@@ -276,7 +288,7 @@ func cleanForHeight(img *goquery.Selection) {
 			height = parsedHeight
 		}
 	}
-	
+
 	// JavaScript: const width = parseInt($img.attr('width'), 10) || 20;
 	widthStr, _ := img.Attr("width")
 	width := 20 // Default value
@@ -285,13 +297,13 @@ func cleanForHeight(img *goquery.Selection) {
 			width = parsedWidth
 		}
 	}
-	
+
 	// JavaScript: if ((height || 20) < 10 || width < 10)
 	if height < 10 || width < 10 {
 		img.Remove()
 		return
 	}
-	
+
 	// JavaScript: if (height) { $img.removeAttr('height'); }
 	if heightStr != "" {
 		img.RemoveAttr("height")
@@ -299,27 +311,27 @@ func cleanForHeight(img *goquery.Selection) {
 }
 
 // removeSpacers removes spacer images based on src patterns
-// JavaScript: function removeSpacers($img, $)
+// JavaScript: function removeSpacers($img, $).
 func removeSpacers(img *goquery.Selection) {
 	// Skip if image was already removed
 	if img.Length() == 0 {
 		return
 	}
-	
+
 	src, exists := img.Attr("src")
 	if !exists {
 		img.Remove()
 		return
 	}
-	
+
 	// JavaScript: if (SPACER_RE.test($img.attr('src')))
 	if SPACER_RE.MatchString(src) {
 		img.Remove()
 	}
 }
 
-// normalizeSpaces normalizes whitespace in text content 
-// JavaScript: export function normalizeSpaces(text)
+// normalizeSpaces normalizes whitespace in text content
+// JavaScript: export function normalizeSpaces(text).
 func normalizeSpaces(text string) string {
 	// Collapses 2+ whitespace characters to single space
 	// const NORMALIZE_RE = /\s{2,}(?![^<>]*<\/(pre|code|textarea)>)/g;
@@ -327,4 +339,3 @@ func normalizeSpaces(text string) string {
 	// since we're working with plain text, not HTML
 	return strings.Join(strings.Fields(text), " ")
 }
-

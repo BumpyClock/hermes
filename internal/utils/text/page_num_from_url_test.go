@@ -80,7 +80,7 @@ func TestPageNumFromURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := PageNumFromURL(tt.url)
-			
+
 			if tt.expected == nil {
 				if result != nil {
 					t.Errorf("PageNumFromURL(%q) = %v, want nil", tt.url, *result)
@@ -96,7 +96,7 @@ func TestPageNumFromURL(t *testing.T) {
 	}
 }
 
-// Helper function to create int pointers for test expectations
+// Helper function to create int pointers for test expectations.
 func intPtr(i int) *int {
 	return &i
 }

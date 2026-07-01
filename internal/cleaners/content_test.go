@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestExtractCleanNode tests the main content cleaning function
+// TestExtractCleanNode tests the main content cleaning function.
 func TestExtractCleanNode(t *testing.T) {
 	t.Run("basic cleaning pipeline", func(t *testing.T) {
 		html := `
@@ -200,7 +200,7 @@ func TestExtractCleanNode(t *testing.T) {
 
 		// YouTube and Vimeo iframes should be preserved
 		iframes := cleaned.Find("iframe")
-		
+
 		// Should have some iframes (YouTube/Vimeo preserved, malicious one removed)
 		sources := make([]string, 0)
 		iframes.Each(func(i int, s *goquery.Selection) {
@@ -254,11 +254,11 @@ func TestExtractCleanNode(t *testing.T) {
 	})
 }
 
-// TestContentCleanOptions tests the options struct
+// TestContentCleanOptions tests the options struct.
 func TestContentCleanOptions(t *testing.T) {
 	t.Run("default values", func(t *testing.T) {
 		opts := ContentCleanOptions{}
-		
+
 		// Test default behavior
 		assert.False(t, opts.CleanConditionally)
 		assert.Equal(t, "", opts.Title)
@@ -282,7 +282,7 @@ func TestContentCleanOptions(t *testing.T) {
 	})
 }
 
-// TestCleaningPipelineStages tests individual stages of the cleaning pipeline
+// TestCleaningPipelineStages tests individual stages of the cleaning pipeline.
 func TestCleaningPipelineStages(t *testing.T) {
 	t.Run("rewrite top level", func(t *testing.T) {
 		html := `<html><head></head><body><p>Content</p></body></html>`
@@ -293,7 +293,7 @@ func TestCleaningPipelineStages(t *testing.T) {
 		opts := ContentCleanOptions{}
 
 		cleaned := ExtractCleanNode(body, doc, opts)
-		
+
 		// Body should be rewritten to div
 		assert.NotNil(t, cleaned)
 		tagName := goquery.NodeName(cleaned)
@@ -372,7 +372,7 @@ func TestCleaningPipelineStages(t *testing.T) {
 	})
 }
 
-// TestJavaScriptCompatibility tests compatibility with the JavaScript implementation
+// TestJavaScriptCompatibility tests compatibility with the JavaScript implementation.
 func TestJavaScriptCompatibility(t *testing.T) {
 	t.Run("matches JavaScript cleaning order", func(t *testing.T) {
 		// This HTML represents typical messy article content

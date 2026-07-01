@@ -12,7 +12,7 @@ import (
 
 // Test imports
 
-// Test basic functionality with simple HTML
+// Test basic functionality with simple HTML.
 func TestExtractBestNode_BasicFunctionality(t *testing.T) {
 	html := `<html><body>
 		<div class="content">
@@ -35,7 +35,7 @@ func TestExtractBestNode_BasicFunctionality(t *testing.T) {
 	}
 
 	candidate := ExtractBestNode(doc, opts)
-	
+
 	if candidate == nil {
 		t.Fatal("Expected a candidate, got nil")
 	}
@@ -47,7 +47,7 @@ func TestExtractBestNode_BasicFunctionality(t *testing.T) {
 	}
 }
 
-// Test with stripUnlikelyCandidates option enabled
+// Test with stripUnlikelyCandidates option enabled.
 func TestExtractBestNode_StripUnlikelyCandidates(t *testing.T) {
 	html := `<html><body>
 		<div class="article-content">
@@ -73,29 +73,29 @@ func TestExtractBestNode_StripUnlikelyCandidates(t *testing.T) {
 	}
 
 	candidate := ExtractBestNode(doc, opts)
-	
+
 	if candidate == nil {
 		t.Fatal("Expected a candidate, got nil")
 	}
 
 	text := strings.TrimSpace(candidate.Text())
-	
+
 	// Should contain main content
 	if !strings.Contains(text, "main article content") {
 		t.Errorf("Expected candidate to contain main article content, got: %s", text)
 	}
-	
+
 	// Should not contain stripped content
 	if strings.Contains(text, "comment that should be stripped") {
 		t.Errorf("Expected stripped content to be removed, but found in: %s", text)
 	}
-	
+
 	if strings.Contains(text, "ad that should be removed") {
 		t.Errorf("Expected ad content to be removed, but found in: %s", text)
 	}
 }
 
-// Test with stripUnlikelyCandidates disabled
+// Test with stripUnlikelyCandidates disabled.
 func TestExtractBestNode_NoStripUnlikelyCandidates(t *testing.T) {
 	html := `<html><body>
 		<div class="content">
@@ -117,7 +117,7 @@ func TestExtractBestNode_NoStripUnlikelyCandidates(t *testing.T) {
 	}
 
 	candidate := ExtractBestNode(doc, opts)
-	
+
 	if candidate == nil {
 		t.Fatal("Expected a candidate, got nil")
 	}
@@ -129,7 +129,7 @@ func TestExtractBestNode_NoStripUnlikelyCandidates(t *testing.T) {
 	}
 }
 
-// Test paragraph conversion functionality
+// Test paragraph conversion functionality.
 func TestExtractBestNode_ParagraphConversion(t *testing.T) {
 	html := `<html><body>
 		<div class="article">
@@ -149,7 +149,7 @@ func TestExtractBestNode_ParagraphConversion(t *testing.T) {
 	}
 
 	candidate := ExtractBestNode(doc, opts)
-	
+
 	if candidate == nil {
 		t.Fatal("Expected a candidate, got nil")
 	}
@@ -161,7 +161,7 @@ func TestExtractBestNode_ParagraphConversion(t *testing.T) {
 	}
 }
 
-// Test scoring integration
+// Test scoring integration.
 func TestExtractBestNode_ScoringIntegration(t *testing.T) {
 	html := `<html><body>
 		<div class="article-body" id="main-content">
@@ -184,20 +184,20 @@ func TestExtractBestNode_ScoringIntegration(t *testing.T) {
 	}
 
 	candidate := ExtractBestNode(doc, opts)
-	
+
 	if candidate == nil {
 		t.Fatal("Expected a candidate, got nil")
 	}
 
 	text := strings.TrimSpace(candidate.Text())
-	
+
 	// Should select the content with higher score (longer, better class names)
 	if !strings.Contains(text, "substantial content") {
 		t.Errorf("Expected high-scoring content to be selected, got: %s", text)
 	}
 }
 
-// Test with no content (edge case)
+// Test with no content (edge case).
 func TestExtractBestNode_NoContent(t *testing.T) {
 	html := `<html><body></body></html>`
 
@@ -212,7 +212,7 @@ func TestExtractBestNode_NoContent(t *testing.T) {
 	}
 
 	candidate := ExtractBestNode(doc, opts)
-	
+
 	// Should handle empty content gracefully - may return body or nil
 	if candidate != nil {
 		text := strings.TrimSpace(candidate.Text())
@@ -222,7 +222,7 @@ func TestExtractBestNode_NoContent(t *testing.T) {
 	}
 }
 
-// Test with malformed HTML
+// Test with malformed HTML.
 func TestExtractBestNode_MalformedHTML(t *testing.T) {
 	html := `<html><body>
 		<div class="content">
@@ -243,13 +243,13 @@ func TestExtractBestNode_MalformedHTML(t *testing.T) {
 
 	// Should not panic with malformed HTML
 	candidate := ExtractBestNode(doc, opts)
-	
+
 	if candidate == nil {
 		t.Fatal("Expected a candidate even with malformed HTML")
 	}
 }
 
-// Test integration with all options enabled
+// Test integration with all options enabled.
 func TestExtractBestNode_AllOptionsEnabled(t *testing.T) {
 	html := `<html><body>
 		<div class="article-content main-content">
@@ -275,29 +275,29 @@ func TestExtractBestNode_AllOptionsEnabled(t *testing.T) {
 	}
 
 	candidate := ExtractBestNode(doc, opts)
-	
+
 	if candidate == nil {
 		t.Fatal("Expected a candidate, got nil")
 	}
 
 	text := strings.TrimSpace(candidate.Text())
-	
+
 	// Should contain main article content
 	if !strings.Contains(text, "primary article content") {
 		t.Errorf("Expected main content to be selected, got: %s", text)
 	}
-	
+
 	// Should not contain filtered content
 	if strings.Contains(text, "comment that should be filtered") {
 		t.Errorf("Expected comments to be filtered out, but found in: %s", text)
 	}
-	
+
 	if strings.Contains(text, "Ad content to be removed") {
 		t.Errorf("Expected ads to be filtered out, but found in: %s", text)
 	}
 }
 
-// Test weight nodes option
+// Test weight nodes option.
 func TestExtractBestNode_WeightNodesOption(t *testing.T) {
 	html := `<html><body>
 		<div class="article-body">
@@ -320,7 +320,7 @@ func TestExtractBestNode_WeightNodesOption(t *testing.T) {
 	}
 
 	candidateWithWeights := ExtractBestNode(doc, optsWithWeights)
-	
+
 	if candidateWithWeights == nil {
 		t.Fatal("Expected a candidate with weights enabled")
 	}
@@ -332,7 +332,7 @@ func TestExtractBestNode_WeightNodesOption(t *testing.T) {
 	}
 
 	candidateNoWeights := ExtractBestNode(doc, optsNoWeights)
-	
+
 	if candidateNoWeights == nil {
 		t.Fatal("Expected a candidate with weights disabled")
 	}

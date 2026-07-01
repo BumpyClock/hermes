@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/resource"
 )
 
@@ -268,13 +269,13 @@ func TestGenericLanguageExtractor_IsValidLanguageCode(t *testing.T) {
 		// Invalid codes
 		{"", false},
 		{"english", false},
-		{"EN", false}, // uppercase simple codes
-		{"e", false},  // too short
-		{"eng", false}, // too long for simple
-		{"en-", false}, // incomplete
+		{"EN", false},     // uppercase simple codes
+		{"e", false},      // too short
+		{"eng", false},    // too long for simple
+		{"en-", false},    // incomplete
 		{"en-USA", false}, // region too long
-		{"123", false}, // numeric
-		{"en@US", false}, // wrong separator
+		{"123", false},    // numeric
+		{"en@US", false},  // wrong separator
 	}
 
 	for _, tt := range tests {
@@ -396,40 +397,6 @@ func TestGenericLanguageExtractor_ExtractFromHTMLLang(t *testing.T) {
 
 			if result != tt.expected {
 				t.Errorf("Expected %q, got %q", tt.expected, result)
-			}
-		})
-	}
-}
-
-func TestGenericLanguageExtractor_GetLanguageName(t *testing.T) {
-	extractor := &GenericLanguageExtractor{}
-
-	tests := []struct {
-		code     string
-		expected string
-	}{
-		{"en", "English"},
-		{"en-US", "English (United States)"},
-		{"en-GB", "English (United Kingdom)"},
-		{"es", "Spanish"},
-		{"es-ES", "Spanish (Spain)"},
-		{"es-MX", "Spanish (Mexico)"},
-		{"fr", "French"},
-		{"fr-FR", "French (France)"},
-		{"fr-CA", "French (Canada)"},
-		{"pt-BR", "Portuguese (Brazil)"},
-		{"zh", "Chinese"},
-		{"zh-CN", "Chinese (Simplified)"},
-		{"zh-TW", "Chinese (Traditional)"},
-		{"unknown", "unknown"}, // Unknown code returns itself
-		{"", ""},               // Empty code returns empty
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.code, func(t *testing.T) {
-			result := extractor.getLanguageName(tt.code)
-			if result != tt.expected {
-				t.Errorf("For code %q, expected %q, got %q", tt.code, tt.expected, result)
 			}
 		})
 	}

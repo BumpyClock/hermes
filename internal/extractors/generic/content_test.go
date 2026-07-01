@@ -10,6 +10,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
 
 func TestGenericContentExtractor_Extract_BasicFunctionality(t *testing.T) {
@@ -75,7 +77,7 @@ func TestGenericContentExtractor_Extract_BasicFunctionality(t *testing.T) {
 			}
 
 			result := extractor.Extract(params, ExtractorOptions{})
-			
+
 			assert.NotEmpty(t, result, "should extract content")
 			for _, expected := range tt.contains {
 				assert.Contains(t, result, expected, "should contain expected text")
@@ -275,7 +277,7 @@ func TestNodeIsSufficient(t *testing.T) {
 			require.NoError(t, err)
 
 			node := doc.Find("div").First()
-			result := NodeIsSufficient(node)
+			result := dom.NodeIsSufficient(node)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

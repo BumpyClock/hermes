@@ -14,13 +14,13 @@ import (
 // article-like content.
 //
 // :param doc: a goquery Document to strip nodes from
-// :return: the cleaned goquery Document
+// :return: the cleaned goquery Document.
 func StripUnlikelyCandidates(doc *goquery.Document) *goquery.Document {
 	// Find all elements except links
 	doc.Find("*").Not("a").Each(func(index int, node *goquery.Selection) {
 		classes, classExists := node.Attr("class")
 		id, idExists := node.Attr("id")
-		
+
 		// Skip if no class or id attributes
 		if !classExists && !idExists {
 			return

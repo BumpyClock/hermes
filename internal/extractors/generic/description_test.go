@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/resource"
 )
 
@@ -251,8 +252,8 @@ func TestGenericDescriptionExtractor_IsValidDescription(t *testing.T) {
 		expected bool
 	}{
 		{"Valid site description for testing purposes", true},
-		{"", false},                                    // empty
-		{"Short", false},                              // too short
+		{"", false},      // empty
+		{"Short", false}, // too short
 		{"This is a very long description that goes on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and exceeds the reasonable limit", false}, // too long
 		{"Visit https://example.com for more info", false}, // contains URL
 		{"Check out http://site.com", false},               // contains URL
@@ -309,28 +310,28 @@ func TestGenericDescriptionExtractor_ExtractFromMetaTags(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "standard meta name description",
-			html: `<html><head><meta name="description" content="Site description" /></head></html>`,
+			name:     "standard meta name description",
+			html:     `<html><head><meta name="description" content="Site description" /></head></html>`,
 			expected: "Site description",
 		},
 		{
-			name: "og:description property",
-			html: `<html><head><meta property="og:description" content="OG description" /></head></html>`,
+			name:     "og:description property",
+			html:     `<html><head><meta property="og:description" content="OG description" /></head></html>`,
 			expected: "OG description",
 		},
 		{
-			name: "twitter:description name",
-			html: `<html><head><meta name="twitter:description" content="Twitter description" /></head></html>`,
+			name:     "twitter:description name",
+			html:     `<html><head><meta name="twitter:description" content="Twitter description" /></head></html>`,
 			expected: "Twitter description",
 		},
 		{
-			name: "dc.description",
-			html: `<html><head><meta name="dc.description" content="Dublin Core description" /></head></html>`,
+			name:     "dc.description",
+			html:     `<html><head><meta name="dc.description" content="Dublin Core description" /></head></html>`,
 			expected: "Dublin Core description",
 		},
 		{
-			name: "no valid description",
-			html: `<html><head><meta name="other" content="Not a description" /></head></html>`,
+			name:     "no valid description",
+			html:     `<html><head><meta name="other" content="Not a description" /></head></html>`,
 			expected: "",
 		},
 	}

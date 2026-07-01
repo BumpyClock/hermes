@@ -5,7 +5,7 @@ A cross-platform Node.js script to compare the performance of the Hermes Go pars
 ## Features
 
 - **🧹 Clean setup**: Automatically cleans output directories before each run
-- **📦 Self-contained**: Installs `@postlight/parser` from npm automatically  
+- **📦 Self-contained**: Installs dependencies declared in `package.json` automatically
 - **⚡ Side-by-side comparison**: Tests both parsers on the same URLs
 - **📊 Detailed metrics**: Execution time, file sizes, success rates
 - **🔄 Multiple formats**: Tests both JSON and Markdown output formats
@@ -19,11 +19,12 @@ node test-comparison.js [urls-file]
 ```
 
 **Example:**
+
 ```bash
 node test-comparison.js ./testurls.txt
 ```
 
-If no URL file is provided, it defaults to `../../testurls.txt`.
+If no URL file is provided, it defaults to `./testurls.txt`.
 
 ## Output
 
@@ -44,7 +45,7 @@ The script creates the following structure:
 
 - Node.js (any recent version)
 - Go (for building the Hermes parser)
-- Internet connection (for npm install)
+- Internet connection (for `npm install`)
 
 ## Sample Results
 
@@ -60,6 +61,7 @@ Markdown - JS: 1/1, Go: 1/1
 ```
 
 The comparison report contains detailed metrics for analysis:
+
 - Execution times per parser per format
 - Success/failure rates
 - Output file sizes

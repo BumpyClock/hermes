@@ -97,13 +97,13 @@ func TestGenericVideoExtractor(t *testing.T) {
 			},
 		},
 		{
-			name: "Empty content ignored",
-			html: `<meta property="og:video" content="">`,
+			name:     "Empty content ignored",
+			html:     `<meta property="og:video" content="">`,
 			expected: nil,
 		},
 		{
-			name: "No video metadata",
-			html: `<meta name="description" content="A test page">`,
+			name:     "No video metadata",
+			html:     `<meta name="description" content="A test page">`,
 			expected: nil,
 		},
 		{
@@ -127,7 +127,7 @@ func TestGenericVideoExtractor(t *testing.T) {
 			}
 
 			result := extractor.Extract(doc.Selection, "https://example.com", []string{})
-			
+
 			if tt.expected == nil {
 				if result != nil {
 					t.Errorf("Expected nil, got %+v", result)
@@ -178,13 +178,13 @@ func TestExtractVideoURL(t *testing.T) {
 			expected: "https://example.com/video.mp4",
 		},
 		{
-			name: "Falls back to regular URL",
-			html: `<meta property="og:video" content="https://example.com/video.mp4">`,
+			name:     "Falls back to regular URL",
+			html:     `<meta property="og:video" content="https://example.com/video.mp4">`,
 			expected: "https://example.com/video.mp4",
 		},
 		{
-			name: "Returns empty for no video",
-			html: `<meta name="description" content="No video here">`,
+			name:     "Returns empty for no video",
+			html:     `<meta name="description" content="No video here">`,
 			expected: "",
 		},
 	}
@@ -197,7 +197,7 @@ func TestExtractVideoURL(t *testing.T) {
 			}
 
 			result := extractor.ExtractVideoURL(doc.Selection, "https://example.com", []string{})
-			
+
 			if result != tt.expected {
 				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
 			}
@@ -205,35 +205,27 @@ func TestExtractVideoURL(t *testing.T) {
 	}
 }
 
-func TestExtractMetaContent(t *testing.T) {
-	extractor := &GenericVideoExtractor{}
-	
+func TestVideoExtractorMetaLookupSupportsNormalizedAndRawMeta(t *testing.T) {
 	html := `
 		<meta property="og:video" content="https://example.com/video.mp4">
 		<meta name="twitter:player" content="https://twitter.com/player">
 		<meta property="og:video:width" content="  1280  ">
 	`
-	
+
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		t.Fatalf("Failed to parse HTML: %v", err)
 	}
 
-	tests := []struct {
-		attr     string
-		value    string
-		expected string
-	}{
-		{"property", "og:video", "https://example.com/video.mp4"},
-		{"name", "twitter:player", "https://twitter.com/player"},
-		{"property", "og:video:width", "1280"}, // Should trim whitespace
-		{"property", "nonexistent", ""},
+	extractor := &GenericVideoExtractor{}
+	video := extractor.Extract(doc.Selection, "https://example.com/article", nil)
+	if video == nil {
+		t.Fatal("expected video metadata")
 	}
-
-	for _, tt := range tests {
-		result := extractor.extractMetaContent(doc.Selection, tt.attr, tt.value)
-		if result != tt.expected {
-			t.Errorf("extractMetaContent(%s, %s) = '%s', expected '%s'", tt.attr, tt.value, result, tt.expected)
-		}
+	if video.URL != "https://example.com/video.mp4" {
+		t.Errorf("video URL = %q", video.URL)
+	}
+	if video.Width != 1280 {
+		t.Errorf("video width = %d", video.Width)
 	}
 }

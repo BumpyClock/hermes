@@ -7,38 +7,38 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GetLATimesExtractor returns the custom extractor for www.latimes.com
+// GetLATimesExtractor returns the custom extractor for www.latimes.com.
 func GetLATimesExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.latimes.com",
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
 				"h1.headline",
 				".trb_ar_hl",
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
 				`a[data-click="standardBylineAuthorName"]`,
 				[]string{`meta[name="author"]`, "value"},
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="article:published_time"]`, "value"},
 				[]string{`meta[itemprop="datePublished"]`, "value"},
 			},
 		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="og:image"]`, "value"},
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
@@ -46,7 +46,7 @@ func GetLATimesExtractor() *CustomExtractor {
 					".trb_ar_main",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				".trb_ar_la": &FunctionTransform{
 					Fn: func(node *goquery.Selection) error {
@@ -60,7 +60,7 @@ func GetLATimesExtractor() *CustomExtractor {
 					},
 				},
 			},
-			
+
 			Clean: []string{
 				".trb_ar_by",
 				".trb_ar_cr",

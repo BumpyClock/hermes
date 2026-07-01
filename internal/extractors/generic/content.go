@@ -7,18 +7,19 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
 
-// ExtractorOptions represents configuration options for content extraction
+// ExtractorOptions represents configuration options for content extraction.
 type ExtractorOptions struct {
 	StripUnlikelyCandidates bool
 	WeightNodes             bool
 	CleanConditionally      bool
 }
 
-// ExtractorParams contains all the parameters needed for extraction
+// ExtractorParams contains all the parameters needed for extraction.
 type ExtractorParams struct {
 	Doc   *goquery.Document
 	HTML  string
@@ -26,12 +27,12 @@ type ExtractorParams struct {
 	URL   string
 }
 
-// GenericContentExtractor implements the main content extraction logic
+// GenericContentExtractor implements the main content extraction logic.
 type GenericContentExtractor struct {
 	DefaultOpts ExtractorOptions
 }
 
-// NewGenericContentExtractor creates a new extractor with default options
+// NewGenericContentExtractor creates a new extractor with default options.
 func NewGenericContentExtractor() *GenericContentExtractor {
 	return &GenericContentExtractor{
 		DefaultOpts: ExtractorOptions{
@@ -61,49 +62,33 @@ func (e *GenericContentExtractor) Extract(params ExtractorParams, opts Extractor
 	// First attempt with current options
 	node := e.GetContentNode(doc, params.Title, params.URL, mergedOpts)
 
-	if NodeIsSufficient(node) {
+	if dom.NodeIsSufficient(node) {
 		return e.CleanAndReturnNode(node, doc)
 	}
 
-	// We didn't succeed on first pass, one by one disable our extraction opts and try again.
-	// This matches the JavaScript logic exactly: iterate through options that are true and disable them
-	
-	// Try disabling StripUnlikelyCandidates
-	if mergedOpts.StripUnlikelyCandidates {
-		mergedOpts.StripUnlikelyCandidates = false
-		
-		freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(params.HTML))
-		if err == nil {
-			node = e.GetContentNode(freshDoc, params.Title, params.URL, mergedOpts)
-			if NodeIsSufficient(node) {
-				return e.CleanAndReturnNode(node, freshDoc)
-			}
-		}
+	retries := []struct {
+		enabled bool
+		disable func(*ExtractorOptions)
+	}{
+		{mergedOpts.StripUnlikelyCandidates, func(o *ExtractorOptions) { o.StripUnlikelyCandidates = false }},
+		{mergedOpts.WeightNodes, func(o *ExtractorOptions) { o.WeightNodes = false }},
+		{mergedOpts.CleanConditionally, func(o *ExtractorOptions) { o.CleanConditionally = false }},
 	}
-	
-	// Try disabling WeightNodes
-	if mergedOpts.WeightNodes {
-		mergedOpts.WeightNodes = false
-		
-		freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(params.HTML))
-		if err == nil {
-			node = e.GetContentNode(freshDoc, params.Title, params.URL, mergedOpts)
-			if NodeIsSufficient(node) {
-				return e.CleanAndReturnNode(node, freshDoc)
-			}
+
+	for _, retry := range retries {
+		if !retry.enabled {
+			continue
 		}
-	}
-	
-	// Try disabling CleanConditionally
-	if mergedOpts.CleanConditionally {
-		mergedOpts.CleanConditionally = false
-		
+
+		retry.disable(&mergedOpts)
 		freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(params.HTML))
-		if err == nil {
-			node = e.GetContentNode(freshDoc, params.Title, params.URL, mergedOpts)
-			if NodeIsSufficient(node) {
-				return e.CleanAndReturnNode(node, freshDoc)
-			}
+		if err != nil {
+			continue
+		}
+
+		node = e.GetContentNode(freshDoc, params.Title, params.URL, mergedOpts)
+		if dom.NodeIsSufficient(node) {
+			return e.CleanAndReturnNode(node, freshDoc)
 		}
 	}
 
@@ -112,7 +97,7 @@ func (e *GenericContentExtractor) Extract(params ExtractorParams, opts Extractor
 }
 
 // GetContentNode gets the content node given current options
-// This orchestrates the extraction pipeline: extract best node -> clean content
+// This orchestrates the extraction pipeline: extract best node -> clean content.
 func (e *GenericContentExtractor) GetContentNode(doc *goquery.Document, title, url string, opts ExtractorOptions) *goquery.Selection {
 	// Extract the best node using the scoring system
 	bestNode := ExtractBestNode(doc, ExtractBestNodeOptions{
@@ -146,7 +131,7 @@ func (e *GenericContentExtractor) CleanAndReturnNode(node *goquery.Selection, do
 	return text.NormalizeSpaces(html)
 }
 
-// mergeOptions merges provided options with defaults
+// mergeOptions merges provided options with defaults.
 func (e *GenericContentExtractor) mergeOptions(opts ExtractorOptions) ExtractorOptions {
 	// Start with defaults
 	merged := e.DefaultOpts
@@ -160,20 +145,7 @@ func (e *GenericContentExtractor) mergeOptions(opts ExtractorOptions) ExtractorO
 	return merged
 }
 
-// NodeIsSufficient determines if a node has enough content to be considered article-like
-// Given a node, determine if it's article-like enough to return
-// Direct port of JavaScript nodeIsSufficient function
-func NodeIsSufficient(node *goquery.Selection) bool {
-	if node == nil || node.Length() == 0 {
-		return false
-	}
-
-	// Extract text and trim whitespace, then check length >= 100 (matches JavaScript exactly)
-	text := strings.TrimSpace(node.Text())
-	return len(text) >= 100
-}
-
-// CleanContentOptions represents options for content cleaning
+// CleanContentOptions represents options for content cleaning.
 type CleanContentOptions struct {
 	Doc                *goquery.Document
 	CleanConditionally bool
@@ -183,7 +155,7 @@ type CleanContentOptions struct {
 }
 
 // CleanContent cleans article content, returning a new, cleaned node
-// This adapts the JavaScript extractCleanNode function to work with Go's document-based DOM functions
+// This adapts the JavaScript extractCleanNode function to work with Go's document-based DOM functions.
 func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery.Selection {
 	if article == nil || article.Length() == 0 {
 		return article
@@ -242,7 +214,7 @@ func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery
 	doc = dom.RemoveEmpty(doc)
 
 	// Remove unnecessary attributes
-	doc = dom.CleanAttributes(doc)
+	dom.CleanAttributes(doc)
 
 	// After cleaning the document, we need to find the corresponding element
 	// This is a limitation of the Go approach - we clean the entire document

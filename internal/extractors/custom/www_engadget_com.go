@@ -4,7 +4,7 @@
 
 package custom
 
-// WwwEngadgetComExtractor provides the custom extraction rules for www.engadget.com
+// WwwEngadgetComExtractor provides the custom extraction rules for www.engadget.com.
 var WwwEngadgetComExtractor = &CustomExtractor{
 	Domain: "www.engadget.com",
 
@@ -56,12 +56,10 @@ var WwwEngadgetComExtractor = &CustomExtractor{
 			"nav",
 			"footer",
 		},
-
-		Transforms: map[string]TransformFunction{},
 	},
 }
 
-// GetWwwEngadgetComExtractor returns the Engadget custom extractor
+// GetWwwEngadgetComExtractor returns the Engadget custom extractor.
 func GetWwwEngadgetComExtractor() *CustomExtractor {
 	return WwwEngadgetComExtractor
 }

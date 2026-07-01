@@ -2,18 +2,18 @@ package parser_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/BumpyClock/hermes/internal/parser"
 )
 
-// BenchmarkParseHTML tests parsing performance with real HTML fixtures
+// BenchmarkParseHTML tests parsing performance with real HTML fixtures.
 func BenchmarkParseHTML(b *testing.B) {
 	// Load a sample fixture
 	fixtureFile := "../../internal/fixtures/www.nytimes.com.html"
-	html, err := ioutil.ReadFile(fixtureFile)
+	html, err := os.ReadFile(fixtureFile) //nolint:gosec // Benchmark reads fixed local fixture path.
 	if err != nil {
 		b.Skip("Fixture file not available:", err)
 	}
@@ -34,10 +34,10 @@ func BenchmarkParseHTML(b *testing.B) {
 	}
 }
 
-// BenchmarkParseHTMLMemory measures memory allocations
+// BenchmarkParseHTMLMemory measures memory allocations.
 func BenchmarkParseHTMLMemory(b *testing.B) {
 	fixtureFile := "../../internal/fixtures/www.nytimes.com.html"
-	html, err := ioutil.ReadFile(fixtureFile)
+	html, err := os.ReadFile(fixtureFile) //nolint:gosec // Benchmark reads fixed local fixture path.
 	if err != nil {
 		b.Skip("Fixture file not available:", err)
 	}
@@ -59,22 +59,22 @@ func BenchmarkParseHTMLMemory(b *testing.B) {
 	}
 }
 
-// BenchmarkParseMultipleFixtures tests with various site fixtures
+// BenchmarkParseMultipleFixtures tests with various site fixtures.
 func BenchmarkParseMultipleFixtures(b *testing.B) {
 	fixtures := []string{
 		"www.nytimes.com.html",
-		"www.washingtonpost.com.html", 
+		"www.washingtonpost.com.html",
 		"www.cnn.com.html",
 		"medium.com.html",
 		"arstechnica.com.html",
 	}
 
 	p := parser.New()
-	
+
 	for _, fixture := range fixtures {
 		b.Run(fixture, func(b *testing.B) {
 			fixtureFile := filepath.Join("../../internal/fixtures", fixture)
-			html, err := ioutil.ReadFile(fixtureFile)
+			html, err := os.ReadFile(fixtureFile) //nolint:gosec // Benchmark reads fixed local fixture path.
 			if err != nil {
 				b.Skip("Fixture not available:", fixture)
 				return
@@ -97,10 +97,10 @@ func BenchmarkParseMultipleFixtures(b *testing.B) {
 	}
 }
 
-// BenchmarkDifferentContentTypes tests output format performance
+// BenchmarkDifferentContentTypes tests output format performance.
 func BenchmarkDifferentContentTypes(b *testing.B) {
 	fixtureFile := "../../internal/fixtures/www.nytimes.com.html"
-	html, err := ioutil.ReadFile(fixtureFile)
+	html, err := os.ReadFile(fixtureFile) //nolint:gosec // Benchmark reads fixed local fixture path.
 	if err != nil {
 		b.Skip("Fixture file not available:", err)
 	}
@@ -109,7 +109,7 @@ func BenchmarkDifferentContentTypes(b *testing.B) {
 	url := "https://www.nytimes.com/test-article"
 
 	contentTypes := []string{"html", "markdown", "text"}
-	
+
 	for _, contentType := range contentTypes {
 		b.Run(contentType, func(b *testing.B) {
 			p := parser.New()

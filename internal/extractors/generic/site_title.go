@@ -6,10 +6,10 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GenericSiteTitleExtractor extracts the site title
+// GenericSiteTitleExtractor extracts the site title.
 type GenericSiteTitleExtractor struct{}
 
-// Extract extracts the site title from the page
+// Extract extracts the site title from the page.
 func (extractor *GenericSiteTitleExtractor) Extract(selection *goquery.Selection, pageURL string, metaCache []string) string {
 	// First try Open Graph title (meta tags normalized to name/value)
 	if ogTitle := selection.Find("meta[name=\"og:title\"]").AttrOr("value", ""); ogTitle != "" {

@@ -12,27 +12,38 @@ import (
 	"time"
 )
 
-// ValidationOptions configures URL validation behavior
+var privateIPNetworks = mustParseCIDRs(
+	"10.0.0.0/8",     // RFC 1918
+	"172.16.0.0/12",  // RFC 1918
+	"192.168.0.0/16", // RFC 1918
+	"127.0.0.0/8",    // Loopback
+	"169.254.0.0/16", // Link-local
+	"::1/128",        // IPv6 loopback
+	"fc00::/7",       // IPv6 unique local
+	"fe80::/10",      // IPv6 link-local
+)
+
+// ValidationOptions configures URL validation behavior.
 type ValidationOptions struct {
 	AllowPrivateNetworks bool
 	AllowLocalhost       bool
-	RequireHTTPS        bool
-	MaxHostnameLength   int
-	Timeout             time.Duration
+	RequireHTTPS         bool
+	MaxHostnameLength    int
+	Timeout              time.Duration
 }
 
-// DefaultValidationOptions returns secure defaults for URL validation
+// DefaultValidationOptions returns secure defaults for URL validation.
 func DefaultValidationOptions() ValidationOptions {
 	return ValidationOptions{
 		AllowPrivateNetworks: false,
-		AllowLocalhost:      false,
-		RequireHTTPS:        false,
-		MaxHostnameLength:   253, // RFC 1035 limit
-		Timeout:             5 * time.Second,
+		AllowLocalhost:       false,
+		RequireHTTPS:         false,
+		MaxHostnameLength:    253, // RFC 1035 limit
+		Timeout:              5 * time.Second,
 	}
 }
 
-// ValidationError represents a URL validation error with specific type information
+// ValidationError represents a URL validation error with specific type information.
 type ValidationError struct {
 	Type    string
 	Message string
@@ -46,8 +57,7 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("URL validation failed (%s): %s", e.Type, e.Message)
 }
 
-// ValidateURL performs comprehensive URL validation with configurable options
-// This is the main entry point that consolidates all validation logic
+// ValidateURL performs comprehensive URL validation with configurable options.
 func ValidateURL(ctx context.Context, rawURL string, opts ValidationOptions) error {
 	if rawURL == "" {
 		return &ValidationError{
@@ -57,7 +67,6 @@ func ValidateURL(ctx context.Context, rawURL string, opts ValidationOptions) err
 		}
 	}
 
-	// Parse the URL
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return &ValidationError{
@@ -67,7 +76,15 @@ func ValidateURL(ctx context.Context, rawURL string, opts ValidationOptions) err
 		}
 	}
 
-	// Basic structure validation
+	return ValidateParsedURL(ctx, parsedURL, rawURL, opts)
+}
+
+// ValidateParsedURL validates an already-parsed URL, avoiding duplicate parsing in callers.
+func ValidateParsedURL(ctx context.Context, parsedURL *url.URL, rawURL string, opts ValidationOptions) error {
+	if parsedURL == nil {
+		return &ValidationError{Type: "parse", Message: "URL cannot be nil", URL: rawURL}
+	}
+
 	if err := validateBasicStructure(parsedURL); err != nil {
 		return err
 	}
@@ -98,22 +115,7 @@ func ValidateURL(ctx context.Context, rawURL string, opts ValidationOptions) err
 	return nil
 }
 
-// ValidateURLSimple performs basic URL validation without network checks
-// Useful for quick validation where SSRF protection isn't needed
-func ValidateURLSimple(rawURL string) error {
-	if rawURL == "" {
-		return &ValidationError{Type: "empty", Message: "URL cannot be empty", URL: rawURL}
-	}
-
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return &ValidationError{Type: "parse", Message: fmt.Sprintf("failed to parse: %v", err), URL: rawURL}
-	}
-
-	return validateBasicStructure(parsedURL)
-}
-
-// validateBasicStructure checks basic URL structure requirements
+// validateBasicStructure checks basic URL structure requirements.
 func validateBasicStructure(u *url.URL) error {
 	if u.Scheme == "" {
 		return &ValidationError{Type: "scheme", Message: "URL scheme is required", URL: u.String()}
@@ -135,7 +137,7 @@ func validateBasicStructure(u *url.URL) error {
 	return nil
 }
 
-// validateNetworkAccess performs network-based validation including SSRF protection
+// validateNetworkAccess performs network-based validation including SSRF protection.
 func validateNetworkAccess(ctx context.Context, u *url.URL, opts ValidationOptions) error {
 	// Extract hostname from host (remove port if present)
 	hostname := u.Hostname()
@@ -177,50 +179,33 @@ func validateNetworkAccess(ctx context.Context, u *url.URL, opts ValidationOptio
 	return nil
 }
 
-// isLocalhost checks if a hostname refers to localhost
+// isLocalhost checks if a hostname refers to localhost.
 func isLocalhost(hostname string) bool {
-	return hostname == "localhost" || 
-		   hostname == "127.0.0.1" || 
-		   hostname == "::1" ||
-		   strings.HasSuffix(hostname, ".localhost")
+	return hostname == "localhost" ||
+		hostname == "127.0.0.1" ||
+		hostname == "::1" ||
+		strings.HasSuffix(hostname, ".localhost")
 }
 
-// isPrivateIP checks if an IP address is in a private network range
-func isPrivateIP(ip net.IP) bool {
-	// IPv4 private ranges
-	private4 := []string{
-		"10.0.0.0/8",     // RFC 1918
-		"172.16.0.0/12",  // RFC 1918  
-		"192.168.0.0/16", // RFC 1918
-		"127.0.0.0/8",    // Loopback
-		"169.254.0.0/16", // Link-local
-	}
-
-	// IPv6 private ranges
-	private6 := []string{
-		"::1/128",      // Loopback
-		"fc00::/7",     // Unique local
-		"fe80::/10",    // Link-local
-	}
-
-	allRanges := append(private4, private6...)
-	
-	for _, cidr := range allRanges {
+func mustParseCIDRs(cidrs ...string) []*net.IPNet {
+	networks := make([]*net.IPNet, 0, len(cidrs))
+	for _, cidr := range cidrs {
 		_, network, err := net.ParseCIDR(cidr)
 		if err != nil {
-			continue
+			panic(fmt.Sprintf("invalid private CIDR %q: %v", cidr, err))
 		}
+		networks = append(networks, network)
+	}
+	return networks
+}
+
+// isPrivateIP checks if an IP address is in a private network range.
+func isPrivateIP(ip net.IP) bool {
+	for _, network := range privateIPNetworks {
 		if network.Contains(ip) {
 			return true
 		}
 	}
 
 	return false
-}
-
-// IsValidWebURL performs lightweight validation for web URLs (backward compatibility)
-func IsValidWebURL(u *url.URL) bool {
-	return u != nil && 
-		   (u.Scheme == "http" || u.Scheme == "https") && 
-		   u.Host != ""
 }

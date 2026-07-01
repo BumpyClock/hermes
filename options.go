@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Option is a functional option for configuring the Client
+// Option is a functional option for configuring the Client.
 type Option func(*Client)
 
 // WithHTTPClient sets a custom HTTP client for the parser.
@@ -23,6 +23,7 @@ type Option func(*Client)
 func WithHTTPClient(httpClient *http.Client) Option {
 	return func(c *Client) {
 		c.httpClient = httpClient
+		c.httpClientProvided = true
 	}
 }
 
@@ -57,10 +58,7 @@ func WithTransport(transport http.RoundTripper) Option {
 func WithTimeout(timeout time.Duration) Option {
 	return func(c *Client) {
 		c.timeout = timeout
-		if c.httpClient == nil {
-			c.httpClient = &http.Client{}
-		}
-		c.httpClient.Timeout = timeout
+		c.timeoutConfigured = true
 	}
 }
 

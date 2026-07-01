@@ -6,10 +6,10 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GenericSiteImageExtractor extracts the main site image
+// GenericSiteImageExtractor extracts the main site image.
 type GenericSiteImageExtractor struct{}
 
-// Extract extracts the site's main image from meta tags
+// Extract extracts the site's main image from meta tags.
 func (extractor *GenericSiteImageExtractor) Extract(selection *goquery.Selection, pageURL string, metaCache []string) string {
 	// Priority order for image extraction
 	metaTags := []string{
@@ -20,22 +20,8 @@ func (extractor *GenericSiteImageExtractor) Extract(selection *goquery.Selection
 		"image",
 	}
 
-	// Check each meta tag in priority order
-	for _, tagName := range metaTags {
-		// Meta tags are normalized to name/value; prefer value then content
-		if content := selection.Find("meta[name=\""+tagName+"\"]").AttrOr("value", ""); content != "" && extractor.isValidImageURL(content) {
-			return strings.TrimSpace(content)
-		}
-		if content := selection.Find("meta[name=\""+tagName+"\"]").AttrOr("content", ""); content != "" && extractor.isValidImageURL(content) {
-			return strings.TrimSpace(content)
-		}
-		// Backward compat for unnormalized property tags
-		if content := selection.Find("meta[property=\""+tagName+"\"]").AttrOr("content", ""); content != "" && extractor.isValidImageURL(content) {
-			return strings.TrimSpace(content)
-		}
-		if content := selection.Find("meta[property=\""+tagName+"\"]").AttrOr("value", ""); content != "" && extractor.isValidImageURL(content) {
-			return strings.TrimSpace(content)
-		}
+	if value := firstMetaValue(selection, metaTags, extractor.isValidImageURL); value != "" {
+		return value
 	}
 
 	// Try link[rel="image_src"]
@@ -47,7 +33,7 @@ func (extractor *GenericSiteImageExtractor) Extract(selection *goquery.Selection
 	return ""
 }
 
-// isValidImageURL checks if the URL looks like a valid image URL
+// isValidImageURL checks if the URL looks like a valid image URL.
 func (extractor *GenericSiteImageExtractor) isValidImageURL(url string) bool {
 	if url == "" {
 		return false

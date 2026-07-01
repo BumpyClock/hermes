@@ -32,7 +32,7 @@ func TestBrsToPs(t *testing.T) {
 			expectedContent: []string{
 				"First paragraph",
 				"Text after double br",
-				"More text after another double br", 
+				"More text after another double br",
 				"Last paragraph",
 			},
 		},
@@ -120,7 +120,7 @@ func TestParagraphize(t *testing.T) {
 				<span>and inline elements</span>
 				<div>Block element stops conversion</div>
 			</body></html>`,
-			expectedPs:      2, // Original div + new p
+			expectedPs:      1,
 			preservedFormat: true,
 		},
 		{
@@ -187,7 +187,7 @@ func TestBrsToPs_EdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		result := dom.BrsToPs(doc)
-		
+
 		// Should still process nested br tags
 		paragraphs := result.Find("p")
 		assert.True(t, paragraphs.Length() >= 1, "Should create paragraphs from nested br tags")
@@ -203,7 +203,7 @@ func TestBrsToPs_EdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		result := dom.BrsToPs(doc)
-		
+
 		// Should still process br tags with attributes
 		paragraphs := result.Find("p")
 		assert.True(t, paragraphs.Length() >= 1, "Should handle br tags with attributes")
@@ -219,7 +219,7 @@ func TestBrsToPs_EdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		result := dom.BrsToPs(doc)
-		
+
 		paragraphs := result.Find("p")
 		assert.True(t, paragraphs.Length() >= 1, "Should handle self-closing br tags")
 	})
@@ -236,10 +236,10 @@ func TestBrsToPs_EdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		result := dom.BrsToPs(doc)
-		
+
 		paragraphs := result.Find("p")
 		assert.True(t, paragraphs.Length() >= 3, "Should preserve existing paragraphs and add new ones")
-		
+
 		// Verify original content is preserved
 		bodyText := result.Find("body").Text()
 		assert.Contains(t, bodyText, "Existing paragraph")
@@ -262,10 +262,10 @@ func TestBrsToPs_EdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		result := dom.BrsToPs(doc)
-		
+
 		paragraphs := result.Find("p")
 		assert.True(t, paragraphs.Length() >= 1, "Should create paragraph from mixed content")
-		
+
 		// Verify that inline elements are preserved
 		firstP := paragraphs.First()
 		if firstP.Length() > 0 {
@@ -278,20 +278,20 @@ func TestBrsToPs_Performance(t *testing.T) {
 	// Test with a large document
 	htmlBuilder := strings.Builder{}
 	htmlBuilder.WriteString("<html><body>")
-	
+
 	for i := 0; i < 100; i++ {
 		htmlBuilder.WriteString("<br><br>")
 		htmlBuilder.WriteString("Content block " + string(rune(i)) + " with some text to make it substantial.")
 	}
-	
+
 	htmlBuilder.WriteString("</body></html>")
-	
+
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlBuilder.String()))
 	require.NoError(t, err)
 
 	// Should not panic or hang
 	result := dom.BrsToPs(doc)
-	
+
 	paragraphs := result.Find("p")
 	assert.True(t, paragraphs.Length() > 50, "Should create many paragraphs from large document")
 }
@@ -320,13 +320,13 @@ func BenchmarkBrsToPs_Large(b *testing.B) {
 	// Create a larger document for performance testing
 	htmlBuilder := strings.Builder{}
 	htmlBuilder.WriteString("<html><body>")
-	
+
 	for i := 0; i < 50; i++ {
 		htmlBuilder.WriteString("<br><br>")
 		htmlBuilder.WriteString("Content block with some text to make it substantial and realistic.")
 		htmlBuilder.WriteString("<strong>Bold text</strong> and <em>emphasis</em>.")
 	}
-	
+
 	htmlBuilder.WriteString("</body></html>")
 	html := htmlBuilder.String()
 

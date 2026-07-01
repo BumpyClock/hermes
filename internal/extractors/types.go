@@ -7,7 +7,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// SelectOptions contains parameters for field selection
+// SelectOptions contains parameters for field selection.
 type SelectOptions struct {
 	Doc            *goquery.Document
 	Type           string
@@ -16,10 +16,10 @@ type SelectOptions struct {
 	URL            string
 }
 
-// TransformFunc is a function type for DOM transformations
+// TransformFunc is a function type for DOM transformations.
 type TransformFunc func(*goquery.Selection, *goquery.Document) interface{}
 
-// ExtractorOptions contains options for field extraction
+// ExtractorOptions contains options for field extraction.
 type ExtractorOptions struct {
 	StripUnlikelyCandidates bool
 	WeightNodes             bool
@@ -29,7 +29,7 @@ type ExtractorOptions struct {
 	Title                   string
 }
 
-// SelectorEntry represents a parsed selector with metadata
+// SelectorEntry represents a parsed selector with metadata.
 type SelectorEntry struct {
 	Selector        string
 	Attribute       string

@@ -1,16 +1,16 @@
 package generic
 
 import (
-    "regexp"
-    "strings"
+	"regexp"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GenericThemeColorExtractor extracts the theme color from meta tags
+// GenericThemeColorExtractor extracts the theme color from meta tags.
 type GenericThemeColorExtractor struct{}
 
-// Extract extracts the theme color from the page
+// Extract extracts the theme color from the page.
 func (extractor *GenericThemeColorExtractor) Extract(selection *goquery.Selection, pageURL string, metaCache []string) string {
 	// Look for meta name="theme-color" tag
 	themeColor := selection.Find("meta[name=\"theme-color\"]").AttrOr("content", "")
@@ -28,37 +28,37 @@ func (extractor *GenericThemeColorExtractor) Extract(selection *goquery.Selectio
 	return ""
 }
 
-// Precompiled patterns for color validation
+// Precompiled patterns for color validation.
 var (
-    hexPattern = regexp.MustCompile(`^#([a-f0-9]{3}|[a-f0-9]{6})$`)
-    rgbPattern = regexp.MustCompile(`^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[0-9.]+)?\s*\)$`)
-    hslPattern = regexp.MustCompile(`^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*(,\s*[0-9.]+)?\s*\)$`)
+	hexPattern = regexp.MustCompile(`^#([a-f0-9]{3}|[a-f0-9]{6})$`)
+	rgbPattern = regexp.MustCompile(`^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[0-9.]+)?\s*\)$`)
+	hslPattern = regexp.MustCompile(`^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*(,\s*[0-9.]+)?\s*\)$`)
 )
 
-// validateAndNormalizeColor validates and normalizes color values
+// validateAndNormalizeColor validates and normalizes color values.
 func (extractor *GenericThemeColorExtractor) validateAndNormalizeColor(color string) string {
-    color = strings.TrimSpace(color)
-    if color == "" {
-        return ""
-    }
+	color = strings.TrimSpace(color)
+	if color == "" {
+		return ""
+	}
 
 	// Convert to lowercase for consistency
 	color = strings.ToLower(color)
 
-    // Validate hex colors (#fff, #ffffff)
-    if hexPattern.MatchString(color) {
-        return color
-    }
+	// Validate hex colors (#fff, #ffffff)
+	if hexPattern.MatchString(color) {
+		return color
+	}
 
-    // Validate rgb/rgba colors
-    if rgbPattern.MatchString(color) {
-        return color
-    }
+	// Validate rgb/rgba colors
+	if rgbPattern.MatchString(color) {
+		return color
+	}
 
-    // Validate hsl/hsla colors
-    if hslPattern.MatchString(color) {
-        return color
-    }
+	// Validate hsl/hsla colors
+	if hslPattern.MatchString(color) {
+		return color
+	}
 
 	// Validate named colors (basic validation for common colors)
 	namedColors := map[string]bool{

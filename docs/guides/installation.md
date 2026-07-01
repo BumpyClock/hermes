@@ -13,7 +13,7 @@ This guide covers installing the Hermes CLI and using Hermes as a Go library.
 
 ## System Requirements
 
-- Go 1.24.6 or later (matching `go.mod`)
+- Go version declared in `go.mod`
 - Linux, macOS, or Windows
 
 ## Installation Methods

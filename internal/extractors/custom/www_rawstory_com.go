@@ -3,25 +3,25 @@
 
 package custom
 
-// GetWwwRawstoryComExtractor returns the custom extractor for www.rawstory.com
+// GetWwwRawstoryComExtractor returns the custom extractor for www.rawstory.com.
 func GetWwwRawstoryComExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.rawstory.com",
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{"meta[name=\"og:title\"]", "value"},
 				".blog-title",
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
 				"div.main-post-head .social-author__name",
 				".blog-author a:first-of-type",
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{"meta[name=\"article:published_time\"]", "value"},
@@ -29,13 +29,13 @@ func GetWwwRawstoryComExtractor() *CustomExtractor {
 			},
 			// Note: timezone: 'EST' is handled by date cleaner in Go version
 		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{"meta[name=\"og:image\"]", "value"},
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
@@ -43,11 +43,11 @@ func GetWwwRawstoryComExtractor() *CustomExtractor {
 					".blog-content",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				// No transforms in JavaScript version
 			},
-			
+
 			Clean: []string{
 				// No clean selectors in JavaScript version
 			},

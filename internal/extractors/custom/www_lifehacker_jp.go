@@ -10,7 +10,7 @@ import (
 )
 
 // WwwLifehackerJpExtractor provides the custom extraction rules for www.lifehacker.jp
-// JavaScript equivalent: export const WwwLifehackerJpExtractor = { ... }
+// JavaScript equivalent: export const WwwLifehackerJpExtractor = { ... }.
 var WwwLifehackerJpExtractor = &CustomExtractor{
 	Domain: "www.lifehacker.jp",
 
@@ -34,8 +34,6 @@ var WwwLifehackerJpExtractor = &CustomExtractor{
 			[]string{"div.lh-entryDetail-header time", "datetime"},
 		},
 	},
-
-	Dek: nil,
 
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
@@ -84,7 +82,7 @@ var WwwLifehackerJpExtractor = &CustomExtractor{
 	},
 }
 
-// GetWwwLifehackerJpExtractor returns the Lifehacker Japan custom extractor
+// GetWwwLifehackerJpExtractor returns the Lifehacker Japan custom extractor.
 func GetWwwLifehackerJpExtractor() *CustomExtractor {
 	return WwwLifehackerJpExtractor
 }

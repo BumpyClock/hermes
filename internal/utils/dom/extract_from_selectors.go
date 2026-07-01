@@ -9,7 +9,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// isGoodNode checks if a node is suitable for content extraction
+// isGoodNode checks if a node is suitable for content extraction.
 func isGoodNode(node *goquery.Selection, maxChildren int) bool {
 	// If it has a number of children, it's more likely a container
 	// element. Skip it.
@@ -36,7 +36,7 @@ func isGoodNode(node *goquery.Selection, maxChildren int) bool {
 // - textOnly: If true, extract text content; if false, extract HTML (default true)
 //
 // Returns:
-// - *string: The extracted content, or nil if nothing suitable found
+// - *string: The extracted content, or nil if nothing suitable found.
 func ExtractFromSelectors(doc *goquery.Selection, selectors []string, maxChildren int, textOnly bool) *string {
 	// eslint-disable-next-line no-restricted-syntax
 	for _, selector := range selectors {
@@ -59,7 +59,7 @@ func ExtractFromSelectors(doc *goquery.Selection, selectors []string, maxChildre
 				// Normalize whitespace to match JavaScript's text normalization
 				// Replace all whitespace sequences with single spaces
 				content = strings.Join(strings.Fields(content), " ")
-				
+
 				if content != "" {
 					return &content
 				}

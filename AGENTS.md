@@ -50,7 +50,6 @@ Hermes is a high-performance Go web content extraction library inspired by Postl
 
 - `internal/extractors/` - Custom and generic content extractors
 - `internal/cleaners/` - Field-specific content cleaning and normalization
-- `internal/cache/` - Result caching and optimization
 - `internal/utils/` - DOM manipulation and text processing utilities
 
 **CLI (**`cmd/hermes/`)
@@ -61,12 +60,11 @@ Hermes is a high-performance Go web content extraction library inspired by Postl
 
 The Go implementation uses a sophisticated extractor architecture:
 
-**Registry System (**`internal/extractors/custom/registry.go`)
+**Registry System (**`internal/extractors/custom/index.go`)
 
-- Thread-safe `RegistryManager` for dynamic extractor loading
+- Cached extractor inventory built from `GetAllCustomExtractors`
 - Domain-to-extractor mapping with support for multiple domains per extractor
-- HTML-based detection fallback for dynamic sites
-- Lazy loading support for memory optimization
+- Deterministic conflict handling for overlapping domains
 
 **Extractor Interface (**`internal/extractors/custom/extractor_interface.go`)
 
@@ -227,7 +225,6 @@ if parseErr, ok := err.(*hermes.ParseError); ok {
 - `internal/extractors/custom/` - 150+ site-specific extractors
 - `internal/extractors/` - Generic extraction algorithms and pipeline
 - `internal/cleaners/` - Field-specific content cleaning functions
-- `internal/cache/` - Caching utilities and optimization
 - `internal/utils/` - Text processing and DOM utilities
 - `benchmark/` - Performance testing and comparison tools
 

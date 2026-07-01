@@ -14,23 +14,23 @@ import (
 )
 
 var (
-	// TEXT_LINK_RE matches plain text URLs that should disqualify a dek
+	// TEXT_LINK_RE matches plain text URLs that should disqualify a dek.
 	textLinkRE = regexp.MustCompile(`https?://`)
-	
-	// Meta tag names for dek extraction, ordered by priority
+
+	// Meta tag names for dek extraction, ordered by priority.
 	dekMetaTags = []string{
 		"description",
-		"og:description", 
+		"og:description",
 		"twitter:description",
 		"dc.description",
 	}
-	
-	// CSS selectors for dek extraction, ordered by priority
+
+	// CSS selectors for dek extraction, ordered by priority.
 	dekSelectors = []string{
 		".entry-summary",
 		"h2[itemprop=\"description\"]",
 		".subtitle",
-		".sub-title", 
+		".sub-title",
 		".deck",
 		".dek",
 		".standfirst",
@@ -39,44 +39,44 @@ var (
 	}
 )
 
-// GenericDekExtractor extracts article subtitles/descriptions (deks)
+// GenericDekExtractor extracts article subtitles/descriptions (deks).
 type GenericDekExtractor struct{}
 
-// Extract extracts dek from meta tags and selectors with validation and cleaning
+// Extract extracts dek from meta tags and selectors with validation and cleaning.
 func (e *GenericDekExtractor) Extract(doc *goquery.Document, opts map[string]interface{}) string {
 	selection := doc.Selection
 	if s, ok := opts["$"].(*goquery.Selection); ok {
 		selection = s
 	}
-	
+
 	var excerpt string
 	if ex, ok := opts["excerpt"].(string); ok {
 		excerpt = ex
 	}
-	
+
 	// Try meta tags first (higher priority)
 	if dek := e.extractFromMeta(selection); dek != "" {
 		if cleaned := e.cleanDek(dek, excerpt); cleaned != "" {
 			return cleaned
 		}
 	}
-	
+
 	// Fall back to CSS selectors
 	if dek := e.extractFromSelectors(selection); dek != "" {
 		if cleaned := e.cleanDek(dek, excerpt); cleaned != "" {
 			return cleaned
 		}
 	}
-	
+
 	return ""
 }
 
-// extractFromMeta extracts dek from meta tags
+// extractFromMeta extracts dek from meta tags.
 func (e *GenericDekExtractor) extractFromMeta(selection *goquery.Selection) string {
 	for _, metaName := range dekMetaTags {
 		var content string
 		var found bool
-		
+
 		// Try name attribute first
 		selection.Find("meta[name=\"" + metaName + "\"]").Each(func(_ int, s *goquery.Selection) {
 			if !found {
@@ -88,7 +88,7 @@ func (e *GenericDekExtractor) extractFromMeta(selection *goquery.Selection) stri
 				}
 			}
 		})
-		
+
 		// Try property attribute for OpenGraph if not found with name
 		if !found {
 			selection.Find("meta[property=\"" + metaName + "\"]").Each(func(_ int, s *goquery.Selection) {
@@ -102,41 +102,41 @@ func (e *GenericDekExtractor) extractFromMeta(selection *goquery.Selection) stri
 				}
 			})
 		}
-		
+
 		// If we found the meta tag but it's empty, reject entirely (don't fall back)
 		if found {
 			return content
 		}
 	}
-	
+
 	return ""
 }
 
-// extractFromSelectors extracts dek from CSS selectors
+// extractFromSelectors extracts dek from CSS selectors.
 func (e *GenericDekExtractor) extractFromSelectors(selection *goquery.Selection) string {
 	for _, selector := range dekSelectors {
 		if element := selection.Find(selector).First(); element.Length() > 0 {
 			return element.Text()
 		}
 	}
-	
+
 	return ""
 }
 
-// cleanDek validates and cleans extracted dek text
+// cleanDek validates and cleans extracted dek text.
 func (e *GenericDekExtractor) cleanDek(dek, excerpt string) string {
 	if dek == "" {
 		return ""
 	}
-	
+
 	// Strip HTML tags if present
 	dekText := dom.StripTags(dek)
-	
+
 	// Sanity check length (5-1000 characters)
 	if len(dekText) > 1000 || len(dekText) < 5 {
 		return ""
 	}
-	
+
 	// Check that dek isn't the same as excerpt (first 10 words)
 	if excerpt != "" {
 		dekExcerpt := text.ExcerptContent(dekText, 10)
@@ -146,12 +146,12 @@ func (e *GenericDekExtractor) cleanDek(dek, excerpt string) string {
 			return ""
 		}
 	}
-	
+
 	// Plain text links shouldn't exist in the dek
 	if textLinkRE.MatchString(dekText) {
 		return ""
 	}
-	
+
 	// Normalize whitespace and trim
 	return text.NormalizeSpaces(strings.TrimSpace(dekText))
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// TestExtractBestNode_RealWorldArticle tests with realistic article HTML
+// TestExtractBestNode_RealWorldArticle tests with realistic article HTML.
 func TestExtractBestNode_RealWorldArticle(t *testing.T) {
 	// Simulates a typical news article layout
 	html := `<html><head>
@@ -67,21 +67,21 @@ func TestExtractBestNode_RealWorldArticle(t *testing.T) {
 	}
 
 	text := strings.TrimSpace(candidate.Text())
-	
+
 	// Should contain main article content
 	if !strings.Contains(text, "first paragraph of the article") {
 		t.Errorf("Expected main article content, got: %s", text)
 	}
-	
+
 	if !strings.Contains(text, "second paragraph with even more detailed content") {
 		t.Errorf("Expected main article content, got: %s", text)
 	}
-	
+
 	// Should not contain sidebar/footer content
 	if strings.Contains(text, "advertisement that should not be selected") {
 		t.Errorf("Expected sidebar content to be excluded, but found: %s", text)
 	}
-	
+
 	if strings.Contains(text, "Copyright information") {
 		t.Errorf("Expected footer content to be excluded, but found: %s", text)
 	}
@@ -90,7 +90,7 @@ func TestExtractBestNode_RealWorldArticle(t *testing.T) {
 	t.Logf("First 200 chars: %s", text[:min(200, len(text))])
 }
 
-// TestExtractBestNode_BlogPost tests with blog-style content
+// TestExtractBestNode_BlogPost tests with blog-style content.
 func TestExtractBestNode_BlogPost(t *testing.T) {
 	html := `<html><body>
 		<div class="container">
@@ -128,16 +128,16 @@ func TestExtractBestNode_BlogPost(t *testing.T) {
 	}
 
 	text := strings.TrimSpace(candidate.Text())
-	
+
 	// Should contain blog post content
 	if !strings.Contains(text, "content extraction") {
 		t.Errorf("Expected blog content, got: %s", text)
 	}
-	
+
 	if !strings.Contains(text, "various techniques and approaches") {
 		t.Errorf("Expected blog content, got: %s", text)
 	}
-	
+
 	// Should have reasonable length
 	if len(text) < 100 {
 		t.Errorf("Expected substantial content, but got only %d characters: %s", len(text), text)
@@ -146,7 +146,7 @@ func TestExtractBestNode_BlogPost(t *testing.T) {
 	t.Logf("Blog content length: %d characters", len(text))
 }
 
-// TestExtractBestNode_Scoring verifies the scoring system integration
+// TestExtractBestNode_Scoring verifies the scoring system integration.
 func TestExtractBestNode_Scoring(t *testing.T) {
 	html := `<html><body>
 		<div class="low-quality">
@@ -175,12 +175,12 @@ func TestExtractBestNode_Scoring(t *testing.T) {
 	}
 
 	text := strings.TrimSpace(candidate.Text())
-	
+
 	// Should select the longer, higher-quality content
 	if !strings.Contains(text, "substantial content that should score higher") {
 		t.Errorf("Expected high-scoring content to be selected, got: %s", text)
 	}
-	
+
 	// Should not select the short content
 	if strings.Contains(text, "Short text.") && !strings.Contains(text, "substantial content") {
 		t.Errorf("Expected low-scoring content to be rejected, but it was selected: %s", text)
@@ -189,7 +189,7 @@ func TestExtractBestNode_Scoring(t *testing.T) {
 	t.Logf("Selected content length: %d characters", len(text))
 }
 
-// Helper function for Go versions that don't have min in stdlib
+// Helper function for Go versions that don't have min in stdlib.
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -197,7 +197,7 @@ func min(a, b int) int {
 	return b
 }
 
-// TestExtractBestNode_CompareOptions tests different option combinations
+// TestExtractBestNode_CompareOptions tests different option combinations.
 func TestExtractBestNode_CompareOptions(t *testing.T) {
 	html := `<html><body>
 		<div class="content-wrapper">
@@ -221,7 +221,7 @@ func TestExtractBestNode_CompareOptions(t *testing.T) {
 
 	candidateWithStripping := ExtractBestNode(doc1, optsWithStripping)
 
-	// Test with stripping disabled  
+	// Test with stripping disabled
 	optsNoStripping := ExtractBestNodeOptions{
 		StripUnlikelyCandidates: false,
 		WeightNodes:             true,
@@ -233,7 +233,7 @@ func TestExtractBestNode_CompareOptions(t *testing.T) {
 	if candidateWithStripping == nil {
 		t.Error("Expected candidate with stripping enabled")
 	}
-	
+
 	if candidateNoStripping == nil {
 		t.Error("Expected candidate with stripping disabled")
 	}
@@ -244,7 +244,7 @@ func TestExtractBestNode_CompareOptions(t *testing.T) {
 	}
 
 	if candidateNoStripping != nil {
-		text2 := strings.TrimSpace(candidateNoStripping.Text())  
+		text2 := strings.TrimSpace(candidateNoStripping.Text())
 		t.Logf("Without stripping: %s", text2)
 	}
 }

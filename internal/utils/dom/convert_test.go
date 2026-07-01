@@ -67,7 +67,7 @@ func TestConvertToParagraphs(t *testing.T) {
 
 			// Check that we have the expected number of paragraphs
 			paragraphs := result.Find("p")
-			
+
 			// Verify paragraph contents
 			found := 0
 			paragraphs.Each(func(i int, p *goquery.Selection) {
@@ -148,7 +148,6 @@ func TestConvertNodeTo(t *testing.T) {
 	}
 }
 
-
 func TestConvertDivs_EdgeCases(t *testing.T) {
 	t.Run("deeply nested block elements", func(t *testing.T) {
 		html := `<html><body>
@@ -184,7 +183,7 @@ func TestConvertDivs_EdgeCases(t *testing.T) {
 		// Should convert to paragraph and preserve inline formatting
 		paragraphs := result.Find("p")
 		assert.True(t, paragraphs.Length() > 0, "Should create paragraph")
-		
+
 		strong := paragraphs.Find("strong")
 		assert.True(t, strong.Length() > 0, "Should preserve inline formatting")
 		assert.Equal(t, "bold", strong.Text())

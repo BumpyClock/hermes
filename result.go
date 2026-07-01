@@ -109,7 +109,7 @@ func (r *Result) FormatMarkdown() string {
 
 		if r.WordCount > 0 {
 			sb.WriteString("**Word Count:** ")
-			sb.WriteString(fmt.Sprintf("%d", r.WordCount))
+			fmt.Fprintf(&sb, "%d", r.WordCount)
 			sb.WriteString("\n")
 		}
 
@@ -136,22 +136,22 @@ func (r *Result) FormatMarkdown() string {
 	return sb.String()
 }
 
-// IsEmpty returns true if the result contains no meaningful content
+// IsEmpty returns true if the result contains no meaningful content.
 func (r *Result) IsEmpty() bool {
 	return r.Title == "" && r.Content == ""
 }
 
-// HasAuthor returns true if author information is available
+// HasAuthor returns true if author information is available.
 func (r *Result) HasAuthor() bool {
 	return r.Author != ""
 }
 
-// HasDate returns true if publication date is available
+// HasDate returns true if publication date is available.
 func (r *Result) HasDate() bool {
 	return r.DatePublished != nil
 }
 
-// HasImage returns true if a lead image is available
+// HasImage returns true if a lead image is available.
 func (r *Result) HasImage() bool {
 	return r.LeadImageURL != ""
 }

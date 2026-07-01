@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"bytes"
-	"io"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-// Resource provides functionality for fetching and preparing HTML documents
+// Resource provides functionality for fetching and preparing HTML documents.
 type Resource struct{}
 
 // Create creates a Resource by fetching from URL or using provided HTML
@@ -23,13 +21,13 @@ type Resource struct{}
 // - rawURL: The URL for the document we should retrieve
 // - preparedResponse: If set, use as the response rather than fetching. Expects HTML string
 // - parsedURL: Pre-parsed URL object (optional)
-// - headers: Custom headers to include in the request
+// - headers: Custom headers to include in the request.
 func (r *Resource) Create(ctx context.Context, rawURL string, preparedResponse string, parsedURL *url.URL, headers map[string]string) (*goquery.Document, error) {
 	// Use nil client for backward compatibility
 	return r.CreateWithClient(ctx, rawURL, preparedResponse, parsedURL, headers, nil)
 }
 
-// CreateWithClient creates a Resource using the provided HTTP client
+// CreateWithClient creates a Resource using the provided HTTP client.
 func (r *Resource) CreateWithClient(ctx context.Context, rawURL string, preparedResponse string, parsedURL *url.URL, headers map[string]string, httpClient *HTTPClient) (*goquery.Document, error) {
 	var result *FetchResult
 
@@ -60,18 +58,13 @@ func (r *Resource) CreateWithClient(ctx context.Context, rawURL string, prepared
 		return nil, fmt.Errorf("resource fetch failed: %s", result.Message)
 	}
 
-	// Check if document is large and should use streaming
-	documentSize := int64(len(result.Response.Body))
-	if IsLargeDocument(documentSize) {
-		return r.GenerateDocStreaming(result)
-	}
-
 	return r.GenerateDocWithContext(ctx, result)
 }
 
-// GenerateDoc creates a goquery Document from fetch result
-// Handles encoding detection and applies DOM preparation pipeline with resource limits
-// DEPRECATED: This method uses context.Background() which prevents proper timeout control.
+// GenerateDoc creates a goquery Document from fetch result.
+// Handles encoding detection and applies DOM preparation pipeline with resource limits.
+//
+// Deprecated: This method uses context.Background() which prevents proper timeout control.
 // Use Create or GenerateDocWithContext instead.
 func (r *Resource) GenerateDoc(result *FetchResult) (*goquery.Document, error) {
 	// Use background context for backward compatibility - DEPRECATED
@@ -79,7 +72,7 @@ func (r *Resource) GenerateDoc(result *FetchResult) (*goquery.Document, error) {
 	return r.GenerateDocWithContext(context.Background(), result)
 }
 
-// GenerateDocWithContext creates a document with context for timeout control
+// GenerateDocWithContext creates a document with context for timeout control.
 func (r *Resource) GenerateDocWithContext(ctx context.Context, result *FetchResult) (*goquery.Document, error) {
 	contentType := result.Response.GetContentType()
 
@@ -122,7 +115,7 @@ func (r *Resource) GenerateDocWithContext(ctx context.Context, result *FetchResu
 	return doc, nil
 }
 
-// ValidateResourceLimits checks if the resource is within safe processing limits
+// ValidateResourceLimits checks if the resource is within safe processing limits.
 func (r *Resource) ValidateResourceLimits(body []byte) error {
 	bodySize := len(body)
 
@@ -133,7 +126,7 @@ func (r *Resource) ValidateResourceLimits(body []byte) error {
 	return nil
 }
 
-// ValidateDOMComplexity checks if the DOM has too many elements
+// ValidateDOMComplexity checks if the DOM has too many elements.
 func (r *Resource) ValidateDOMComplexity(doc *goquery.Document) error {
 	elementCount := doc.Find("*").Length()
 
@@ -144,7 +137,7 @@ func (r *Resource) ValidateDOMComplexity(doc *goquery.Document) error {
 	return nil
 }
 
-// EncodeDoc handles character encoding detection and document creation
+// EncodeDoc handles character encoding detection and document creation.
 func (r *Resource) EncodeDoc(content []byte, contentType string, alreadyDecoded bool) (*goquery.Document, error) {
 	var htmlContent string
 	var err error
@@ -177,7 +170,7 @@ func (r *Resource) EncodeDoc(content []byte, contentType string, alreadyDecoded 
 }
 
 // recheckEncoding checks if encoding in header matches encoding in HTML meta tags
-// and re-encodes if necessary (matches JavaScript behavior)
+// and re-encodes if necessary (matches JavaScript behavior).
 func (r *Resource) recheckEncoding(content []byte, doc *goquery.Document, headerContentType string) (*goquery.Document, error) {
 	// Get encoding from Content-Type header
 	headerEncoding := getEncodingFromContentType(headerContentType)
@@ -228,78 +221,7 @@ func (r *Resource) recheckEncoding(content []byte, doc *goquery.Document, header
 	return doc, nil
 }
 
-// NewResource creates a new Resource instance
+// NewResource creates a new Resource instance.
 func NewResource() *Resource {
 	return &Resource{}
-}
-
-// IsLargeDocument determines if a document should use streaming
-func IsLargeDocument(size int64) bool {
-	const largeSizeThreshold = 1024 * 1024 // 1MB
-	return size > largeSizeThreshold
-}
-
-// GenerateDocStreaming creates a goquery Document using streaming for large documents
-// Provides memory optimization for documents over 1MB by processing HTML in chunks
-func (r *Resource) GenerateDocStreaming(result *FetchResult) (*goquery.Document, error) {
-	contentType := result.Response.GetContentType()
-
-	// Check if content appears to be HTML/text
-	if !IsTextContent(contentType) {
-		return nil, fmt.Errorf("content does not appear to be text, got: %s", contentType)
-	}
-
-	// For streaming, we still need to validate limits but can be more lenient
-	documentSize := int64(len(result.Response.Body))
-	if documentSize > MAX_DOCUMENT_SIZE_STREAMING {
-		return nil, fmt.Errorf("document too large for streaming: %d bytes (max: %d)", 
-			documentSize, MAX_DOCUMENT_SIZE_STREAMING)
-	}
-
-	// For now, implement a simplified streaming approach
-	// In a complete implementation, this would use the full streaming parser
-	
-	// Create a reader from the response body
-	reader := bytes.NewReader(result.Response.Body)
-	
-	// Process the document in chunks to reduce memory pressure
-	const chunkSize = 128 * 1024 // 128KB chunks
-	var htmlBuilder strings.Builder
-	
-	buffer := make([]byte, chunkSize)
-	for {
-		n, err := reader.Read(buffer)
-		if err != nil && err != io.EOF {
-			return nil, fmt.Errorf("error reading document chunks: %w", err)
-		}
-		
-		if n > 0 {
-			htmlBuilder.Write(buffer[:n])
-		}
-		
-		if err == io.EOF {
-			break
-		}
-	}
-	
-	// Parse the complete HTML
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlBuilder.String()))
-	if err != nil {
-		// Fallback to regular parsing if streaming approach fails
-		if documentSize < 5*1024*1024 { // 5MB fallback limit
-			return r.GenerateDoc(result)
-		}
-		return nil, fmt.Errorf("streaming parse failed: %w", err)
-	}
-
-	if doc == nil {
-		return nil, fmt.Errorf("streaming parser returned nil document")
-	}
-
-	// Apply basic DOM validation 
-	if doc.Find("*").Length() == 0 {
-		return nil, fmt.Errorf("no children found in streamed document, likely a bad parse")
-	}
-
-	return doc, nil
 }

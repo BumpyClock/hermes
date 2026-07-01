@@ -9,10 +9,11 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
 
-// ContentCleanOptions represents configuration options for content cleaning
+// ContentCleanOptions represents configuration options for content cleaning.
 type ContentCleanOptions struct {
 	CleanConditionally bool
 	Title              string
@@ -24,7 +25,7 @@ type ContentCleanOptions struct {
 // Direct port of JavaScript extractCleanNode function with identical cleaning pipeline:
 //
 // 1. rewriteTopLevel - Convert HTML/BODY tags to DIV to avoid complications
-// 2. cleanImages - Remove small/spacer images (if defaultCleaner enabled)  
+// 2. cleanImages - Remove small/spacer images (if defaultCleaner enabled)
 // 3. makeLinksAbsolute - Convert relative URLs to absolute URLs
 // 4. markToKeep - Mark video iframes and important elements for preservation
 // 5. stripJunkTags - Remove script, style, title and other junk tags
@@ -37,7 +38,7 @@ type ContentCleanOptions struct {
 // This function matches the JavaScript implementation exactly, including:
 // - Same cleaning order and logic
 // - Same conditional cleaning based on options
-// - Same default behaviors for aggressive vs conservative cleaning
+// - Same default behaviors for aggressive vs conservative cleaning.
 func ExtractCleanNode(article *goquery.Selection, doc *goquery.Document, opts ContentCleanOptions) *goquery.Selection {
 	if article == nil || article.Length() == 0 {
 		return article
@@ -51,7 +52,7 @@ func ExtractCleanNode(article *goquery.Selection, doc *goquery.Document, opts Co
 	}
 
 	// Apply cleaning functions in the exact same order as JavaScript:
-	// Unlike the document-level cleaning in the generic extractor, 
+	// Unlike the document-level cleaning in the generic extractor,
 	// we need to apply these operations specifically to the article scope
 
 	// 1. Rewrite the tag name to div if it's a top level node like body or
@@ -125,15 +126,15 @@ func cleanImagesInSelection(selection *goquery.Selection) {
 		src, _ := img.Attr("src")
 		width, _ := img.Attr("width")
 		height, _ := img.Attr("height")
-		
+
 		// Check if it's a spacer by name
 		if strings.Contains(strings.ToLower(src), "spacer") ||
-		   strings.Contains(strings.ToLower(src), "blank") ||
-		   strings.Contains(strings.ToLower(src), "clear.gif") {
+			strings.Contains(strings.ToLower(src), "blank") ||
+			strings.Contains(strings.ToLower(src), "clear.gif") {
 			img.Remove()
 			return
 		}
-		
+
 		// Check if it's small (likely spacer)
 		if width != "" && height != "" {
 			w, errW := strconv.Atoi(width)
@@ -143,7 +144,7 @@ func cleanImagesInSelection(selection *goquery.Selection) {
 				return
 			}
 		}
-		
+
 		// Remove images with very small dimensions in style
 		style, _ := img.Attr("style")
 		if strings.Contains(style, "width:1px") || strings.Contains(style, "height:1px") {
@@ -156,35 +157,35 @@ func makeLinksAbsoluteInSelection(selection *goquery.Selection, baseURL string) 
 	if baseURL == "" {
 		return
 	}
-	
+
 	base, err := url.Parse(baseURL)
 	if err != nil {
 		return
 	}
-	
+
 	selection.Find("a[href], link[href]").Each(func(i int, link *goquery.Selection) {
 		href, exists := link.Attr("href")
 		if !exists {
 			return
 		}
-		
+
 		resolved, err := base.Parse(href)
 		if err == nil {
 			link.SetAttr("href", resolved.String())
 		}
 	})
-	
+
 	selection.Find("img[src]").Each(func(i int, img *goquery.Selection) {
 		src, exists := img.Attr("src")
 		if !exists {
 			return
 		}
-		
+
 		resolved, err := base.Parse(src)
 		if err == nil {
 			img.SetAttr("src", resolved.String())
 		}
-		
+
 		// Handle srcset
 		if srcset, exists := img.Attr("srcset"); exists {
 			parts := strings.Split(srcset, ",")
@@ -199,7 +200,7 @@ func makeLinksAbsoluteInSelection(selection *goquery.Selection, baseURL string) 
 				} else {
 					srcPart = part
 				}
-				
+
 				if resolved, err := base.Parse(srcPart); err == nil {
 					newParts = append(newParts, resolved.String()+descriptor)
 				} else {
@@ -215,7 +216,7 @@ func markToKeepInSelection(selection *goquery.Selection, baseURL string) {
 	keepSelectors := []string{
 		"iframe[src*='youtube.com']",
 		"iframe[src*='www.youtube.com']",
-		"iframe[src*='youtu.be']", 
+		"iframe[src*='youtu.be']",
 		"iframe[src*='vimeo.com']",
 		"iframe[src*='player.vimeo.com']",
 		"object[data*='youtube.com']",
@@ -223,11 +224,11 @@ func markToKeepInSelection(selection *goquery.Selection, baseURL string) {
 		"embed[src*='youtube.com']",
 		"embed[src*='vimeo.com']",
 	}
-	
+
 	for _, selector := range keepSelectors {
 		selection.Find(selector).AddClass("hermes-parser-keep")
 	}
-	
+
 	// If we have a base URL, also mark iframes from the same domain
 	if baseURL != "" {
 		if parsed, err := url.Parse(baseURL); err == nil {
@@ -249,14 +250,14 @@ func stripJunkTagsInSelection(selection *goquery.Selection) {
 		"script", "style", "link", "meta", "noscript", "template",
 		"title", "head", "object", "embed", "applet",
 	}
-	
+
 	selector := strings.Join(junkTags, ", ")
 	selection.Find(selector).Not(".hermes-parser-keep").Remove()
 }
 
 func cleanHOnesInSelection(selection *goquery.Selection) {
 	h1s := selection.Find("h1")
-	
+
 	if h1s.Length() < 3 {
 		// Remove all H1s if there are fewer than 3
 		h1s.Remove()
@@ -270,10 +271,10 @@ func cleanHOnesInSelection(selection *goquery.Selection) {
 
 func cleanHeadersInSelection(selection *goquery.Selection, title string) {
 	headers := selection.Find("h1, h2, h3, h4, h5, h6")
-	
+
 	headers.Each(func(i int, header *goquery.Selection) {
 		headerText := strings.TrimSpace(header.Text())
-		
+
 		// Remove headers that appear before all paragraphs
 		allParagraphs := selection.Find("p")
 		if allParagraphs.Length() > 0 {
@@ -283,13 +284,13 @@ func cleanHeadersInSelection(selection *goquery.Selection, title string) {
 				return
 			}
 		}
-		
+
 		// Remove headers that match the title exactly
 		if title != "" && headerText == title {
 			header.Remove()
 			return
 		}
-		
+
 		// Remove very short headers
 		if len(headerText) < 3 {
 			header.Remove()
@@ -301,25 +302,25 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool)
 	if !cleanConditionally {
 		return // Skip conditional cleaning
 	}
-	
+
 	// Tags that might be cleaned conditionally
 	conditionalTags := []string{"div", "section", "header", "footer", "aside", "nav"}
-	
+
 	for _, tag := range conditionalTags {
 		selection.Find(tag).Each(func(i int, elem *goquery.Selection) {
 			// Skip if marked to keep
 			if elem.HasClass("hermes-parser-keep") {
 				return
 			}
-			
+
 			// Skip if it contains elements marked to keep
 			if elem.Find(".hermes-parser-keep").Length() > 0 {
 				return
 			}
-			
+
 			// Basic heuristic: remove if mostly links
 			text := strings.TrimSpace(elem.Text())
-			
+
 			// Don't remove empty elements that contain important media (iframe, video, etc.)
 			if len(text) == 0 {
 				// Check if it contains media elements that should be preserved
@@ -329,7 +330,7 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool)
 				elem.Remove()
 				return
 			}
-			
+
 			links := elem.Find("a")
 			var linkTextBuilder strings.Builder
 			links.Each(func(j int, link *goquery.Selection) {
@@ -337,7 +338,7 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool)
 				linkTextBuilder.WriteString(" ")
 			})
 			linkText := linkTextBuilder.String()
-			
+
 			// If more than 50% of text is links, likely navigation/junk
 			if len(strings.TrimSpace(linkText)) > len(text)/2 {
 				elem.Remove()
@@ -365,14 +366,14 @@ func removeEmptyInSelection(selection *goquery.Selection) {
 func cleanAttributesInSelection(selection *goquery.Selection) {
 	// Keep only essential attributes
 	keepAttrs := []string{"href", "src", "alt", "title", "srcset"}
-	
+
 	selection.Find("*").Each(func(i int, elem *goquery.Selection) {
 		// Get all current attributes
 		node := elem.Get(0)
 		if node == nil {
 			return
 		}
-		
+
 		// Collect attributes to remove
 		var attrsToRemove []string
 		for _, attr := range node.Attr {
@@ -387,12 +388,12 @@ func cleanAttributesInSelection(selection *goquery.Selection) {
 			if attr.Key == "data-content-score" || attr.Key == "class" {
 				keep = true
 			}
-			
+
 			if !keep {
 				attrsToRemove = append(attrsToRemove, attr.Key)
 			}
 		}
-		
+
 		// Remove unwanted attributes
 		for _, attrName := range attrsToRemove {
 			elem.RemoveAttr(attrName)

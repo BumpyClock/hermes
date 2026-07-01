@@ -31,7 +31,7 @@ func TestHTTPClientGet(t *testing.T) {
 
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write([]byte("<html><body>Test content</body></html>"))
+		_, _ = w.Write([]byte("<html><body>Test content</body></html>"))
 	}))
 	defer server.Close()
 
@@ -46,20 +46,20 @@ func TestHTTPClientGet(t *testing.T) {
 
 func TestHTTPClientCustomHeaders(t *testing.T) {
 	customHeader := "test-custom-value"
-	
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check custom header
 		assert.Equal(t, customHeader, r.Header.Get("X-Custom"))
-		
+
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	}))
 	defer server.Close()
 
 	headers := map[string]string{
 		"X-Custom": customHeader,
 	}
-	
+
 	client := resource.NewHTTPClient(headers)
 	resp, err := client.Get(context.Background(), server.URL)
 
@@ -69,7 +69,7 @@ func TestHTTPClientCustomHeaders(t *testing.T) {
 
 func TestHTTPClientRetry(t *testing.T) {
 	attemptCount := 0
-	
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attemptCount++
 		if attemptCount < 3 {
@@ -77,7 +77,7 @@ func TestHTTPClientRetry(t *testing.T) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Success"))
+		_, _ = w.Write([]byte("Success"))
 	}))
 	defer server.Close()
 
@@ -91,19 +91,19 @@ func TestHTTPClientRetry(t *testing.T) {
 
 func TestHTTPClientTimeout(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Simulate slow response
 		time.Sleep(100 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
-	// This test would require modifying the client timeout
-	// For now, just test that the client works normally
-	client := resource.NewHTTPClient(nil)
-	resp, err := client.Get(context.Background(), server.URL)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
 
-	require.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode)
+	client := resource.NewHTTPClient(nil)
+	_, err := client.Get(ctx, server.URL)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context")
 }
 
 func TestHTTPClientError(t *testing.T) {

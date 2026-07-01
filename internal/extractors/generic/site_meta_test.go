@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// helper to build a goquery document from HTML string
+// helper to build a goquery document from HTML string.
 func newDoc(html string, t *testing.T) *goquery.Document {
 	t.Helper()
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))

@@ -4,34 +4,30 @@
 package custom
 
 // TakagihiromitsuJpExtractor provides the custom extraction rules for takagi-hiromitsu.jp
-// JavaScript equivalent: export const TakagihiromitsuJpExtractor = { ... }
+// JavaScript equivalent: export const TakagihiromitsuJpExtractor = { ... }.
 var TakagihiromitsuJpExtractor = &CustomExtractor{
 	Domain: "takagi-hiromitsu.jp",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h3",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"author\"]", "value"},
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[http-equiv=\"Last-Modified\"]", "value"},
 		},
 	},
-	
+
 	// Dek is null in JavaScript
-	Dek: nil,
-	
-	// Lead image URL is null in JavaScript
-	LeadImageURL: nil,
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
@@ -39,16 +35,10 @@ var TakagihiromitsuJpExtractor = &CustomExtractor{
 			},
 			DefaultCleaner: false,
 		},
-		
-		// Transform functions (empty in JavaScript)
-		Transforms: map[string]TransformFunction{},
-		
-		// Clean selectors (empty in JavaScript)
-		Clean: []string{},
 	},
 }
 
-// GetTakagihiromitsuJpExtractor returns the Takagi Hiromitsu custom extractor
+// GetTakagihiromitsuJpExtractor returns the Takagi Hiromitsu custom extractor.
 func GetTakagihiromitsuJpExtractor() *CustomExtractor {
 	return TakagihiromitsuJpExtractor
 }

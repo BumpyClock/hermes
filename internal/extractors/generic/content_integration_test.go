@@ -94,13 +94,13 @@ func TestContentExtractor_EndToEndExtraction(t *testing.T) {
 
 	// Test with default options (strict)
 	result := extractor.Extract(params, ExtractorOptions{})
-	
+
 	t.Logf("Extracted content length: %d characters", len(result))
 	t.Logf("First 300 chars: %s", truncateString(result, 300))
 
 	// Verify content was extracted
 	assert.NotEmpty(t, result, "should extract content from complex HTML")
-	
+
 	// Verify main content is included
 	assert.Contains(t, result, "first paragraph of the main article")
 	assert.Contains(t, result, "second paragraph continues")
@@ -158,7 +158,7 @@ func TestContentExtractor_JavaScriptCompatibilityVerification(t *testing.T) {
 	}
 
 	result := extractor.Extract(params, ExtractorOptions{})
-	
+
 	// Verify the extracted content matches expected JavaScript behavior
 	assert.Contains(t, result, "same behavior as the JavaScript version")
 	assert.Contains(t, result, "scoring algorithms and content analysis")
@@ -166,13 +166,13 @@ func TestContentExtractor_JavaScriptCompatibilityVerification(t *testing.T) {
 	assert.Contains(t, result, "Second key point")
 	assert.Contains(t, result, "Third point that concludes")
 	assert.Contains(t, result, "Concluding paragraph that wraps up")
-	
+
 	// Verify sidebar content is not included
 	assert.NotContains(t, result, "Sidebar widget content")
-	
+
 	// Verify content is properly normalized (no excessive whitespace)
 	assert.NotContains(t, result, "  ", "should normalize spaces properly")
-	
+
 	t.Logf("JavaScript compatibility test passed. Content length: %d", len(result))
 }
 
@@ -203,15 +203,15 @@ func TestContentExtractor_OptionsCascading(t *testing.T) {
 
 	// Test extraction with cascading - should succeed even with challenging content
 	result := extractor.Extract(params, ExtractorOptions{})
-	
+
 	assert.NotEmpty(t, result, "should extract content through options cascading")
 	assert.Contains(t, result, "main article content")
 	assert.Contains(t, result, "cascading options should help")
-	
+
 	t.Logf("Options cascading successful. Extracted: %s", truncateString(result, 150))
 }
 
-// Helper function to truncate strings for logging
+// Helper function to truncate strings for logging.
 func truncateString(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s

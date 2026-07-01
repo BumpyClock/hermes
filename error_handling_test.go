@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// TestErrorCodeClassification tests all error code paths
+// TestErrorCodeClassification tests all error code paths.
 func TestErrorCodeClassification(t *testing.T) {
 	client := New(WithAllowPrivateNetworks(true)) // Allow localhost for testing network errors
 
@@ -35,7 +35,7 @@ func TestErrorCodeClassification(t *testing.T) {
 				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					time.Sleep(200 * time.Millisecond)
 					w.WriteHeader(200)
-					w.Write([]byte("<html><body>Test</body></html>"))
+					_, _ = w.Write([]byte("<html><body>Test</body></html>"))
 				}))
 				t.Cleanup(server.Close)
 
@@ -52,7 +52,7 @@ func TestErrorCodeClassification(t *testing.T) {
 				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					time.Sleep(100 * time.Millisecond)
 					w.WriteHeader(200)
-					w.Write([]byte("<html><body>Test</body></html>"))
+					_, _ = w.Write([]byte("<html><body>Test</body></html>"))
 				}))
 				t.Cleanup(server.Close)
 
@@ -96,16 +96,16 @@ func TestErrorCodeClassification(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			url, ctx := tt.setupFunc()
-			
+
 			// Handle SSRF test specially - needs a client that blocks private networks
 			testClient := client
 			if url == "SSRF_TEST_SPECIAL" {
-				testClient = New() // Default client blocks private networks
+				testClient = New()              // Default client blocks private networks
 				url = "http://192.168.1.1/test" // Use private IP to trigger SSRF
 			}
-			
+
 			result, err := testClient.Parse(ctx, url)
-			
+
 			if !tt.shouldError {
 				if err != nil {
 					t.Fatalf("Expected no error, got: %v", err)
@@ -128,9 +128,9 @@ func TestErrorCodeClassification(t *testing.T) {
 			}
 
 			if parseErr.Code != tt.expectedCode {
-				t.Errorf("Expected error code %d (%s), got %d (%s). Error: %v", 
-					tt.expectedCode, ErrorCode(tt.expectedCode).String(), 
-					parseErr.Code, parseErr.Code.String(), 
+				t.Errorf("Expected error code %d (%s), got %d (%s). Error: %v",
+					tt.expectedCode, tt.expectedCode.String(),
+					parseErr.Code, parseErr.Code.String(),
 					parseErr.Error())
 			}
 
@@ -141,7 +141,7 @@ func TestErrorCodeClassification(t *testing.T) {
 	}
 }
 
-// TestParseErrorMethods tests the ParseError interface methods
+// TestParseErrorMethods tests the ParseError interface methods.
 func TestParseErrorMethods(t *testing.T) {
 	originalErr := errors.New("original error")
 	parseErr := &ParseError{
@@ -185,13 +185,13 @@ func TestParseErrorMethods(t *testing.T) {
 	}
 }
 
-// TestErrorWrappingAndUnwrapping tests error wrapping behavior
+// TestErrorWrappingAndUnwrapping tests error wrapping behavior.
 func TestErrorWrappingAndUnwrapping(t *testing.T) {
 	client := New()
-	
+
 	// Test with invalid URL to get a ParseError
 	result, err := client.Parse(context.Background(), "")
-	
+
 	if err == nil {
 		t.Fatal("Expected error for empty URL")
 	}
@@ -213,7 +213,7 @@ func TestErrorWrappingAndUnwrapping(t *testing.T) {
 	}
 }
 
-// TestParseHTMLErrorHandling tests error handling in ParseHTML
+// TestParseHTMLErrorHandling tests error handling in ParseHTML.
 func TestParseHTMLErrorHandling(t *testing.T) {
 	client := New()
 	ctx := context.Background()
@@ -247,7 +247,7 @@ func TestParseHTMLErrorHandling(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := client.ParseHTML(ctx, tt.html, tt.url)
-			
+
 			if err == nil {
 				t.Fatal("Expected error, got none")
 			}
@@ -272,13 +272,13 @@ func TestParseHTMLErrorHandling(t *testing.T) {
 	}
 }
 
-// TestContextCancellationErrorClassification tests that context cancellation is properly classified
+// TestContextCancellationErrorClassification tests that context cancellation is properly classified.
 func TestContextCancellationErrorClassification(t *testing.T) {
 	// Create a server that responds slowly
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(200 * time.Millisecond)
 		w.WriteHeader(200)
-		w.Write([]byte("<html><body>Test content</body></html>"))
+		_, _ = w.Write([]byte("<html><body>Test content</body></html>"))
 	}))
 	defer server.Close()
 
@@ -310,7 +310,7 @@ func TestContextCancellationErrorClassification(t *testing.T) {
 
 	t.Run("context canceled", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		
+
 		// Cancel the context immediately
 		cancel()
 
@@ -336,7 +336,7 @@ func TestContextCancellationErrorClassification(t *testing.T) {
 	})
 }
 
-// TestNetworkErrorClassification tests classification of various network errors
+// TestNetworkErrorClassification tests classification of various network errors.
 func TestNetworkErrorClassification(t *testing.T) {
 	client := New(WithAllowPrivateNetworks(true)) // Allow localhost for testing
 	ctx := context.Background()
@@ -386,7 +386,7 @@ func TestNetworkErrorClassification(t *testing.T) {
 	}
 }
 
-// TestSSRFProtectionNetworkErrors tests that SSRF protection properly blocks private networks
+// TestSSRFProtectionNetworkErrors tests that SSRF protection properly blocks private networks.
 func TestSSRFProtectionNetworkErrors(t *testing.T) {
 	// Use default client (no private networks allowed)
 	client := New()
@@ -436,11 +436,11 @@ func TestSSRFProtectionNetworkErrors(t *testing.T) {
 	}
 }
 
-// TestErrorCodeValues tests that error codes have expected values
+// TestErrorCodeValues tests that error codes have expected values.
 func TestErrorCodeValues(t *testing.T) {
 	expectedCodes := map[ErrorCode]string{
 		ErrInvalidURL: "invalid URL",
-		ErrFetch:      "fetch error", 
+		ErrFetch:      "fetch error",
 		ErrTimeout:    "timeout",
 		ErrSSRF:       "SSRF blocked",
 		ErrExtract:    "extraction error",
@@ -458,7 +458,7 @@ func TestErrorCodeValues(t *testing.T) {
 	}
 }
 
-// BenchmarkErrorClassification benchmarks the error classification performance
+// BenchmarkErrorClassification benchmarks the error classification performance.
 func BenchmarkErrorClassification(b *testing.B) {
 	client := New()
 	ctx := context.Background()

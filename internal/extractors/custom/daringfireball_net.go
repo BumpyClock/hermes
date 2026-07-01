@@ -6,17 +6,17 @@ package custom
 
 import (
 	"strings"
-	
+
 	"github.com/PuerkitoBio/goquery"
 )
 
-// DaringFireballExtractor provides the custom extraction rules for daringfireball.net
+// DaringFireballExtractor provides the custom extraction rules for daringfireball.net.
 var DaringFireballExtractor = &CustomExtractor{
 	Domain: "daringfireball.net",
 	SupportedDomains: []string{
 		"www.daringfireball.net",
 	},
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"title",
@@ -25,7 +25,7 @@ var DaringFireballExtractor = &CustomExtractor{
 			"h1.entry-title",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			"[name='author']",
@@ -33,7 +33,7 @@ var DaringFireballExtractor = &CustomExtractor{
 			".byline",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"time", "datetime"},
@@ -41,7 +41,7 @@ var DaringFireballExtractor = &CustomExtractor{
 			"p.smallprint em", // Format: "★ Saturday, 30 August 2025"
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
@@ -53,52 +53,40 @@ var DaringFireballExtractor = &CustomExtractor{
 				"body", // Last fallback
 			},
 		},
-		
-        // Clean out navigation and non-content elements (conservative)
-        Clean: []string{
-            // Page furniture outside main content
-            "div#Banner",
-            "div#Sidebar",
-            "div#Footer",
-            "#SidebarMartini",
 
-            // Footer/date blocks within content
-            ".smallprint",
-            "a[href='/preferences/']",
+		// Clean out navigation and non-content elements (conservative)
+		Clean: []string{
+			// Page furniture outside main content
+			"div#Banner",
+			"div#Sidebar",
+			"div#Footer",
+			"#SidebarMartini",
 
-            // Scripts and styles
-            "script",
-            "style",
-            "noscript",
+			// Footer/date blocks within content
+			".smallprint",
 
-            // Ads/sponsored
-            "[href*='apps.apple.com']",
-            "img[src*='/martini/']",
-            ".ads",
-            ".advertisement",
-            ".sponsored",
-        },
-		
+			// Scripts and styles
+			"script",
+			"style",
+			"noscript",
+
+			// Ads/sponsored
+			"[href*='apps.apple.com']",
+			"img[src*='/martini/']",
+			".ads",
+			".advertisement",
+			".sponsored",
+		},
+
 		// Basic transforms - preserve important formatting
 		Transforms: map[string]TransformFunction{
-			// Remove footer elements that contain specific text patterns
-            "p": &FunctionTransform{
-                Fn: func(selection *goquery.Selection) error {
-                    text := selection.Text()
-                    // Remove paragraphs containing footer text
-                    if strings.Contains(text, "★") ||
-                       strings.Contains(text, "Display Preferences") ||
-                       strings.Contains(text, "Copyright") {
-                        selection.Remove()
-                    }
-                    return nil
-                },
-            },
-			// Remove links to preferences
-			"a": &FunctionTransform{
+			// Remove footer elements that contain specific text patterns.
+			"p": &FunctionTransform{
 				Fn: func(selection *goquery.Selection) error {
-					href, exists := selection.Attr("href")
-					if exists && strings.Contains(href, "/preferences/") {
+					text := selection.Text()
+					if strings.Contains(text, "★") ||
+						strings.Contains(text, "Display Preferences") ||
+						strings.Contains(text, "Copyright") {
 						selection.Remove()
 					}
 					return nil
@@ -106,7 +94,7 @@ var DaringFireballExtractor = &CustomExtractor{
 			},
 		},
 	},
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[property='og:image']", "content"},
@@ -116,7 +104,7 @@ var DaringFireballExtractor = &CustomExtractor{
 	},
 }
 
-// GetDaringFireballExtractor returns the Daring Fireball custom extractor
+// GetDaringFireballExtractor returns the Daring Fireball custom extractor.
 func GetDaringFireballExtractor() *CustomExtractor {
 	return DaringFireballExtractor
 }
