@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-12
+
+### Added
+- Exported `DefaultUserAgent`, matching the current stable Chrome reduced User-Agent format, and `FacebookCrawlerUserAgent` for crawler-specific responses.
+- Custom extractors for Apple, BBC, and TechCrunch, along with expanded coverage for Ars Technica, Medium, Reuters, The Guardian, The Washington Post, Le Monde, and The Times of India.
+
+### Changed
+- Simplified the parser and extractor internals while preserving the public parsing API and strengthening custom-extractor dispatch.
+- Applied one consistent default User-Agent to resource fetching and public client construction.
+
+### Fixed
+- Hardened custom-content sanitization and HTML extraction so transformed content is sanitized consistently without dropping supported image captions.
+- Corrected parser option handling for caller-provided HTTP clients and explicit timeouts.
+
 ## [1.0.0] - 2024-08-24
 
 ### 🎉 Major Release: Go Module Refactoring Complete
