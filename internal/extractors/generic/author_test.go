@@ -27,18 +27,18 @@ func TestGenericAuthorExtractor_ExtractFromMeta(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "Extract from byl meta tag",
-			html: `<html><head><meta name="byl" value="John Smith"></head><body></body></html>`,
+			name:     "Extract from byl meta tag",
+			html:     `<html><head><meta name="byl" value="John Smith"></head><body></body></html>`,
 			expected: "John Smith",
 		},
 		{
-			name: "Extract from dc.author meta tag",
-			html: `<html><head><meta name="dc.author" value="Jane Doe"></head><body></body></html>`,
+			name:     "Extract from dc.author meta tag",
+			html:     `<html><head><meta name="dc.author" value="Jane Doe"></head><body></body></html>`,
 			expected: "Jane Doe",
 		},
 		{
-			name: "Extract from authors meta tag",
-			html: `<html><head><meta name="authors" value="Bob Wilson"></head><body></body></html>`,
+			name:     "Extract from authors meta tag",
+			html:     `<html><head><meta name="authors" value="Bob Wilson"></head><body></body></html>`,
 			expected: "Bob Wilson",
 		},
 		{
@@ -50,13 +50,13 @@ func TestGenericAuthorExtractor_ExtractFromMeta(t *testing.T) {
 			expected: "First Author",
 		},
 		{
-			name: "Author too long - should fall through",
-			html: `<html><head><meta name="byl" value="` + strings.Repeat("Very Long Author Name ", 20) + `"></head><body></body></html>`,
+			name:     "Author too long - should fall through",
+			html:     `<html><head><meta name="byl" value="` + strings.Repeat("Very Long Author Name ", 20) + `"></head><body></body></html>`,
 			expected: "",
 		},
 		{
-			name: "No meta tags",
-			html: `<html><head></head><body></body></html>`,
+			name:     "No meta tags",
+			html:     `<html><head></head><body></body></html>`,
 			expected: "",
 		},
 	}
@@ -95,23 +95,23 @@ func TestGenericAuthorExtractor_ExtractFromSelectors(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "Extract from .author class",
-			html: `<html><body><div class="author">John Smith</div></body></html>`,
+			name:     "Extract from .author class",
+			html:     `<html><body><div class="author">John Smith</div></body></html>`,
 			expected: "John Smith",
 		},
 		{
-			name: "Extract from .byline class",
-			html: `<html><body><div class="byline">Jane Doe</div></body></html>`,
+			name:     "Extract from .byline class",
+			html:     `<html><body><div class="byline">Jane Doe</div></body></html>`,
 			expected: "Jane Doe",
 		},
 		{
-			name: "Extract from vcard pattern",
-			html: `<html><body><div class="author vcard"><span class="fn">Bob Wilson</span></div></body></html>`,
+			name:     "Extract from vcard pattern",
+			html:     `<html><body><div class="author vcard"><span class="fn">Bob Wilson</span></div></body></html>`,
 			expected: "Bob Wilson",
 		},
 		{
-			name: "Extract from rel=author link",
-			html: `<html><body><a rel="author" href="/author/john">John Smith</a></body></html>`,
+			name:     "Extract from rel=author link",
+			html:     `<html><body><a rel="author" href="/author/john">John Smith</a></body></html>`,
 			expected: "John Smith",
 		},
 		{
@@ -123,13 +123,13 @@ func TestGenericAuthorExtractor_ExtractFromSelectors(t *testing.T) {
 			expected: "First Author",
 		},
 		{
-			name: "Author too long - should fall through",
-			html: `<html><body><div class="author">` + strings.Repeat("Very Long Author Name ", 20) + `</div></body></html>`,
+			name:     "Author too long - should fall through",
+			html:     `<html><body><div class="author">` + strings.Repeat("Very Long Author Name ", 20) + `</div></body></html>`,
 			expected: "",
 		},
 		{
-			name: "No matching selectors",
-			html: `<html><body><div class="content">Some content</div></body></html>`,
+			name:     "No matching selectors",
+			html:     `<html><body><div class="content">Some content</div></body></html>`,
 			expected: "",
 		},
 	}
@@ -168,18 +168,18 @@ func TestGenericAuthorExtractor_ExtractFromBylineRegex(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "Extract from #byline with By pattern",
-			html: `<html><body><div id="byline">By John Smith</div></body></html>`,
+			name:     "Extract from #byline with By pattern",
+			html:     `<html><body><div id="byline">By John Smith</div></body></html>`,
 			expected: "John Smith",
 		},
 		{
-			name: "Extract from .byline with By pattern",
-			html: `<html><body><div class="byline">By Jane Doe</div></body></html>`,
+			name:     "Extract from .byline with By pattern",
+			html:     `<html><body><div class="byline">By Jane Doe</div></body></html>`,
 			expected: "Jane Doe",
 		},
 		{
-			name: "Case insensitive By pattern",
-			html: `<html><body><div id="byline">BY BOB WILSON</div></body></html>`,
+			name:     "Case insensitive By pattern",
+			html:     `<html><body><div id="byline">BY BOB WILSON</div></body></html>`,
 			expected: "BOB WILSON",
 		},
 		{
@@ -208,13 +208,13 @@ func TestGenericAuthorExtractor_ExtractFromBylineRegex(t *testing.T) {
 			expected: "First Author",
 		},
 		{
-			name: "Byline without By pattern - should not match",
-			html: `<html><body><div id="byline">Just an author name</div></body></html>`,
+			name:     "Byline without By pattern - should not match",
+			html:     `<html><body><div id="byline">Just an author name</div></body></html>`,
 			expected: "",
 		},
 		{
-			name: "No byline elements",
-			html: `<html><body><div class="content">Some content</div></body></html>`,
+			name:     "No byline elements",
+			html:     `<html><body><div class="content">Some content</div></body></html>`,
 			expected: "",
 		},
 	}
@@ -267,8 +267,8 @@ func TestGenericAuthorExtractor_ExtractionPriority(t *testing.T) {
 			expected: "Selector Author",
 		},
 		{
-			name: "Falls through all strategies when no match",
-			html: `<html><body><div class="content">No author info</div></body></html>`,
+			name:     "Falls through all strategies when no match",
+			html:     `<html><body><div class="content">No author info</div></body></html>`,
 			expected: "",
 		},
 		{

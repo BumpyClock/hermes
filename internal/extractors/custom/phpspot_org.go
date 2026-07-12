@@ -4,53 +4,41 @@
 package custom
 
 // PhpspotOrgExtractor provides the custom extraction rules for phpspot.org
-// JavaScript equivalent: export const PhpspotOrgExtractor = { ... }
+// JavaScript equivalent: export const PhpspotOrgExtractor = { ... }.
 var PhpspotOrgExtractor = &CustomExtractor{
 	Domain: "phpspot.org",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h3.hl",
 		},
 	},
-	
-	Author: nil,
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			"h4.hl",
 		},
-		
+
 		// format: 'YYYY年MM月DD日' in JavaScript - note: Go implementation handles format in date cleaner
-		Format:   "YYYY年MM月DD日",
-		
+		Format: "YYYY年MM月DD日",
+
 		// timezone: 'Asia/Tokyo' in JavaScript - note: Go implementation handles timezone in date cleaner
 		Timezone: "Asia/Tokyo",
 	},
-	
-	Dek: nil,
-	
-	LeadImageURL: nil,
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
 				"div.entrybody",
 			},
 		},
-		
+
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
-		
-		// transforms: {} (empty in JavaScript)
-		Transforms: map[string]TransformFunction{},
-		
-		// clean: [] (empty in JavaScript)
-		Clean: []string{},
+		DisableDefaultCleaner: true,
 	},
 }
 
-// GetPhpspotOrgExtractor returns the PHPSpot Japan custom extractor
+// GetPhpspotOrgExtractor returns the PHPSpot Japan custom extractor.
 func GetPhpspotOrgExtractor() *CustomExtractor {
 	return PhpspotOrgExtractor
 }

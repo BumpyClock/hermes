@@ -20,11 +20,11 @@ func RewriteTopLevel(doc *goquery.Document) *goquery.Document {
 
 	// Convert html and body tags to divs using string replacement
 	// This approach works around goquery's limitations with root element manipulation
-	
+
 	// Replace opening html tags with div tags (preserving attributes)
 	htmlContent = replaceHtmlTag(htmlContent, "html")
-	
-	// Replace opening body tags with div tags (preserving attributes)  
+
+	// Replace opening body tags with div tags (preserving attributes)
 	htmlContent = replaceHtmlTag(htmlContent, "body")
 
 	// Create a new document from the modified HTML
@@ -37,34 +37,34 @@ func RewriteTopLevel(doc *goquery.Document) *goquery.Document {
 }
 
 // replaceHtmlTag replaces opening and closing tags of the specified type with div tags
-// while preserving attributes
+// while preserving attributes.
 func replaceHtmlTag(htmlContent, tagName string) string {
 	// Use regex-like approach but safer with strings package
 	// Replace opening tags like <html> or <html class="foo"> with <div> or <div class="foo">
-	
+
 	// First, find and replace opening tags
 	result := htmlContent
-	
+
 	// Simple approach: look for opening tags and replace them
 	openTagStart := "<" + tagName
 	openTagEnd := ">"
-	
+
 	for {
 		start := strings.Index(result, openTagStart)
 		if start == -1 {
 			break
 		}
-		
+
 		end := strings.Index(result[start:], openTagEnd)
 		if end == -1 {
 			break
 		}
-		
+
 		end += start
-		
+
 		// Extract the tag content including attributes
-		fullTag := result[start:end+1]
-		
+		fullTag := result[start : end+1]
+
 		// Replace tag name with div while preserving attributes
 		var newTag string
 		if strings.Contains(fullTag, " ") {
@@ -75,13 +75,13 @@ func replaceHtmlTag(htmlContent, tagName string) string {
 			// No attributes: <html> -> <div>
 			newTag = "<div>"
 		}
-		
+
 		result = result[:start] + newTag + result[end+1:]
 	}
-	
+
 	// Replace closing tags
 	closingTag := "</" + tagName + ">"
 	result = strings.ReplaceAll(result, closingTag, "</div>")
-	
+
 	return result
 }

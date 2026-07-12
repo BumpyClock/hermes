@@ -90,7 +90,7 @@ func TestConstants_RegexPatterns(t *testing.T) {
 			case "BLOCK_LEVEL_TAGS_RE matches div", "BLOCK_LEVEL_TAGS_RE matches article", "BLOCK_LEVEL_TAGS_RE doesn't match span":
 				matches = dom.BLOCK_LEVEL_TAGS_RE.MatchString(tt.input)
 			}
-			
+
 			assert.Equal(t, tt.matches, matches)
 		})
 	}
@@ -101,15 +101,15 @@ func TestConstants_Lists(t *testing.T) {
 	assert.NotEmpty(t, dom.STRIP_OUTPUT_TAGS)
 	assert.Contains(t, dom.STRIP_OUTPUT_TAGS, "script")
 	assert.Contains(t, dom.STRIP_OUTPUT_TAGS, "style")
-	
+
 	assert.NotEmpty(t, dom.WHITELIST_ATTRS)
 	assert.Contains(t, dom.WHITELIST_ATTRS, "src")
 	assert.Contains(t, dom.WHITELIST_ATTRS, "href")
-	
+
 	assert.NotEmpty(t, dom.BLOCK_LEVEL_TAGS)
 	assert.Contains(t, dom.BLOCK_LEVEL_TAGS, "div")
 	assert.Contains(t, dom.BLOCK_LEVEL_TAGS, "p")
-	
+
 	assert.Equal(t, "hermes-parser-keep", dom.KEEP_CLASS)
 }
 
@@ -122,11 +122,11 @@ func TestConstants_CandidatesRegex(t *testing.T) {
 		"footer-links",
 		"comment-section",
 	}
-	
+
 	for _, testCase := range blacklistCases {
 		assert.True(t, dom.CANDIDATES_BLACKLIST.MatchString(testCase), "Should match blacklist: %s", testCase)
 	}
-	
+
 	// Test whitelist patterns
 	whitelistCases := []string{
 		"article-content",
@@ -134,7 +134,7 @@ func TestConstants_CandidatesRegex(t *testing.T) {
 		"entry-content",
 		"post-body",
 	}
-	
+
 	for _, testCase := range whitelistCases {
 		assert.True(t, dom.CANDIDATES_WHITELIST.MatchString(testCase), "Should match whitelist: %s", testCase)
 	}
@@ -146,7 +146,7 @@ func TestConstants_HelperFunctions(t *testing.T) {
 	assert.NotEmpty(t, removeSelectors)
 	assert.Contains(t, removeSelectors, "[style]")
 	assert.Contains(t, removeSelectors, "[align]")
-	
+
 	emptySelectors := dom.GetRemoveEmptySelectors()
 	assert.NotEmpty(t, emptySelectors)
 	assert.Contains(t, emptySelectors, "p:empty")

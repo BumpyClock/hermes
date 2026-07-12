@@ -67,7 +67,7 @@ func TestContentTypeMarkdownBehavior(t *testing.T) {
 	if result.Content == "" {
 		t.Error("Content should not be empty")
 	}
-	
+
 	// Content should contain markdown formatting
 	hasMarkdown := strings.Contains(result.Content, "**") || strings.Contains(result.Content, "*") || strings.Contains(result.Content, "#")
 	if !hasMarkdown {
@@ -91,11 +91,11 @@ func TestContentTypeMarkdownBehavior(t *testing.T) {
 	if formatted == "" {
 		t.Error("FormatMarkdown should not return empty string")
 	}
-	
+
 	// FormatMarkdown should combine everything into one markdown document
 	if !strings.Contains(formatted, "# "+result.Title) {
 		t.Error("FormatMarkdown should contain title as H1")
 	}
-	
+
 	t.Logf("FormatMarkdown output length: %d", len(formatted))
 }

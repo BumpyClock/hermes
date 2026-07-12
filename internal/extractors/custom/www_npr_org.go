@@ -3,7 +3,7 @@
 
 package custom
 
-// GetNPRExtractor returns the custom extractor for www.npr.org
+// GetNPRExtractor returns the custom extractor for www.npr.org.
 func GetNPRExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.npr.org",
@@ -54,7 +54,7 @@ func GetNPRExtractor() *CustomExtractor {
 			Clean: []string{
 				"div.enlarge_measure",
 				"b.toggle-caption",
-				"b.hide-caption", 
+				"b.hide-caption",
 				".ad-header",
 				".ad-wrap",
 				"aside.ad-wrap",

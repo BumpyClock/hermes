@@ -10,12 +10,12 @@ import (
 
 func TestFindTopCandidate(t *testing.T) {
 	tests := []struct {
-		name           string
+		name          string
 		html          string
-		expectedTag    string
-		expectedClass  string
-		expectedText   string
-		description    string
+		expectedTag   string
+		expectedClass string
+		expectedText  string
+		description   string
 	}{
 		{
 			name: "single candidate with score",
@@ -267,13 +267,13 @@ func TestFindTopCandidateIntegration(t *testing.T) {
 	t.Run("non-candidate tags filtering", func(t *testing.T) {
 		// Test all the non-candidate tags defined in NON_TOP_CANDIDATE_TAGS_RE
 		nonCandidateTags := []string{"br", "b", "i", "label", "hr", "area", "base", "basefont", "input", "img", "link", "meta"}
-		
+
 		for _, tag := range nonCandidateTags {
 			html := fmt.Sprintf(`<html><body>
 				<%s score="100">Should be ignored</%s>
 				<div score="10">Should be selected</div>
 			</body></html>`, tag, tag)
-			
+
 			doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 			if err != nil {
 				t.Fatalf("Failed to parse HTML for tag %s: %v", tag, err)
@@ -290,4 +290,3 @@ func TestFindTopCandidateIntegration(t *testing.T) {
 		}
 	})
 }
-

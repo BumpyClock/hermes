@@ -37,7 +37,7 @@ func TestCleanAuthor(t *testing.T) {
 			input:    "by :  Mary Jane",
 			expected: "Mary Jane",
 		},
-		
+
 		// "Posted by" and "Written by" variants
 		{
 			name:     "posted by prefix",
@@ -54,7 +54,7 @@ func TestCleanAuthor(t *testing.T) {
 			input:    "  Posted by   Alice Cooper   ",
 			expected: "Alice Cooper",
 		},
-		
+
 		// Whitespace handling
 		{
 			name:     "leading and trailing spaces",
@@ -71,7 +71,7 @@ func TestCleanAuthor(t *testing.T) {
 			input:    "By\tDavid\nSmith",
 			expected: "David", // JavaScript .* stops at newlines
 		},
-		
+
 		// No prefix cases
 		{
 			name:     "author without prefix",
@@ -83,7 +83,7 @@ func TestCleanAuthor(t *testing.T) {
 			input:    "  David Smith  ",
 			expected: "David Smith",
 		},
-		
+
 		// Edge cases
 		{
 			name:     "empty string",
@@ -105,7 +105,7 @@ func TestCleanAuthor(t *testing.T) {
 			input:    "By:",
 			expected: "",
 		},
-		
+
 		// Multiple authors
 		{
 			name:     "multiple authors",
@@ -117,7 +117,7 @@ func TestCleanAuthor(t *testing.T) {
 			input:    "By John Smith, Jane Doe, Bob Wilson",
 			expected: "John Smith, Jane Doe, Bob Wilson",
 		},
-		
+
 		// Special characters
 		{
 			name:     "author with special chars",
@@ -134,7 +134,7 @@ func TestCleanAuthor(t *testing.T) {
 			input:    "By José María",
 			expected: "José María",
 		},
-		
+
 		// Case sensitivity tests
 		{
 			name:     "BY uppercase",
@@ -146,7 +146,7 @@ func TestCleanAuthor(t *testing.T) {
 			input:    "PoStEd By Mixed Case",
 			expected: "Mixed Case",
 		},
-		
+
 		// Complex whitespace patterns
 		{
 			name:     "multiple consecutive spaces",
@@ -163,7 +163,7 @@ func TestCleanAuthor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CleanAuthor(tt.input)
-			assert.Equal(t, tt.expected, result, 
+			assert.Equal(t, tt.expected, result,
 				"CleanAuthor(%q) = %q, expected %q", tt.input, result, tt.expected)
 		})
 	}
@@ -184,7 +184,7 @@ func TestCleanAuthorJavaScriptCompatibility(t *testing.T) {
 			note:     "Trailing space should be trimmed",
 		},
 		{
-			name:     "javascript exact case 2", 
+			name:     "javascript exact case 2",
 			input:    "posted by: John Doe",
 			expected: "John Doe",
 			note:     "Posted by with colon",
@@ -206,8 +206,8 @@ func TestCleanAuthorJavaScriptCompatibility(t *testing.T) {
 	for _, tt := range compatTests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CleanAuthor(tt.input)
-			assert.Equal(t, tt.expected, result, 
-				"JavaScript compatibility test failed: %s\nCleanAuthor(%q) = %q, expected %q", 
+			assert.Equal(t, tt.expected, result,
+				"JavaScript compatibility test failed: %s\nCleanAuthor(%q) = %q, expected %q",
 				tt.note, tt.input, result, tt.expected)
 		})
 	}
@@ -217,7 +217,7 @@ func TestCleanAuthorRegexPattern(t *testing.T) {
 	// Test the regex pattern directly to ensure it matches JavaScript behavior
 	regexTests := []struct {
 		input    string
-		expected []string // [full_match, prefix_group, author_group] 
+		expected []string // [full_match, prefix_group, author_group]
 	}{
 		{
 			input:    "By David Smith",
@@ -240,16 +240,16 @@ func TestCleanAuthorRegexPattern(t *testing.T) {
 	for _, tt := range regexTests {
 		t.Run("regex_"+strings.ReplaceAll(tt.input, " ", "_"), func(t *testing.T) {
 			matches := CLEAN_AUTHOR_RE.FindStringSubmatch(tt.input)
-			
+
 			if len(tt.expected) == 0 {
 				assert.Nil(t, matches, "Expected no match for %q", tt.input)
 			} else {
 				assert.NotNil(t, matches, "Expected match for %q", tt.input)
-				assert.Equal(t, len(tt.expected), len(matches), 
+				assert.Equal(t, len(tt.expected), len(matches),
 					"Wrong number of capture groups for %q", tt.input)
-				
+
 				for i, expected := range tt.expected {
-					assert.Equal(t, expected, matches[i], 
+					assert.Equal(t, expected, matches[i],
 						"Capture group %d mismatch for %q", i, tt.input)
 				}
 			}
@@ -260,9 +260,9 @@ func TestCleanAuthorRegexPattern(t *testing.T) {
 func TestCleanAuthorPerformance(t *testing.T) {
 	// Test performance with longer author strings
 	longAuthor := "By " + strings.Repeat("Very Long Author Name ", 100)
-	
+
 	result := CleanAuthor(longAuthor)
-	
+
 	// Should still work correctly with long strings
 	expected := strings.Repeat("Very Long Author Name ", 100)
 	expected = strings.TrimSpace(expected)
@@ -281,7 +281,7 @@ func TestCleanAuthorEdgeCases(t *testing.T) {
 			expected: "Author Name by", // Should not match
 		},
 		{
-			name:     "by in middle of string", 
+			name:     "by in middle of string",
 			input:    "Written by John by Smith",
 			expected: "John by Smith", // Only matches prefix
 		},

@@ -8,45 +8,47 @@ import (
 )
 
 // ArstechnicaComExtractor provides the custom extraction rules for arstechnica.com
-// JavaScript equivalent: export const ArstechnicaComExtractor = { ... }
+// JavaScript equivalent: export const ArstechnicaComExtractor = { ... }.
 var ArstechnicaComExtractor = &CustomExtractor{
 	Domain: "arstechnica.com",
-	
+
 	Title: &FieldExtractor{
-		Selectors: []interface{}{"title"},
+		Selectors: []interface{}{"article h1", "h1", "title"},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
+			[]string{"meta[name=\"author\"]", "value"},
 			"*[rel=\"author\"] *[itemprop=\"name\"]",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{".byline time", "datetime"},
 		},
 	},
-	
+
 	Dek: &FieldExtractor{
 		Selectors: []interface{}{
 			"h2[itemprop=\"description\"]",
 		},
 	},
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
+				"article",
 				"div[itemprop=\"articleBody\"]",
 			},
 		},
-		
+
 		// Transform functions for Ars Technica-specific content
 		Transforms: map[string]TransformFunction{
 			// Some pages have an element h2 that is significant, and that the parser will
@@ -59,27 +61,28 @@ var ArstechnicaComExtractor = &CustomExtractor{
 				},
 			},
 		},
-		
-		// Clean selectors - remove unwanted elements  
+
+		// Clean selectors - remove unwanted elements
 		Clean: []string{
+			"article > header",
 			// Remove enlarge links and separators inside image captions.
 			"figcaption .enlarge-link",
 			"figcaption .sep",
-			
+
 			// I could not transform the video into usable elements, so I
 			// removed them.
 			"figure.video",
-			
+
 			// Image galleries that do not work.
 			".gallery",
-			
+
 			"aside",
 			".sidebar",
 		},
 	},
 }
 
-// GetArstechnicaComExtractor returns the Ars Technica custom extractor
+// GetArstechnicaComExtractor returns the Ars Technica custom extractor.
 func GetArstechnicaComExtractor() *CustomExtractor {
 	return ArstechnicaComExtractor
 }

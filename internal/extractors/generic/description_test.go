@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/resource"
 )
 
@@ -251,9 +252,9 @@ func TestGenericDescriptionExtractor_IsValidDescription(t *testing.T) {
 		expected bool
 	}{
 		{"Valid site description for testing purposes", true},
-		{"", false},                                    // empty
-		{"Short", false},                              // too short
-		{"This is a very long description that goes on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and on and exceeds the reasonable limit", false}, // too long
+		{"", false},                       // empty
+		{"Short", false},                  // too short
+		{strings.Repeat("a", 501), false}, // too long
 		{"Visit https://example.com for more info", false}, // contains URL
 		{"Check out http://site.com", false},               // contains URL
 		{"In this article we discuss topics", false},       // article-specific
@@ -270,6 +271,40 @@ func TestGenericDescriptionExtractor_IsValidDescription(t *testing.T) {
 			result := extractor.isValidDescription(tt.input)
 			if result != tt.expected {
 				t.Errorf("For input %q, expected %v, got %v", tt.input, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestGenericDescriptionExtractor_IsValidDescriptionCountsUnicodeCharacters(t *testing.T) {
+	extractor := &GenericDescriptionExtractor{}
+
+	tests := []struct {
+		name        string
+		description string
+		expected    bool
+	}{
+		{
+			name:        "accepts 370 ASCII characters",
+			description: strings.Repeat("a", 370),
+			expected:    true,
+		},
+		{
+			name:        "accepts 113 Unicode characters encoded as 321 bytes",
+			description: strings.Repeat("界", 104) + "123456789",
+			expected:    true,
+		},
+		{
+			name:        "rejects more than 500 Unicode characters",
+			description: strings.Repeat("界", 501),
+			expected:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if result := extractor.isValidDescription(tt.description); result != tt.expected {
+				t.Errorf("expected %v, got %v", tt.expected, result)
 			}
 		})
 	}
@@ -309,28 +344,28 @@ func TestGenericDescriptionExtractor_ExtractFromMetaTags(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "standard meta name description",
-			html: `<html><head><meta name="description" content="Site description" /></head></html>`,
+			name:     "standard meta name description",
+			html:     `<html><head><meta name="description" content="Site description" /></head></html>`,
 			expected: "Site description",
 		},
 		{
-			name: "og:description property",
-			html: `<html><head><meta property="og:description" content="OG description" /></head></html>`,
+			name:     "og:description property",
+			html:     `<html><head><meta property="og:description" content="OG description" /></head></html>`,
 			expected: "OG description",
 		},
 		{
-			name: "twitter:description name",
-			html: `<html><head><meta name="twitter:description" content="Twitter description" /></head></html>`,
+			name:     "twitter:description name",
+			html:     `<html><head><meta name="twitter:description" content="Twitter description" /></head></html>`,
 			expected: "Twitter description",
 		},
 		{
-			name: "dc.description",
-			html: `<html><head><meta name="dc.description" content="Dublin Core description" /></head></html>`,
+			name:     "dc.description",
+			html:     `<html><head><meta name="dc.description" content="Dublin Core description" /></head></html>`,
 			expected: "Dublin Core description",
 		},
 		{
-			name: "no valid description",
-			html: `<html><head><meta name="other" content="Not a description" /></head></html>`,
+			name:     "no valid description",
+			html:     `<html><head><meta name="other" content="Not a description" /></head></html>`,
 			expected: "",
 		},
 	}

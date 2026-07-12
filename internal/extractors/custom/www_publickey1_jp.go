@@ -4,56 +4,51 @@
 package custom
 
 // WwwPublickey1JpExtractor provides the custom extraction rules for www.publickey1.jp
-// JavaScript equivalent: export const WwwPublickey1JpExtractor = { ... }
+// JavaScript equivalent: export const WwwPublickey1JpExtractor = { ... }.
 var WwwPublickey1JpExtractor = &CustomExtractor{
 	Domain: "www.publickey1.jp",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h1",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			".bloggerinchief p:first-of-type",
 			"#subcol p:has(img)",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			"div.pubdate",
 		},
-		
+
 		// format: 'YYYY年MM月DD日' in JavaScript - note: Go implementation handles format in date cleaner
-		Format:   "YYYY年MM月DD日",
-		
+		Format: "YYYY年MM月DD日",
+
 		// timezone: 'Asia/Tokyo' in JavaScript - note: Go implementation handles timezone in date cleaner
 		Timezone: "Asia/Tokyo",
 	},
-	
-	Dek: nil,
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
 				"#maincol",
 			},
 		},
-		
+
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
-		
-		// transforms: {} (empty in JavaScript)
-		Transforms: map[string]TransformFunction{},
-		
+		DisableDefaultCleaner: true,
+
 		// Clean navigation and ads
 		Clean: []string{
 			"#breadcrumbs",
@@ -63,7 +58,7 @@ var WwwPublickey1JpExtractor = &CustomExtractor{
 	},
 }
 
-// GetWwwPublickey1JpExtractor returns the Publickey1 Japan custom extractor
+// GetWwwPublickey1JpExtractor returns the Publickey1 Japan custom extractor.
 func GetWwwPublickey1JpExtractor() *CustomExtractor {
 	return WwwPublickey1JpExtractor
 }

@@ -5,10 +5,11 @@ package generic
 
 import (
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
 
-// ExtractBestNodeOptions represents configuration options for content extraction
+// ExtractBestNodeOptions represents configuration options for content extraction.
 type ExtractBestNodeOptions struct {
 	StripUnlikelyCandidates bool
 	WeightNodes             bool
@@ -27,8 +28,8 @@ type ExtractBestNodeOptions struct {
 // Parameters:
 //   - doc: A goquery Document representing the DOM to extract from
 //   - opts: ExtractBestNodeOptions with configuration flags
-//     - StripUnlikelyCandidates: If true, remove elements that match exclusion criteria
-//     - WeightNodes: If true, use classNames and IDs to determine node worthiness
+//   - StripUnlikelyCandidates: If true, remove elements that match exclusion criteria
+//   - WeightNodes: If true, use classNames and IDs to determine node worthiness
 //
 // Returns:
 //   - *goquery.Selection: The top candidate element, or nil if no suitable content found

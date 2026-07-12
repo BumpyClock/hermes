@@ -10,44 +10,45 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
 
-// Constants from JavaScript implementation
+// Constants from JavaScript implementation.
 var (
-	// DIGIT_RE matches any digit character
+	// DIGIT_RE matches any digit character.
 	DIGIT_RE = regexp.MustCompile(`\d`)
-	
-	// EXTRANEOUS_LINK_HINTS are words that indicate a link is probably not a next page
+
+	// EXTRANEOUS_LINK_HINTS are words that indicate a link is probably not a next page.
 	EXTRANEOUS_LINK_HINTS = []string{
 		"print", "archive", "comment", "discuss", "e-mail", "email",
 		"share", "reply", "all", "login", "sign", "single", "adx", "entry-unrelated",
 	}
 	EXTRANEOUS_LINK_HINTS_RE = regexp.MustCompile(`(?i)` + strings.Join(EXTRANEOUS_LINK_HINTS, "|"))
-	
-	// NEXT_LINK_TEXT_RE matches text that likely indicates a next page link
+
+	// NEXT_LINK_TEXT_RE matches text that likely indicates a next page link.
 	NEXT_LINK_TEXT_RE = regexp.MustCompile(`(?i)(next|weiter|continue|>([^|]|$)|»([^|]|$))`)
-	
+
 	// CAP_LINK_TEXT_RE matches text that indicates end links (first, last, etc.)
 	CAP_LINK_TEXT_RE = regexp.MustCompile(`(?i)(first|last|end)`)
-	
-	// PREV_LINK_TEXT_RE matches text that indicates previous page links
+
+	// PREV_LINK_TEXT_RE matches text that indicates previous page links.
 	PREV_LINK_TEXT_RE = regexp.MustCompile(`(?i)(prev|earl|old|new|<|«)`)
-	
-	// PAGE_RE matches pagination-related text
+
+	// PAGE_RE matches pagination-related text.
 	PAGE_RE = regexp.MustCompile(`(?i)pag(e|ing|inat)`)
 )
 
-// GenericNextPageUrlExtractor extracts next page URLs for multi-page articles
+// GenericNextPageUrlExtractor extracts next page URLs for multi-page articles.
 type GenericNextPageUrlExtractor struct{}
 
-// NewGenericNextPageUrlExtractor creates a new instance
+// NewGenericNextPageUrlExtractor creates a new instance.
 func NewGenericNextPageUrlExtractor() *GenericNextPageUrlExtractor {
 	return &GenericNextPageUrlExtractor{}
 }
 
-// Extract finds and returns the most likely next page URL
+// Extract finds and returns the most likely next page URL.
 func (e *GenericNextPageUrlExtractor) Extract(doc *goquery.Document, articleURL string, parsedURL *url.URL, previousUrls []string) string {
 	if parsedURL == nil {
 		var err error
@@ -70,7 +71,7 @@ func (e *GenericNextPageUrlExtractor) Extract(doc *goquery.Document, articleURL 
 	scoredLinks := scoreLinks(links, cleanArticleURL, baseURL, parsedURL, previousUrls, doc)
 
 	// If no links were scored, return empty string
-	if scoredLinks == nil || len(scoredLinks) == 0 {
+	if len(scoredLinks) == 0 {
 		return ""
 	}
 
@@ -92,14 +93,14 @@ func (e *GenericNextPageUrlExtractor) Extract(doc *goquery.Document, articleURL 
 	return ""
 }
 
-// scoredLink represents a link with its calculated score
+// scoredLink represents a link with its calculated score.
 type scoredLink struct {
 	score    float64
 	linkText string
 	href     string
 }
 
-// scoreLinks scores all potential next page links and returns them
+// scoreLinks scores all potential next page links and returns them.
 func scoreLinks(links []*goquery.Selection, articleURL, baseURL string, parsedURL *url.URL, previousUrls []string, doc *goquery.Document) []scoredLink {
 	baseRegex := regexp.MustCompile(`(?i)^` + regexp.QuoteMeta(baseURL))
 	isWp := dom.IsWordpress(doc)
@@ -173,7 +174,7 @@ func scoreLinks(links []*goquery.Selection, articleURL, baseURL string, parsedUR
 	return scoredPages
 }
 
-// shouldScore determines if a link should be considered for next page scoring
+// shouldScore determines if a link should be considered for next page scoring.
 func shouldScore(href, articleURL, baseURL string, parsedURL *url.URL, linkText string, previousUrls []string) bool {
 	// Skip if we've already fetched this URL
 	for _, prevURL := range previousUrls {
@@ -217,15 +218,15 @@ func shouldScore(href, articleURL, baseURL string, parsedURL *url.URL, linkText 
 	return true
 }
 
-// makeSig creates a signature string from a link element
+// makeSig creates a signature string from a link element.
 func makeSig(link *goquery.Selection, linkText string) string {
 	if linkText == "" {
 		linkText = strings.TrimSpace(link.Text())
 	}
-	
+
 	class, _ := link.Attr("class")
 	id, _ := link.Attr("id")
-	
+
 	return linkText + " " + class + " " + id
 }
 
@@ -292,9 +293,9 @@ func scoreByParentsNextPage(link *goquery.Selection) float64 {
 		}
 
 		// If we have negative indicators and extraneous hints, penalize
-		if !negativeMatch && 
-		   dom.NEGATIVE_SCORE_RE.MatchString(parentData) && 
-		   EXTRANEOUS_LINK_HINTS_RE.MatchString(parentData) {
+		if !negativeMatch &&
+			dom.NEGATIVE_SCORE_RE.MatchString(parentData) &&
+			EXTRANEOUS_LINK_HINTS_RE.MatchString(parentData) {
 			if !dom.POSITIVE_SCORE_RE.MatchString(parentData) {
 				negativeMatch = true
 				score -= 25
@@ -359,7 +360,7 @@ func scoreSimilarity(score float64, articleURL, href string) float64 {
 		// Calculate similarity using simple string comparison
 		// This is a simplified version of JavaScript's difflib.SequenceMatcher
 		similarity := calculateSimilarity(articleURL, href)
-		
+
 		// JavaScript algorithm: diffPercent = 1.0 - similarity
 		// diffModifier = -(250 * (diffPercent - 0.2))
 		diffPercent := 1.0 - similarity
@@ -370,7 +371,7 @@ func scoreSimilarity(score float64, articleURL, href string) float64 {
 }
 
 // calculateSimilarity provides a simple similarity calculation
-// This is a simplified version of Python's difflib.SequenceMatcher ratio
+// This is a simplified version of Python's difflib.SequenceMatcher ratio.
 func calculateSimilarity(a, b string) float64 {
 	if a == b {
 		return 1.0

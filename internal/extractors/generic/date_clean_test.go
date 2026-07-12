@@ -42,7 +42,7 @@ func TestCleanDatePublished_MillisecondTimestamps(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
-			
+
 			if tt.shouldErr {
 				if result != nil {
 					// Should either fail or not match the expected pattern
@@ -82,7 +82,7 @@ func TestCleanDatePublished_SecondTimestamps(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
-			
+
 			assert.NotNil(t, result)
 			assert.Equal(t, tt.expected, *result)
 		})
@@ -91,8 +91,8 @@ func TestCleanDatePublished_SecondTimestamps(t *testing.T) {
 
 func TestCleanDatePublished_RelativeDates(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
+		name             string
+		input            string
 		approximateCheck bool // For relative dates, we check if it's close to expected
 	}{
 		{
@@ -125,19 +125,19 @@ func TestCleanDatePublished_RelativeDates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
-			
+
 			assert.NotNil(t, result)
-			
+
 			if tt.approximateCheck {
 				// Parse the result and check it's reasonable
 				parsedTime, err := time.Parse("2006-01-02T15:04:05.000Z", *result)
 				assert.NoError(t, err)
-				
+
 				now := time.Now()
 				// Should be within reasonable timeframe for relative dates
 				diff := now.Sub(parsedTime)
 				assert.True(t, diff >= 0, "Date should be in the past")
-				
+
 				// Allow more generous bounds for relative dates (up to 3 days for "2 days ago")
 				maxDiff := 3 * 24 * time.Hour
 				assert.True(t, diff <= maxDiff, "Date should be within reasonable range, got diff: %v", diff)
@@ -177,7 +177,7 @@ func TestCleanDatePublished_ISO8601Dates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
-			
+
 			assert.NotNil(t, result, "Should parse ISO 8601 date: %s", tt.input)
 			assert.Equal(t, tt.expected, *result)
 		})
@@ -220,7 +220,7 @@ func TestCleanDatePublished_HumanReadableDates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
-			
+
 			if result != nil {
 				// Some date formats may parse differently, so we check year and month at least
 				assert.Contains(t, *result, "2023", "Should contain the correct year")
@@ -249,13 +249,13 @@ func TestCleanDatePublished_DateStringCleaning(t *testing.T) {
 			expected: "2023-12-01T08:00:00.000Z", // Local timezone conversion like JavaScript
 		},
 		{
-			name:     "Meridian dot format (.m. -> m)",
-			input:    "12:30 p.m. December 1, 2023",
+			name:  "Meridian dot format (.m. -> m)",
+			input: "12:30 p.m. December 1, 2023",
 			// This should be cleaned by the meridian dots regex
 		},
 		{
-			name:     "Meridian spacing (3pm -> 3 pm)",
-			input:    "3pm December 1, 2023",
+			name:  "Meridian spacing (3pm -> 3 pm)",
+			input: "3pm December 1, 2023",
 			// This should be cleaned by the meridian space regex
 		},
 	}
@@ -263,7 +263,7 @@ func TestCleanDatePublished_DateStringCleaning(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
-			
+
 			if result != nil && tt.expected != "" {
 				assert.Equal(t, tt.expected, *result)
 			} else if result != nil {
@@ -305,7 +305,7 @@ func TestCleanDatePublished_EdgeCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
-			
+
 			if tt.shouldErr {
 				assert.Nil(t, result, "Should return nil for invalid input: %s", tt.input)
 			} else {
@@ -338,7 +338,7 @@ func TestCleanDatePublished_JavaScriptCompatibility(t *testing.T) {
 			expected: stringPtr("2023-12-01T10:30:00.000Z"),
 		},
 		{
-			name:     "Second timestamp (JavaScript compatible)",  
+			name:     "Second timestamp (JavaScript compatible)",
 			input:    "1701426600",
 			expected: stringPtr("2023-12-01T10:30:00.000Z"),
 		},
@@ -352,7 +352,7 @@ func TestCleanDatePublished_JavaScriptCompatibility(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
-			
+
 			if tt.expected == nil {
 				assert.Nil(t, result)
 			} else {
@@ -363,7 +363,7 @@ func TestCleanDatePublished_JavaScriptCompatibility(t *testing.T) {
 	}
 }
 
-// Helper function to create string pointer
+// Helper function to create string pointer.
 func stringPtr(s string) *string {
 	return &s
 }

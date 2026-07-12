@@ -12,7 +12,7 @@ func TestExtractFromURL(t *testing.T) {
 		regexList := []*regexp.Regexp{
 			regexp.MustCompile(`/(20\d{2}/\d{2}/\d{2})/`),
 		}
-		
+
 		result, found := ExtractFromURL(url, regexList)
 		if !found {
 			t.Fatal("Expected to find a match, but got false")
@@ -28,7 +28,7 @@ func TestExtractFromURL(t *testing.T) {
 		regexList := []*regexp.Regexp{
 			regexp.MustCompile(`/(20\d{2}/\d{2}/\d{2})/`),
 		}
-		
+
 		result, found := ExtractFromURL(url, regexList)
 		if found {
 			t.Fatal("Expected no match, but got true")
@@ -42,10 +42,10 @@ func TestExtractFromURL(t *testing.T) {
 	t.Run("returns first matching pattern", func(t *testing.T) {
 		url := "https://example.com/2012/08/01/article-2012-08-01-title"
 		regexList := []*regexp.Regexp{
-			regexp.MustCompile(`/(20\d{2}/\d{2}/\d{2})/`),                    // Matches 2012/08/01
-			regexp.MustCompile(`/article-(20\d{2}-\d{2}-\d{2})-/`),           // Matches 2012-08-01
+			regexp.MustCompile(`/(20\d{2}/\d{2}/\d{2})/`),          // Matches 2012/08/01
+			regexp.MustCompile(`/article-(20\d{2}-\d{2}-\d{2})-/`), // Matches 2012-08-01
 		}
-		
+
 		result, found := ExtractFromURL(url, regexList)
 		if !found {
 			t.Fatal("Expected to find a match, but got false")
@@ -59,10 +59,10 @@ func TestExtractFromURL(t *testing.T) {
 	t.Run("returns second pattern when first doesn't match", func(t *testing.T) {
 		url := "https://example.com/article-2012-08-01-title"
 		regexList := []*regexp.Regexp{
-			regexp.MustCompile(`/(20\d{2}/\d{2}/\d{2})/`),                    // No match
-			regexp.MustCompile(`article-(20\d{2}-\d{2}-\d{2})-`),             // Matches 2012-08-01
+			regexp.MustCompile(`/(20\d{2}/\d{2}/\d{2})/`),        // No match
+			regexp.MustCompile(`article-(20\d{2}-\d{2}-\d{2})-`), // Matches 2012-08-01
 		}
-		
+
 		result, found := ExtractFromURL(url, regexList)
 		if !found {
 			t.Fatal("Expected to find a match, but got false")
@@ -152,7 +152,7 @@ func TestExtractFromURL(t *testing.T) {
 		regexList := []*regexp.Regexp{
 			regexp.MustCompile(`20\d{2}`), // No capture groups
 		}
-		
+
 		result, found := ExtractFromURL(url, regexList)
 		if found {
 			t.Error("Expected no match when regex has no capture groups")
@@ -168,7 +168,7 @@ func TestExtractFromURL(t *testing.T) {
 		regexList := []*regexp.Regexp{
 			regexp.MustCompile(`(?i)/(20\d{2}/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/\d{2})/`),
 		}
-		
+
 		result, found := ExtractFromURL(url, regexList)
 		if !found {
 			t.Fatal("Expected to find a match, but got false")
@@ -184,7 +184,7 @@ func TestExtractFromURL(t *testing.T) {
 		regexList := []*regexp.Regexp{
 			regexp.MustCompile(`/(20\d{2})/(\d{2})/(\d{2})/`), // Three capture groups
 		}
-		
+
 		result, found := ExtractFromURL(url, regexList)
 		if !found {
 			t.Fatal("Expected to find a match, but got false")
@@ -200,7 +200,7 @@ func TestExtractFromURL(t *testing.T) {
 		regexList := []*regexp.Regexp{
 			regexp.MustCompile(`\?date=(20\d{2}-\d{2}-\d{2})&`),
 		}
-		
+
 		result, found := ExtractFromURL(url, regexList)
 		if !found {
 			t.Fatal("Expected to find a match, but got false")
@@ -211,7 +211,7 @@ func TestExtractFromURL(t *testing.T) {
 	})
 }
 
-// Benchmark tests to ensure performance is acceptable
+// Benchmark tests to ensure performance is acceptable.
 func BenchmarkExtractFromURL(b *testing.B) {
 	url := "https://example.com/2023/12/25/this-is-a-very-long-article-title-with-many-words"
 	regexList := []*regexp.Regexp{

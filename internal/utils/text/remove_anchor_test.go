@@ -109,35 +109,35 @@ func TestRemoveAnchor(t *testing.T) {
 	}
 }
 
-// BenchmarkRemoveAnchor measures performance of the function
+// BenchmarkRemoveAnchor measures performance of the function.
 func BenchmarkRemoveAnchor(b *testing.B) {
 	testURL := "https://example.com/very/long/path/with/many/segments/and/parameters?param1=value1&param2=value2#very-long-anchor-name-with-dashes"
-	
+
 	for i := 0; i < b.N; i++ {
 		RemoveAnchor(testURL)
 	}
 }
 
-// TestRemoveAnchorJavaScriptCompatibility ensures exact JavaScript behavior
+// TestRemoveAnchorJavaScriptCompatibility ensures exact JavaScript behavior.
 func TestRemoveAnchorJavaScriptCompatibility(t *testing.T) {
 	// Test the exact behavior from the JavaScript tests
 	// These test cases are directly from remove-anchor.test.js
-	
+
 	t.Run("JavaScript test case 1 - URL with anchor and trailing slash", func(t *testing.T) {
 		url := "http://example.com/foo/bar/wow-cool/page=10/#wow"
 		expected := "http://example.com/foo/bar/wow-cool/page=10"
 		result := RemoveAnchor(url)
-		
+
 		if result != expected {
 			t.Errorf("RemoveAnchor(%q) = %q, expected %q (JavaScript compatibility test 1)", url, result, expected)
 		}
 	})
-	
+
 	t.Run("JavaScript test case 2 - URL without anchor", func(t *testing.T) {
 		url := "http://example.com/foo/bar/wow-cool"
 		expected := "http://example.com/foo/bar/wow-cool"
 		result := RemoveAnchor(url)
-		
+
 		if result != expected {
 			t.Errorf("RemoveAnchor(%q) = %q, expected %q (JavaScript compatibility test 2)", url, result, expected)
 		}

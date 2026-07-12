@@ -105,7 +105,7 @@ func TestGenericThemeColorExtractor(t *testing.T) {
 			}
 
 			result := extractor.Extract(doc.Selection, "https://example.com", []string{})
-			
+
 			if result != tt.expected {
 				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
 			}
@@ -125,21 +125,21 @@ func TestValidateAndNormalizeColor(t *testing.T) {
 		{"#ffffff", "#ffffff"},
 		{"#FF0000", "#ff0000"},
 		{"#abc123", "#abc123"},
-		
+
 		// Valid RGB colors
 		{"rgb(255, 0, 0)", "rgb(255, 0, 0)"},
 		{"rgba(255, 0, 0, 0.5)", "rgba(255, 0, 0, 0.5)"},
 		{"rgb( 255 , 0 , 0 )", "rgb( 255 , 0 , 0 )"},
-		
+
 		// Valid HSL colors
 		{"hsl(120, 100%, 50%)", "hsl(120, 100%, 50%)"},
 		{"hsla(120, 100%, 50%, 0.3)", "hsla(120, 100%, 50%, 0.3)"},
-		
+
 		// Valid named colors
 		{"red", "red"},
 		{"blue", "blue"},
 		{"transparent", "transparent"},
-		
+
 		// Invalid colors
 		{"#gg", ""},
 		{"#1234567", ""},

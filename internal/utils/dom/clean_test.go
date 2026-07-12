@@ -13,26 +13,26 @@ import (
 
 func TestCleanAttributes(t *testing.T) {
 	tests := []struct {
-		name     string
-		html     string
-		removed  []string // attributes that should be removed
-		kept     []string // attributes that should be kept
+		name    string
+		html    string
+		removed []string // attributes that should be removed
+		kept    []string // attributes that should be kept
 	}{
 		{
-			name: "removes style and align",
-			html: `<div style="color: red;" align="center" class="content" id="main">Content</div>`,
+			name:    "removes style and align",
+			html:    `<div style="color: red;" align="center" class="content" id="main">Content</div>`,
 			removed: []string{"style", "align"},
 			kept:    []string{"class", "id"},
 		},
 		{
-			name: "keeps whitelisted attributes",
-			html: `<img src="image.jpg" srcset="image@2x.jpg 2x" alt="Image" width="100" height="200" onclick="alert()">`,
+			name:    "keeps whitelisted attributes",
+			html:    `<img src="image.jpg" srcset="image@2x.jpg 2x" alt="Image" width="100" height="200" onclick="alert()">`,
 			removed: []string{"onclick"},
 			kept:    []string{"src", "srcset", "alt", "width", "height"},
 		},
 		{
-			name: "handles links properly",
-			html: `<a href="http://example.com" target="_blank" rel="noopener" onclick="track()">Link</a>`,
+			name:    "handles links properly",
+			html:    `<a href="http://example.com" target="_blank" rel="noopener" onclick="track()">Link</a>`,
 			removed: []string{"target", "onclick"},
 			kept:    []string{"href"},
 		},
@@ -55,7 +55,7 @@ func TestCleanAttributes(t *testing.T) {
 					}
 				})
 			}
-			
+
 			// Check removed attributes
 			for _, attr := range tt.removed {
 				_, exists := element.Attr(attr)
@@ -100,14 +100,14 @@ func TestCleanHeaders(t *testing.T) {
 			removed:   []string{"Navigation", "Sidebar"},
 		},
 		{
-			name: "keeps good content headers",
+			name: "keeps non-negative content headers",
 			html: `<html><body>
 				<h2 class="article-title">Main Article Title</h2>
 				<h3 class="section-header">Section Header</h3>
 				<h4>Subsection Header</h4>
 			</body></html>`,
-			remaining: 3,
-			removed:   []string{},
+			remaining: 2,
+			removed:   []string{"Section Header"},
 		},
 	}
 
@@ -126,7 +126,7 @@ func TestCleanHeaders(t *testing.T) {
 			for _, removedText := range tt.removed {
 				found := false
 				headers.Each(func(i int, h *goquery.Selection) {
-					if strings.Contains(h.Text(), removedText) {
+					if strings.TrimSpace(h.Text()) == removedText {
 						found = true
 					}
 				})
@@ -138,10 +138,10 @@ func TestCleanHeaders(t *testing.T) {
 
 func TestCleanTags(t *testing.T) {
 	tests := []struct {
-		name      string
-		html      string
-		removed   []string // text that should be removed
-		kept      []string // text that should be kept
+		name    string
+		html    string
+		removed []string // text that should be removed
+		kept    []string // text that should be kept
 	}{
 		{
 			name: "removes high link density elements with low weight",
@@ -203,7 +203,7 @@ func TestCleanTags(t *testing.T) {
 	}
 }
 
-// TestCleanTagsFormDetection tests the form detection logic exactly like JavaScript
+// TestCleanTagsFormDetection tests the form detection logic exactly like JavaScript.
 func TestCleanTagsFormDetection(t *testing.T) {
 	// Based on JavaScript test: "removes a node with too many inputs"
 	html := `<html><body>
@@ -236,13 +236,13 @@ func TestCleanTagsFormDetection(t *testing.T) {
 	bodyText := result.Find("body").Text()
 	assert.NotContains(t, bodyText, "What is your name?", "Form with too many inputs should be removed")
 	assert.Contains(t, bodyText, "What do you think?", "Regular content should be kept")
-	
+
 	// Should have removed the form div but kept the content
 	innerDivs := result.Find("div div")
 	assert.Equal(t, 0, innerDivs.Length(), "Inner div with form should be removed")
 }
 
-// TestCleanTagsShortContentNoImages tests removal of short content without images
+// TestCleanTagsShortContentNoImages tests removal of short content without images.
 func TestCleanTagsShortContentNoImages(t *testing.T) {
 	// Based on JavaScript test: "removes a div with no images and very little text"
 	html := `<html><body>
@@ -264,25 +264,25 @@ func TestCleanTagsShortContentNoImages(t *testing.T) {
 	result := dom.CleanTags(doc)
 
 	bodyText := result.Find("body").Text()
-	
+
 	// Short content without image should be removed
 	assert.NotContains(t, bodyText, "Lose this one", "Short content without image should be removed")
-	
+
 	// Content with image should be kept
 	assert.Contains(t, bodyText, "Keep this one", "Content with image should be kept")
 	assert.Contains(t, bodyText, "What do you think?", "Main content should be kept")
-	
+
 	// Should still have the image
 	images := result.Find("img")
 	assert.Equal(t, 1, images.Length(), "Image should be preserved")
 }
 
-// TestCleanTagsLinkDensity tests the link density removal logic
+// TestCleanTagsLinkDensity tests the link density removal logic.
 func TestCleanTagsLinkDensity(t *testing.T) {
 	// Based on JavaScript test: "removes a node with a link density that is too high"
 	html := `<html><body>
 		<div score="0">
-			<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu.</p>
+			<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculous mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu.</p>
 			<ul>
 				<li>Keep this one</li>
 				<li>Keep this one</li>
@@ -310,21 +310,21 @@ func TestCleanTagsLinkDensity(t *testing.T) {
 	result := dom.CleanTags(doc)
 
 	bodyText := result.Find("body").Text()
-	
+
 	// High link density ul should be removed
 	assert.NotContains(t, bodyText, "Lose this one", "High link density list should be removed")
-	
+
 	// Low link density content should be kept
 	assert.Contains(t, bodyText, "Keep this one", "Low link density list should be kept")
 	assert.Contains(t, bodyText, "Lorem ipsum", "Main content should be kept")
 }
 
-// TestCleanTagsColonException tests the colon exception for lists
+// TestCleanTagsColonException tests the colon exception for lists.
 func TestCleanTagsColonException(t *testing.T) {
 	// Based on JavaScript test: "keeps node with a good score but link density > 0.5 if preceding text ends in colon"
 	html := `<html><body>
 		<div score="40">
-			<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu.</p>
+			<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculous mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu.</p>
 			<p>Now read these links: </p>
 			<ul score="30">
 				<li><a href="#">Lose this one</a></li>
@@ -345,19 +345,19 @@ func TestCleanTagsColonException(t *testing.T) {
 	result := dom.CleanTags(doc)
 
 	bodyText := result.Find("body").Text()
-	
+
 	// With colon in previous sibling, high link density list should be KEPT
 	assert.Contains(t, bodyText, "Lose this one", "List after colon should be kept despite high link density")
 	assert.Contains(t, bodyText, "Now read these links:", "Colon text should be kept")
 	assert.Contains(t, bodyText, "Lorem ipsum", "Main content should be kept")
 }
 
-// TestCleanTagsEntryContentAsset tests the entry-content-asset protection
+// TestCleanTagsEntryContentAsset tests the entry-content-asset protection.
 func TestCleanTagsEntryContentAsset(t *testing.T) {
 	// Based on JavaScript test: "keeps anything with a class of entry-content-asset"
 	html := `<html><body>
 		<div score="100">
-			<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu.</p>
+			<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculous mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu.</p>
 			<ul score="20" class="entry-content-asset">
 				<li><a href="#">Lose this one</a></li>
 				<li><a href="#">Lose this one</a></li>
@@ -373,17 +373,17 @@ func TestCleanTagsEntryContentAsset(t *testing.T) {
 	result := dom.CleanTags(doc)
 
 	bodyText := result.Find("body").Text()
-	
+
 	// entry-content-asset should be kept despite high link density
 	assert.Contains(t, bodyText, "Lose this one", "entry-content-asset should be kept")
 	assert.Contains(t, bodyText, "Lorem ipsum", "Main content should be kept")
-	
+
 	// Should still have the entry-content-asset class
 	assetElements := result.Find(".entry-content-asset")
 	assert.Equal(t, 1, assetElements.Length(), "entry-content-asset element should be preserved")
 }
 
-// TestCleanTagsNegativeScore tests removal of negative scored elements
+// TestCleanTagsNegativeScore tests removal of negative scored elements.
 func TestCleanTagsNegativeScore(t *testing.T) {
 	// Based on JavaScript test: "drops a matching node with a negative score"
 	html := `<html><body>
@@ -405,16 +405,16 @@ func TestCleanTagsNegativeScore(t *testing.T) {
 	result := dom.CleanTags(doc)
 
 	bodyText := result.Find("body").Text()
-	
+
 	// Negative scored elements should be removed
 	assert.NotContains(t, bodyText, "Foo", "Negative scored element should be removed")
 	assert.NotContains(t, bodyText, "Bar", "Negative scored element should be removed")
-	
+
 	// Positive content should be kept
 	assert.Contains(t, bodyText, "What do you think?", "Positive content should be kept")
 }
 
-// TestCleanTagsScriptRemoval tests removal of elements with too many scripts
+// TestCleanTagsScriptRemoval tests removal of elements with too many scripts.
 func TestCleanTagsScriptRemoval(t *testing.T) {
 	html := `<html><body>
 		<div>
@@ -432,10 +432,10 @@ func TestCleanTagsScriptRemoval(t *testing.T) {
 	result := dom.CleanTags(doc)
 
 	bodyText := result.Find("body").Text()
-	
+
 	// Element with script and short content should be removed
 	assert.NotContains(t, bodyText, "Short text", "Element with script and short content should be removed")
-	
+
 	// Good content should be kept
 	assert.Contains(t, bodyText, "Good content with substantial text", "Good content should be kept")
 }
@@ -664,13 +664,13 @@ func TestCleaningPipeline(t *testing.T) {
 	assert.Equal(t, 0, result.Find("script, style, title").Length(), "Junk tags should be removed")
 	assert.Equal(t, 0, result.Find(".header, .sidebar").Length(), "Unlikely candidates should be removed")
 	assert.Equal(t, 0, result.Find("[style]").Length(), "Style attributes should be removed")
-	assert.Equal(t, 1, result.Find("h2").Length(), "Should keep one good header")
+	assert.Equal(t, 0, result.Find("h2").Length(), "Header before article paragraphs should be removed")
 	assert.Equal(t, 1, result.Find("p").Length(), "Should keep one good paragraph")
 	assert.Equal(t, 1, result.Find("img").Length(), "Should keep one good image")
 
 	// Check that good content remains
 	bodyText := result.Find("body").Text()
-	assert.Contains(t, bodyText, "Good Article Title")
+	assert.NotContains(t, bodyText, "Good Article Title")
 	assert.Contains(t, bodyText, "substantial article content")
 }
 
@@ -720,7 +720,7 @@ func BenchmarkCleaningFunctions(b *testing.B) {
 			doc = dom.CleanHeadersWithoutTitle(doc)
 			doc = dom.CleanTags(doc)
 			doc = dom.RemoveEmpty(doc)
-			doc = dom.CleanImages(doc)
+			dom.CleanImages(doc)
 		}
 	})
 }

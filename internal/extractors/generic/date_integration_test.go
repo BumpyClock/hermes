@@ -59,7 +59,7 @@ func TestGenericDateExtractor_RealWorldIntegration(t *testing.T) {
 				</body>
 			</html>`,
 			url:         "https://myblog.com/posts/my-post",
-			metaCache:   []string{}, // No meta tags to match
+			metaCache:   []string{},                 // No meta tags to match
 			expected:    "2023-12-01T17:15:00.000Z", // Converted to UTC from PST
 			description: "Should extract from CSS selectors and handle timezone conversion",
 		},
@@ -72,7 +72,7 @@ func TestGenericDateExtractor_RealWorldIntegration(t *testing.T) {
 				</body>
 			</html>`,
 			url:         "https://example.com/articles/2023/12/01/important-news",
-			metaCache:   []string{}, // No meta tags
+			metaCache:   []string{},                 // No meta tags
 			expected:    "2023-12-01T08:00:00.000Z", // Parsed from URL in local timezone
 			description: "Should extract date from URL when no metadata available",
 		},

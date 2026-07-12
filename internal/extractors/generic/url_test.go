@@ -10,14 +10,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// TestGenericUrlExtractor_Basic tests the basic functionality matching JavaScript tests
+// TestGenericUrlExtractor_Basic tests the basic functionality matching JavaScript tests.
 func TestGenericUrlExtractor_Basic(t *testing.T) {
 	tests := []struct {
-		name        string
-		html        string
-		url         string
-		metaCache   []string
-		expectedURL string
+		name           string
+		html           string
+		url            string
+		metaCache      []string
+		expectedURL    string
 		expectedDomain string
 	}{
 		{
@@ -84,7 +84,7 @@ func TestGenericUrlExtractor_Basic(t *testing.T) {
 	}
 }
 
-// TestParseDomain tests the domain parsing function
+// TestParseDomain tests the domain parsing function.
 func TestParseDomain(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -133,7 +133,7 @@ func TestParseDomain(t *testing.T) {
 	}
 }
 
-// TestGenericUrlExtractor_CanonicalPriority tests canonical link priority over meta tags
+// TestGenericUrlExtractor_CanonicalPriority tests canonical link priority over meta tags.
 func TestGenericUrlExtractor_CanonicalPriority(t *testing.T) {
 	html := `
 		<html>
@@ -157,7 +157,7 @@ func TestGenericUrlExtractor_CanonicalPriority(t *testing.T) {
 	}
 }
 
-// TestGenericUrlExtractor_EmptyCanonical tests handling of empty canonical href
+// TestGenericUrlExtractor_EmptyCanonical tests handling of empty canonical href.
 func TestGenericUrlExtractor_EmptyCanonical(t *testing.T) {
 	html := `
 		<html>
@@ -181,7 +181,7 @@ func TestGenericUrlExtractor_EmptyCanonical(t *testing.T) {
 	}
 }
 
-// TestGenericUrlExtractor_MultipleCanonical tests handling of multiple canonical links
+// TestGenericUrlExtractor_MultipleCanonical tests handling of multiple canonical links.
 func TestGenericUrlExtractor_MultipleCanonical(t *testing.T) {
 	html := `
 		<html>
@@ -205,7 +205,7 @@ func TestGenericUrlExtractor_MultipleCanonical(t *testing.T) {
 	}
 }
 
-// TestGenericUrlExtractor_NoCanonicalInCache tests meta tag extraction when not in cache
+// TestGenericUrlExtractor_NoCanonicalInCache tests meta tag extraction when not in cache.
 func TestGenericUrlExtractor_NoCanonicalInCache(t *testing.T) {
 	html := `
 		<html>
@@ -228,7 +228,7 @@ func TestGenericUrlExtractor_NoCanonicalInCache(t *testing.T) {
 	}
 }
 
-// TestGenericUrlExtractor_RelativeCanonical tests handling of relative canonical URLs
+// TestGenericUrlExtractor_RelativeCanonical tests handling of relative canonical URLs.
 func TestGenericUrlExtractor_RelativeCanonical(t *testing.T) {
 	html := `
 		<html>
@@ -256,7 +256,7 @@ func TestGenericUrlExtractor_RelativeCanonical(t *testing.T) {
 	}
 }
 
-// TestGenericUrlExtractor_JavaScriptCompatibility verifies exact JavaScript matching
+// TestGenericUrlExtractor_JavaScriptCompatibility verifies exact JavaScript matching.
 func TestGenericUrlExtractor_JavaScriptCompatibility(t *testing.T) {
 	// Test case matching the exact JavaScript test
 	fullUrl := "https://example.com/blog/post?utm_campain=poajwefpaoiwjefaepoj"
@@ -288,7 +288,7 @@ func TestGenericUrlExtractor_JavaScriptCompatibility(t *testing.T) {
 	}
 }
 
-// TestParseDomain_EdgeCases tests edge cases for domain parsing
+// TestParseDomain_EdgeCases tests edge cases for domain parsing.
 func TestParseDomain_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -337,7 +337,7 @@ func TestParseDomain_EdgeCases(t *testing.T) {
 	}
 }
 
-// TestGenericUrlExtractor_ComplexHTML tests extraction from complex HTML documents
+// TestGenericUrlExtractor_ComplexHTML tests extraction from complex HTML documents.
 func TestGenericUrlExtractor_ComplexHTML(t *testing.T) {
 	html := `
 		<!DOCTYPE html>
@@ -378,7 +378,7 @@ func TestGenericUrlExtractor_ComplexHTML(t *testing.T) {
 	}
 }
 
-// BenchmarkGenericUrlExtractor benchmarks the URL extraction performance
+// BenchmarkGenericUrlExtractor benchmarks the URL extraction performance.
 func BenchmarkGenericUrlExtractor(b *testing.B) {
 	html := `
 		<html>
@@ -400,7 +400,7 @@ func BenchmarkGenericUrlExtractor(b *testing.B) {
 	}
 }
 
-// BenchmarkParseDomain benchmarks the domain parsing performance
+// BenchmarkParseDomain benchmarks the domain parsing performance.
 func BenchmarkParseDomain(b *testing.B) {
 	testURL := "https://www.example.com:8080/complex/path/to/resource?param=value#fragment"
 

@@ -89,10 +89,10 @@ func TestNormalizeSpaces(t *testing.T) {
 	}
 }
 
-// TestNormalizeSpacesJavaScriptCompatibility ensures exact JavaScript behavior
+// TestNormalizeSpacesJavaScriptCompatibility ensures exact JavaScript behavior.
 func TestNormalizeSpacesJavaScriptCompatibility(t *testing.T) {
 	// Test cases directly from the JavaScript test file
-	
+
 	t.Run("JavaScript test case 1 - normalizes spaces from text", func(t *testing.T) {
 		// This simulates cheerio loading and extracting text from:
 		// <div><p>What do you think?</p></div>
@@ -100,34 +100,34 @@ func TestNormalizeSpacesJavaScriptCompatibility(t *testing.T) {
 		input := "\n        What do you think?\n      "
 		expected := "What do you think?"
 		result := NormalizeSpaces(input)
-		
+
 		if result != expected {
 			t.Errorf("NormalizeSpaces(%q) = %q, expected %q (JavaScript compatibility test 1)", input, result, expected)
 		}
 	})
-	
+
 	t.Run("JavaScript test case 2 - preserves spaces in preformatted text blocks", func(t *testing.T) {
 		// This is the exact HTML from the JavaScript test
 		input := `<div> <p>What   do  you    think?</p> <pre>  What     happens to        spaces?    </pre> </div>`
 		expected := `<div> <p>What do you think?</p> <pre>  What     happens to        spaces?    </pre> </div>`
 		result := NormalizeSpaces(input)
-		
+
 		if result != expected {
 			t.Errorf("NormalizeSpaces(%q) = %q, expected %q (JavaScript compatibility test 2)", input, result, expected)
 		}
 	})
 }
 
-// BenchmarkNormalizeSpaces measures performance of the function
+// BenchmarkNormalizeSpaces measures performance of the function.
 func BenchmarkNormalizeSpaces(b *testing.B) {
 	testHTML := "<div><p>Multiple   spaces   everywhere</p><pre>  Keep     these    spaces  </pre><p>More   text   with    spaces</p></div>"
-	
+
 	for i := 0; i < b.N; i++ {
 		NormalizeSpaces(testHTML)
 	}
 }
 
-// TestNormalizeSpacesRegexBehavior tests the specific regex pattern behavior
+// TestNormalizeSpacesRegexBehavior tests the specific regex pattern behavior.
 func TestNormalizeSpacesRegexBehavior(t *testing.T) {
 	tests := []struct {
 		name     string

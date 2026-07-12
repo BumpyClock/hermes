@@ -3,35 +3,35 @@
 
 package custom
 
-// GetWwwInquisitrComExtractor returns the custom extractor for www.inquisitr.com
+// GetWwwInquisitrComExtractor returns the custom extractor for www.inquisitr.com.
 func GetWwwInquisitrComExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.inquisitr.com",
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
 				"h1.entry-title.story--header--title",
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
 				"div.story--header--author",
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{"meta[name=\"datePublished\"]", "value"},
 			},
 		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{"meta[name=\"og:image\"]", "value"},
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
@@ -39,11 +39,11 @@ func GetWwwInquisitrComExtractor() *CustomExtractor {
 					".entry-content",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				// No transforms in JavaScript version
 			},
-			
+
 			Clean: []string{
 				".post-category",
 				".story--header--socials",

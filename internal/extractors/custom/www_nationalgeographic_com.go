@@ -5,46 +5,47 @@ package custom
 
 import (
 	"fmt"
+
 	"github.com/PuerkitoBio/goquery"
 )
 
 // WwwNationalgeographicComExtractor provides the custom extraction rules for www.nationalgeographic.com
-// JavaScript equivalent: export const WwwNationalgeographicComExtractor = { ... }
+// JavaScript equivalent: export const WwwNationalgeographicComExtractor = { ... }.
 var WwwNationalgeographicComExtractor = &CustomExtractor{
 	Domain: "www.nationalgeographic.com",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h1",
 			"h1.main-title",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			".byline-component__contributors b span",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"article:published_time\"]", "value"},
 		},
 	},
-	
+
 	Dek: &FieldExtractor{
 		Selectors: []interface{}{
 			".Article__Headline__Desc",
 			".article__deck",
 		},
 	},
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
@@ -53,7 +54,7 @@ var WwwNationalgeographicComExtractor = &CustomExtractor{
 				".content",
 			},
 		},
-		
+
 		// Transform functions for National Geographic-specific content
 		// JavaScript: transforms: { '.parsys.content': ($node, $) => { ... } }
 		Transforms: map[string]TransformFunction{
@@ -66,7 +67,7 @@ var WwwNationalgeographicComExtractor = &CustomExtractor{
 						dataAttrContainer := imageParent.Find(".media--medium__container").Children().First()
 						imgPath1, exists1 := dataAttrContainer.Attr("data-platform-image1-path")
 						imgPath2, exists2 := dataAttrContainer.Attr("data-platform-image2-path")
-						
+
 						if exists1 && exists2 && imgPath1 != "" && imgPath2 != "" {
 							// Prepend both images as lead content
 							imageHTML := fmt.Sprintf(`<div class="__image-lead__">
@@ -87,7 +88,7 @@ var WwwNationalgeographicComExtractor = &CustomExtractor{
 				},
 			},
 		},
-		
+
 		// Clean selectors - remove unwanted elements
 		Clean: []string{
 			".pull-quote.pull-quote--small",
@@ -95,7 +96,7 @@ var WwwNationalgeographicComExtractor = &CustomExtractor{
 	},
 }
 
-// GetWwwNationalgeographicComExtractor returns the National Geographic custom extractor
+// GetWwwNationalgeographicComExtractor returns the National Geographic custom extractor.
 func GetWwwNationalgeographicComExtractor() *CustomExtractor {
 	return WwwNationalgeographicComExtractor
 }

@@ -49,7 +49,7 @@ func TestParserIntegration_ParseHTML_BasicExtraction(t *testing.T) {
 	if result.Title == "" {
 		t.Error("Expected title to be extracted")
 	}
-	
+
 	if result.Author == "" {
 		t.Error("Expected author to be extracted")
 	}
@@ -100,7 +100,7 @@ func TestParserIntegration_ParseHTML_BasicExtraction(t *testing.T) {
 
 func TestParserIntegration_ParseHTML_ContentTypes(t *testing.T) {
 	parser := New()
-	
+
 	tests := []struct {
 		name        string
 		contentType string
@@ -117,7 +117,7 @@ func TestParserIntegration_ParseHTML_ContentTypes(t *testing.T) {
 			expectHTML:  false,
 		},
 		{
-			name:        "Markdown content type", 
+			name:        "Markdown content type",
 			contentType: "markdown",
 			expectHTML:  false,
 		},
@@ -213,7 +213,7 @@ func TestParserIntegration_ParseHTML_EmptyContent(t *testing.T) {
 	}
 
 	emptyHTML := `<html><head><title>Empty</title></head><body></body></html>`
-	
+
 	result, err := parser.ParseHTML(emptyHTML, "https://example.com/empty", &opts)
 	if err != nil {
 		t.Fatalf("ParseHTML should handle empty content: %v", err)
@@ -223,7 +223,7 @@ func TestParserIntegration_ParseHTML_EmptyContent(t *testing.T) {
 	if result.URL == "" {
 		t.Error("Expected URL to be set")
 	}
-	
+
 	if result.Domain == "" {
 		t.Error("Expected domain to be set")
 	}
@@ -233,7 +233,7 @@ func TestParserIntegration_ParseHTML_EmptyContent(t *testing.T) {
 	}
 }
 
-// Helper function to check if a string contains a substring
+// Helper function to check if a string contains a substring.
 func contains(s, substr string) bool {
 	return strings.Contains(s, substr)
 }

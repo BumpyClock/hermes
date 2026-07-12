@@ -7,47 +7,46 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GetWashingtonPostExtractor returns the custom extractor for www.washingtonpost.com
+// GetWashingtonPostExtractor returns the custom extractor for www.washingtonpost.com.
 func GetWashingtonPostExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.washingtonpost.com",
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
+				"#topper-text-elems h1",
+				"article header h1",
 				"h1",
 				"#topper-headline-wrapper",
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
+				[]string{`meta[name="author"]`, "value"},
 				".pb-author-name",
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`.author-timestamp[itemprop="datePublished"]`, "content"},
 			},
 		},
-		
-		Dek: &FieldExtractor{
-			Selectors: []interface{}{},
-		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="og:image"]`, "value"},
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
 					".article-body",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				"div.inline-content": &FunctionTransform{
 					Fn: func(node *goquery.Selection) error {
@@ -58,7 +57,7 @@ func GetWashingtonPostExtractor() *CustomExtractor {
 							node.ReplaceWithHtml("<figure>" + content + "</figure>")
 							return nil
 						}
-						
+
 						// Remove node if it doesn't contain media
 						node.Remove()
 						return nil
@@ -68,7 +67,7 @@ func GetWashingtonPostExtractor() *CustomExtractor {
 					TargetTag: "figcaption",
 				},
 			},
-			
+
 			Clean: []string{
 				".interstitial-link",
 				".newsletter-inline-unit",

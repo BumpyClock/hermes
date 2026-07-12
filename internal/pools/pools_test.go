@@ -8,68 +8,8 @@ import (
 	"testing"
 )
 
-func TestDocumentPool(t *testing.T) {
-	pool := NewDocumentPool()
-
-	// Test basic get/put cycle
-	htmlContent := `<html><body><p>Test content</p></body></html>`
-	reader := strings.NewReader(htmlContent)
-
-	doc, err := pool.Get(reader)
-	if err != nil {
-		t.Fatalf("Failed to get document from pool: %v", err)
-	}
-
-	if doc == nil {
-		t.Fatal("Got nil document from pool")
-	}
-
-	// Verify the document contains expected content
-	text := doc.Find("p").Text()
-	if text != "Test content" {
-		t.Errorf("Expected 'Test content', got '%s'", text)
-	}
-
-	// Put document back in pool
-	pool.Put(doc)
-
-	// Get another document to ensure pool reuse works
-	reader2 := strings.NewReader(`<html><body><h1>Different content</h1></body></html>`)
-	doc2, err := pool.Get(reader2)
-	if err != nil {
-		t.Fatalf("Failed to get second document from pool: %v", err)
-	}
-
-	// Verify the new document has the new content
-	h1Text := doc2.Find("h1").Text()
-	if h1Text != "Different content" {
-		t.Errorf("Expected 'Different content', got '%s'", h1Text)
-	}
-
-	pool.Put(doc2)
-}
-
-func TestDocumentPoolWithInvalidHTML(t *testing.T) {
-	pool := NewDocumentPool()
-
-	// Test with invalid HTML
-	invalidHTML := `<html><body><p>Unclosed paragraph`
-	reader := strings.NewReader(invalidHTML)
-
-	doc, err := pool.Get(reader)
-	if err != nil {
-		t.Fatalf("Failed to get document with invalid HTML: %v", err)
-	}
-
-	if doc == nil {
-		t.Fatal("Got nil document from pool with invalid HTML")
-	}
-
-	pool.Put(doc)
-}
-
 func TestResponseBodyPool(t *testing.T) {
-	pool := NewResponseBodyPool()
+	pool := NewBufferPool()
 
 	// Test basic get/put cycle
 	buf1 := pool.Get()
@@ -98,7 +38,7 @@ func TestResponseBodyPool(t *testing.T) {
 }
 
 func TestResponseBodyPoolReadResponseBody(t *testing.T) {
-	pool := NewResponseBodyPool()
+	pool := NewBufferPool()
 
 	// Create a mock HTTP response
 	responseBody := "This is a test response body"
@@ -118,7 +58,7 @@ func TestResponseBodyPoolReadResponseBody(t *testing.T) {
 }
 
 func TestResponseBodyPoolWithNilResponse(t *testing.T) {
-	pool := NewResponseBodyPool()
+	pool := NewBufferPool()
 
 	// Test with nil response
 	data, err := pool.ReadResponseBody(nil)
@@ -230,28 +170,6 @@ func TestStringBuilderPool(t *testing.T) {
 	pool.Put(sb2)
 }
 
-func TestPooledStringBuilder(t *testing.T) {
-	psb := NewPooledStringBuilder()
-	defer psb.Close()
-
-	// Test writing to the builder
-	testData := "test pooled string builder"
-	_, err := psb.WriteString(testData)
-	if err != nil {
-		t.Fatalf("Failed to write to pooled string builder: %v", err)
-	}
-
-	if psb.String() != testData {
-		t.Errorf("Expected '%s', got '%s'", testData, psb.String())
-	}
-
-	// Test reset
-	psb.Reset()
-	if psb.String() != "" {
-		t.Errorf("Expected empty string after reset, got '%s'", psb.String())
-	}
-}
-
 func TestWithPooledStringBuilder(t *testing.T) {
 	result, err := WithPooledStringBuilder(func(sb *strings.Builder) error {
 		sb.WriteString("Hello, ")
@@ -326,10 +244,6 @@ func TestWithPooledBufferError(t *testing.T) {
 
 func TestGlobalPools(t *testing.T) {
 	// Test that global pools are initialized and working
-	if GlobalDocumentPool == nil {
-		t.Error("GlobalDocumentPool is nil")
-	}
-
 	if GlobalResponseBodyPool == nil {
 		t.Error("GlobalResponseBodyPool is nil")
 	}
@@ -352,29 +266,7 @@ func TestGlobalPools(t *testing.T) {
 	GlobalStringBuilderPool.Put(sb)
 }
 
-func TestGetPoolStats(t *testing.T) {
-	stats := GetPoolStats()
-
-	// Since we can't easily track actual usage with sync.Pool,
-	// we just verify the function doesn't panic and returns a valid struct
-	if stats.DocumentsInUse < 0 {
-		t.Error("DocumentsInUse should not be negative")
-	}
-
-	if stats.BuffersInUse < 0 {
-		t.Error("BuffersInUse should not be negative")
-	}
-
-	if stats.StringBuildersInUse < 0 {
-		t.Error("StringBuildersInUse should not be negative")
-	}
-
-	if stats.ResponseBuffersInUse < 0 {
-		t.Error("ResponseBuffersInUse should not be negative")
-	}
-}
-
-// Benchmark tests to verify pool performance benefits
+// Benchmark tests to verify pool performance benefits.
 func BenchmarkStringBuilderWithPool(b *testing.B) {
 	b.ResetTimer()
 

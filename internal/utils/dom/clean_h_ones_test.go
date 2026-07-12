@@ -148,7 +148,7 @@ func TestCleanHOnes_HandlesNoH1Elements(t *testing.T) {
 	}
 
 	originalHTML, _ := doc.Html()
-	
+
 	CleanHOnes(doc)
 
 	// Get the result HTML

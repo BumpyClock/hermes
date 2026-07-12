@@ -17,14 +17,12 @@ go install github.com/BumpyClock/hermes/cmd/hermes@latest
 
 - `-f, --format <json|html|markdown|text>`: Output format (default: `json`)
 - `-o, --output <path>`: Write to file instead of stdout
-- `--headers <json>`: Custom HTTP headers as JSON string (currently ignored)
 - `--timeout <duration>`: Timeout per URL (default: `30s`)
 - `--concurrency <n>`: Maximum concurrent requests (default: `10`)
 - `--timing`: Print timing information to stderr
 
 Notes:
 
-- The `--headers` flag is parsed but not applied yet; only the `User-Agent` can be set via the library using `WithUserAgent`.
 - The output format controls both CLI output and the content format requested from the parser.
 
 ## Examples
@@ -56,13 +54,6 @@ hermes parse --timing https://example.com/1 https://example.com/2
 
 # Save to file
 hermes parse -o output.json https://example.com/1 https://example.com/2
-```
-
-### Custom Headers (currently ignored)
-
-```bash
-hermes parse --headers '{"User-Agent":"Hermes/1.0"}' https://example.com/article
-# Note: headers are currently ignored by the CLI; use the Go API WithUserAgent option.
 ```
 
 ## Exit Codes

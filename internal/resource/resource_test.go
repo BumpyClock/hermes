@@ -15,7 +15,7 @@ import (
 
 func TestResource_Create_WithPreparedHTML(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	htmlContent := `<!DOCTYPE html>
 <html>
 <head>
@@ -31,18 +31,18 @@ func TestResource_Create_WithPreparedHTML(t *testing.T) {
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
-	
+
 	// Check that DOM was processed
 	title := doc.Find("title").Text()
 	assert.Equal(t, "Test Article", title)
-	
+
 	h1 := doc.Find("h1").Text()
 	assert.Equal(t, "Test Title", h1)
 }
 
 func TestResource_Create_WithMetaNormalization(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	htmlContent := `<!DOCTYPE html>
 <html>
 <head>
@@ -56,12 +56,12 @@ func TestResource_Create_WithMetaNormalization(t *testing.T) {
 
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
-	
+
 	// Check that property was converted to name
 	ogTitle, exists := doc.Find("meta[name='og:title']").Attr("value")
 	assert.True(t, exists)
 	assert.Equal(t, "OpenGraph Title", ogTitle)
-	
+
 	// Check that content was converted to value
 	description, exists := doc.Find("meta[name='description']").Attr("value")
 	assert.True(t, exists)
@@ -70,7 +70,7 @@ func TestResource_Create_WithMetaNormalization(t *testing.T) {
 
 func TestResource_Create_WithLazyImages(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	htmlContent := `<!DOCTYPE html>
 <html>
 <body>
@@ -81,7 +81,7 @@ func TestResource_Create_WithLazyImages(t *testing.T) {
 
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
-	
+
 	// Check that lazy images were converted
 	img1Src, _ := doc.Find("img").First().Attr("src")
 	assert.Equal(t, "https://example.com/image.jpg", img1Src)
@@ -89,7 +89,7 @@ func TestResource_Create_WithLazyImages(t *testing.T) {
 
 func TestResource_Create_CleansTags(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	htmlContent := `<!DOCTYPE html>
 <html>
 <head>
@@ -105,7 +105,7 @@ func TestResource_Create_CleansTags(t *testing.T) {
 
 	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
 	require.NoError(t, err)
-	
+
 	// Check that unwanted tags were removed
 	assert.Equal(t, 0, doc.Find("script").Length())
 	assert.Equal(t, 0, doc.Find("style").Length())
@@ -117,13 +117,13 @@ func TestFetchResource_ValidatesResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
 		w.WriteHeader(200)
-		w.Write([]byte("fake image data"))
+		_, _ = w.Write([]byte("fake image data"))
 	}))
 	defer server.Close()
 
 	parsedURL, _ := url.Parse(server.URL)
 	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, nil)
-	
+
 	require.NoError(t, err)
 	assert.True(t, result.IsError())
 	assert.Contains(t, result.Message, "not allowed")
@@ -131,17 +131,17 @@ func TestFetchResource_ValidatesResponse(t *testing.T) {
 
 func TestFetchResource_HandlesSuccess(t *testing.T) {
 	htmlContent := `<!DOCTYPE html><html><body><h1>Test</h1></body></html>`
-	
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(200)
-		w.Write([]byte(htmlContent))
+		_, _ = w.Write([]byte(htmlContent))
 	}))
 	defer server.Close()
 
 	parsedURL, _ := url.Parse(server.URL)
 	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, nil)
-	
+
 	require.NoError(t, err)
 	assert.False(t, result.IsError())
 	assert.Equal(t, htmlContent, string(result.Response.Body))
@@ -150,12 +150,12 @@ func TestFetchResource_HandlesSuccess(t *testing.T) {
 
 func TestFetchResource_WithCustomHeaders(t *testing.T) {
 	var receivedHeaders http.Header
-	
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedHeaders = r.Header
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(200)
-		w.Write([]byte("<html><body>Test</body></html>"))
+		_, _ = w.Write([]byte("<html><body>Test</body></html>"))
 	}))
 	defer server.Close()
 
@@ -166,14 +166,14 @@ func TestFetchResource_WithCustomHeaders(t *testing.T) {
 
 	parsedURL, _ := url.Parse(server.URL)
 	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, headers)
-	
+
 	require.NoError(t, err)
 	assert.False(t, result.IsError())
-	
+
 	// Check that custom headers were sent
 	assert.Equal(t, "test-value", receivedHeaders.Get("X-Custom-Header"))
 	assert.Equal(t, "Bearer token123", receivedHeaders.Get("Authorization"))
-	
+
 	// Check that default headers were also sent
 	userAgent := receivedHeaders.Get("User-Agent")
 	assert.Contains(t, userAgent, "Mozilla")
@@ -187,7 +187,7 @@ func TestValidateResponse_ContentLength(t *testing.T) {
 			"Content-Length": []string{"10485760"}, // 10MB > 5MB limit
 		},
 	}
-	
+
 	err := resource.ValidateResponse(response, false)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "too large")
@@ -200,12 +200,12 @@ func TestValidateResponse_NonOKStatus(t *testing.T) {
 			"Content-Type": []string{"text/html"},
 		},
 	}
-	
+
 	// Should fail with parseNon200=false
 	err := resource.ValidateResponse(response, false)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "404")
-	
+
 	// Should pass with parseNon200=true
 	err = resource.ValidateResponse(response, true)
 	assert.NoError(t, err)
@@ -222,7 +222,7 @@ func TestBaseDomain(t *testing.T) {
 		{"example.com", "example.com"},
 		{"localhost", "localhost"},
 	}
-	
+
 	for _, test := range tests {
 		result := resource.BaseDomain(test.input)
 		assert.Equal(t, test.expected, result, "BaseDomain(%s)", test.input)
@@ -231,7 +231,7 @@ func TestBaseDomain(t *testing.T) {
 
 func TestResource_GenerateDoc_InvalidContent(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	result := &resource.FetchResult{
 		Response: &resource.Response{
 			StatusCode: 200,
@@ -241,7 +241,7 @@ func TestResource_GenerateDoc_InvalidContent(t *testing.T) {
 			Body: []byte("not html content"),
 		},
 	}
-	
+
 	_, err := r.GenerateDoc(result)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "does not appear to be text")
@@ -249,7 +249,7 @@ func TestResource_GenerateDoc_InvalidContent(t *testing.T) {
 
 func TestResource_GenerateDoc_EmptyDocument(t *testing.T) {
 	r := resource.NewResource()
-	
+
 	// Use malformed HTML that won't parse correctly
 	result := &resource.FetchResult{
 		Response: &resource.Response{
@@ -260,11 +260,11 @@ func TestResource_GenerateDoc_EmptyDocument(t *testing.T) {
 			Body: []byte("<html><head></head><body></body></html>"),
 		},
 	}
-	
+
 	// This should actually succeed since goquery is more lenient
 	// Let's test with truly invalid HTML instead
 	result.Response.Body = []byte("not html at all")
-	
+
 	doc, err := r.GenerateDoc(result)
 	// Even this might parse, so let's check if we get a document
 	if err == nil {
@@ -289,10 +289,10 @@ func TestEncodingDetection(t *testing.T) {
 	r := resource.NewResource()
 	doc, err := r.Create(context.Background(), "http://example.com", utf8Content, nil, nil)
 	require.NoError(t, err)
-	
+
 	title := doc.Find("title").Text()
 	assert.Equal(t, "UTF-8 Test", title)
-	
+
 	content := doc.Find("p").Text()
 	assert.Contains(t, content, "ñáéíóú")
 }
@@ -311,7 +311,7 @@ func TestResource_Create_EncodingMismatch(t *testing.T) {
 </html>`
 
 	r := resource.NewResource()
-	
+
 	// Simulate server response with different encoding
 	result := &resource.FetchResult{
 		Response: &resource.Response{
@@ -323,20 +323,20 @@ func TestResource_Create_EncodingMismatch(t *testing.T) {
 		},
 		AlreadyDecoded: false,
 	}
-	
+
 	doc, err := r.GenerateDoc(result)
 	require.NoError(t, err)
-	
+
 	// Should have normalized the meta tag
 	metaCharset, exists := doc.Find("meta[http-equiv]").Attr("value")
 	assert.True(t, exists)
 	assert.Contains(t, metaCharset, "iso-8859-1")
 }
 
-// Benchmark test to ensure performance
+// Benchmark test to ensure performance.
 func BenchmarkResource_Create(b *testing.B) {
 	r := resource.NewResource()
-	
+
 	htmlContent := `<!DOCTYPE html>
 <html>
 <head>

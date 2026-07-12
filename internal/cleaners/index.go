@@ -5,7 +5,7 @@ package cleaners
 
 import "github.com/PuerkitoBio/goquery"
 
-// CleanerOptions represents unified options for all cleaner types
+// CleanerOptions represents unified options for all cleaner types.
 type CleanerOptions struct {
 	URL            string
 	Title          string
@@ -14,16 +14,16 @@ type CleanerOptions struct {
 	DefaultCleaner bool
 }
 
-// FieldCleaner represents the interface for field-specific cleaners
+// FieldCleaner represents the interface for field-specific cleaners.
 type FieldCleaner interface {
 	// Clean cleans a field value (string, []string, etc.)
 	Clean(value interface{}, opts CleanerOptions) interface{}
-	
+
 	// CleanSelection cleans a goquery selection (for HTML content)
 	CleanSelection(selection *goquery.Selection, doc *goquery.Document, opts CleanerOptions) *goquery.Selection
 }
 
-// ContentCleaner implements FieldCleaner for content fields
+// ContentCleaner implements FieldCleaner for content fields.
 type ContentCleaner struct{}
 
 func (c *ContentCleaner) Clean(value interface{}, opts CleanerOptions) interface{} {
@@ -41,7 +41,7 @@ func (c *ContentCleaner) CleanSelection(selection *goquery.Selection, doc *goque
 	return ExtractCleanNode(selection, doc, contentOpts)
 }
 
-// LeadImageURLCleaner implements FieldCleaner for lead image URL fields
+// LeadImageURLCleaner implements FieldCleaner for lead image URL fields.
 type LeadImageURLCleaner struct{}
 
 func (c *LeadImageURLCleaner) Clean(value interface{}, opts CleanerOptions) interface{} {
@@ -56,7 +56,7 @@ func (c *LeadImageURLCleaner) CleanSelection(selection *goquery.Selection, doc *
 	return selection
 }
 
-// ResolveSplitTitleCleaner implements FieldCleaner for title fields with split resolution
+// ResolveSplitTitleCleaner implements FieldCleaner for title fields with split resolution.
 type ResolveSplitTitleCleaner struct{}
 
 func (c *ResolveSplitTitleCleaner) Clean(value interface{}, opts CleanerOptions) interface{} {
@@ -71,20 +71,20 @@ func (c *ResolveSplitTitleCleaner) CleanSelection(selection *goquery.Selection, 
 	return selection
 }
 
-// Registry of all available cleaners
+// Registry of all available cleaners.
 var cleanerRegistry = map[string]FieldCleaner{
-	"content":          &ContentCleaner{},
-	"lead_image_url":   &LeadImageURLCleaner{},
-	"resolve_title":    &ResolveSplitTitleCleaner{},
+	"content":        &ContentCleaner{},
+	"lead_image_url": &LeadImageURLCleaner{},
+	"resolve_title":  &ResolveSplitTitleCleaner{},
 	// Additional cleaners will be added here as they're implemented
 }
 
-// GetCleaner retrieves a cleaner by field type
+// GetCleaner retrieves a cleaner by field type.
 func GetCleaner(fieldType string) FieldCleaner {
 	return cleanerRegistry[fieldType]
 }
 
-// RegisterCleaner registers a new cleaner for a field type
+// RegisterCleaner registers a new cleaner for a field type.
 func RegisterCleaner(fieldType string, cleaner FieldCleaner) {
 	cleanerRegistry[fieldType] = cleaner
 }
@@ -93,8 +93,8 @@ func RegisterCleaner(fieldType string, cleaner FieldCleaner) {
 // This allows other packages to import and use the content cleaner independently
 
 // ExtractCleanNode is the main content cleaning function
-// It can be used as a standalone utility or integrated with content extractors
+// It can be used as a standalone utility or integrated with content extractors.
 var ExtractCleanNodeFunc = ExtractCleanNode
 
-// ContentCleanOptions represents the configuration options for content cleaning
+// ContentCleanOptions represents the configuration options for content cleaning.
 type ContentCleanOptionsStruct = ContentCleanOptions

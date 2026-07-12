@@ -29,7 +29,7 @@ func TestParseDate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := text.ParseDate(tt.input)
-			
+
 			if tt.expected {
 				require.NoError(t, err, "Expected successful parsing for: %s", tt.input)
 				assert.NotNil(t, result)
@@ -57,7 +57,7 @@ func TestParseDateFromMeta(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := text.ParseDateFromMeta(tt.input)
-			
+
 			if tt.valid {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
@@ -70,7 +70,7 @@ func TestParseDateFromMeta(t *testing.T) {
 
 func TestIsValidDate(t *testing.T) {
 	now := time.Now()
-	
+
 	tests := []struct {
 		name  string
 		date  *time.Time
@@ -95,12 +95,12 @@ func TestIsValidDate(t *testing.T) {
 func TestFormatDateForJSON(t *testing.T) {
 	// Test with specific date
 	testDate := time.Date(2023, 4, 15, 10, 30, 45, 123456789, time.UTC)
-	
+
 	result := text.FormatDateForJSON(&testDate)
 	expected := "2023-04-15T10:30:45.123Z"
-	
+
 	assert.Equal(t, expected, result)
-	
+
 	// Test with nil
 	result = text.FormatDateForJSON(nil)
 	assert.Equal(t, "", result)

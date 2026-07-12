@@ -4,24 +4,24 @@
 package custom
 
 // BookwalkerJpExtractor provides the custom extraction rules for bookwalker.jp
-// JavaScript equivalent: export const BookwalkerJpExtractor = { ... }
+// JavaScript equivalent: export const BookwalkerJpExtractor = { ... }.
 var BookwalkerJpExtractor = &CustomExtractor{
 	Domain: "bookwalker.jp",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h1.p-main__title",
 			"h1.main-heading",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			"div.p-author__list",
 			"div.authors",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			"dl.p-information__data dd:nth-of-type(7)",
@@ -30,15 +30,13 @@ var BookwalkerJpExtractor = &CustomExtractor{
 		// timezone: 'Asia/Tokyo' in JavaScript - note: Go implementation handles timezone in date cleaner
 		Timezone: "Asia/Tokyo",
 	},
-	
-	Dek: nil,
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
@@ -46,13 +44,10 @@ var BookwalkerJpExtractor = &CustomExtractor{
 				[]interface{}{"div.main-info", "div.main-cover-inner"},
 			},
 		},
-		
+
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
-		
-		// transforms: {} (empty in JavaScript)
-		Transforms: map[string]TransformFunction{},
-		
+		DisableDefaultCleaner: true,
+
 		// Clean trial labels and promotional content
 		Clean: []string{
 			"span.label.label--trial",
@@ -63,7 +58,7 @@ var BookwalkerJpExtractor = &CustomExtractor{
 	},
 }
 
-// GetBookwalkerJpExtractor returns the BookWalker Japan custom extractor
+// GetBookwalkerJpExtractor returns the BookWalker Japan custom extractor.
 func GetBookwalkerJpExtractor() *CustomExtractor {
 	return BookwalkerJpExtractor
 }

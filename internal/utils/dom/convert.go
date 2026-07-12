@@ -26,7 +26,7 @@ func ConvertToParagraphs(doc *goquery.Document) *goquery.Document {
 	return doc
 }
 
-// convertDivs converts div elements that don't contain block-level elements to paragraphs
+// convertDivs converts div elements that don't contain block-level elements to paragraphs.
 func convertDivs(doc *goquery.Document) *goquery.Document {
 	doc.Find("div").Each(func(index int, div *goquery.Selection) {
 		// Check if this div contains any block-level elements
@@ -40,7 +40,7 @@ func convertDivs(doc *goquery.Document) *goquery.Document {
 	return doc
 }
 
-// convertSpans converts span elements that are not children of p, div, li, or figcaption to paragraphs
+// convertSpans converts span elements that are not children of p, div, li, or figcaption to paragraphs.
 func convertSpans(doc *goquery.Document) *goquery.Document {
 	doc.Find("span").Each(func(index int, span *goquery.Selection) {
 		// Check if this span has parent p, div, li, or figcaption elements
@@ -53,7 +53,7 @@ func convertSpans(doc *goquery.Document) *goquery.Document {
 	return doc
 }
 
-// ConvertNodeTo converts a node to a different tag type while preserving attributes and content
+// ConvertNodeTo converts a node to a different tag type while preserving attributes and content.
 func ConvertNodeTo(node *goquery.Selection, tag string) {
 	if node.Length() == 0 {
 		return
@@ -91,4 +91,3 @@ func ConvertNodeTo(node *goquery.Selection, tag string) {
 	// Replace the node
 	node.ReplaceWithHtml(replacement)
 }
-

@@ -13,7 +13,7 @@ import (
 // Returns nil if the date cannot be parsed or is invalid.
 //
 // This is a faithful 1:1 port of the JavaScript cleanDatePublished function:
-// - Handles millisecond/second timestamps 
+// - Handles millisecond/second timestamps
 // - Supports relative time expressions ("5 minutes ago")
 // - Handles "now" time indicators
 // - Supports timezone and format parameters
@@ -21,10 +21,11 @@ import (
 // - Returns ISO 8601 formatted string or nil for invalid dates
 //
 // JavaScript equivalent:
-// export default function cleanDatePublished(dateString, { timezone, format } = {}) {
-//   // Timestamp handling, date cleaning, and parsing logic
-//   return date.isValid() ? date.toISOString() : null;
-// }
+//
+//	export default function cleanDatePublished(dateString, { timezone, format } = {}) {
+//	  // Timestamp handling, date cleaning, and parsing logic
+//	  return date.isValid() ? date.toISOString() : null;
+//	}
 func CleanDatePublished(dateString, timezone, format string) *string {
 	dateString = strings.TrimSpace(dateString)
 	if dateString == "" {
@@ -40,7 +41,7 @@ func CleanDatePublished(dateString, timezone, format string) *string {
 		}
 	}
 
-	// If string is in seconds, convert to int and return  
+	// If string is in seconds, convert to int and return
 	if SEC_DATE_STRING.MatchString(dateString) {
 		if sec, err := strconv.ParseInt(dateString, 10, 64); err == nil {
 			t := time.Unix(sec, 0).UTC()
@@ -68,15 +69,15 @@ func CleanDatePublished(dateString, timezone, format string) *string {
 }
 
 // cleanDateString cleans date strings by removing prefixes and normalizing format
-// This is a faithful port of the JavaScript cleanDateString function
+// This is a faithful port of the JavaScript cleanDateString function.
 func cleanDateString(dateString string) string {
 	// Apply cleaning transformations directly to the original string
 	// to preserve formatting like commas while still cleaning meridian marks
 	cleaned := dateString
-	
+
 	// Apply meridian dot cleaning first
 	cleaned = TIME_MERIDIAN_DOTS_RE.ReplaceAllString(cleaned, "m")
-	
+
 	// Apply meridian spacing fixes
 	cleaned = TIME_MERIDIAN_SPACE_RE.ReplaceAllStringFunc(cleaned, func(match string) string {
 		submatches := TIME_MERIDIAN_SPACE_RE.FindStringSubmatch(match)
@@ -95,10 +96,10 @@ func cleanDateString(dateString string) string {
 		}
 		return match
 	})
-	
+
 	// Apply general date string cleaning (removes prefixes like "PUBLISHED:")
 	cleaned = CLEAN_DATE_STRING_RE.ReplaceAllString(cleaned, "$1")
-	
+
 	// Check if the cleaned version successfully removed prefixes
 	// If it still contains "PUBLISHED" (case insensitive), try reassembly
 	cleanedLower := strings.ToLower(cleaned)
@@ -125,13 +126,13 @@ func cleanDateString(dateString string) string {
 			return strings.TrimSpace(assembled)
 		}
 	}
-	
+
 	// Return the cleaned version (preserves commas and original formatting)
 	return strings.TrimSpace(cleaned)
 }
 
 // createDate creates a time.Time from various date string formats
-// This is a faithful port of the JavaScript createDate function
+// This is a faithful port of the JavaScript createDate function.
 func createDate(dateString, timezone, format string) *time.Time {
 	dateString = strings.TrimSpace(dateString)
 	if dateString == "" {
@@ -156,7 +157,7 @@ func createDate(dateString, timezone, format string) *time.Time {
 			if amount, err := strconv.Atoi(matches[1]); err == nil {
 				unit := matches[2]
 				now := time.Now().UTC()
-				
+
 				var duration time.Duration
 				switch {
 				case strings.HasPrefix(unit, "second"):
@@ -178,7 +179,7 @@ func createDate(dateString, timezone, format string) *time.Time {
 				default:
 					return nil
 				}
-				
+
 				result := now.Add(-duration)
 				return &result
 			}
@@ -226,10 +227,10 @@ func createDate(dateString, timezone, format string) *time.Time {
 	return nil
 }
 
-// parseWithTimezoneAndFormat attempts to parse a date string with specified timezone and format
+// parseWithTimezoneAndFormat attempts to parse a date string with specified timezone and format.
 func parseWithTimezoneAndFormat(dateString, timezone, format string) *time.Time {
-	var loc *time.Location = time.UTC
-	
+	var loc = time.UTC
+
 	// Load timezone if provided
 	if timezone != "" {
 		if tz, err := time.LoadLocation(timezone); err == nil {
@@ -266,12 +267,12 @@ func parseWithTimezoneAndFormat(dateString, timezone, format string) *time.Time 
 }
 
 // convertMomentFormatToGo converts moment.js format tokens to Go time format
-// This is a simplified implementation covering common cases
+// This is a simplified implementation covering common cases.
 func convertMomentFormatToGo(momentFormat string) string {
 	// Simple replacements for common moment.js tokens
 	replacements := map[string]string{
 		"YYYY": "2006",
-		"MM":   "01", 
+		"MM":   "01",
 		"DD":   "02",
 		"HH":   "15",
 		"mm":   "04",

@@ -3,17 +3,17 @@
 
 package custom
 
-// GetPoliticoExtractor returns the custom extractor for www.politico.com
+// GetPoliticoExtractor returns the custom extractor for www.politico.com.
 func GetPoliticoExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.politico.com",
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="og:title"]`, "value"},
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`div[itemprop="author"] meta[itemprop="name"]`, "value"},
@@ -21,7 +21,7 @@ func GetPoliticoExtractor() *CustomExtractor {
 				".story-main-content .byline .vcard",
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
@@ -30,18 +30,18 @@ func GetPoliticoExtractor() *CustomExtractor {
 					".story-core",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				// No transforms in JavaScript version (transforms: [] is empty)
 			},
-			
+
 			Clean: []string{
 				"figcaption",
 				".story-meta",
 				".ad",
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`time[itemprop="datePublished"]`, "datetime"},
@@ -50,13 +50,13 @@ func GetPoliticoExtractor() *CustomExtractor {
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="og:image"]`, "value"},
 			},
 		},
-		
+
 		Dek: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="og:description"]`, "value"},

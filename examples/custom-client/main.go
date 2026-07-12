@@ -3,7 +3,6 @@
 // This example shows how to:
 // - Create custom HTTP clients with specific configurations
 // - Configure connection pooling and timeouts
-// - Set up proxy support
 // - Configure TLS settings
 // - Use custom transport options
 // - Handle different authentication scenarios
@@ -17,7 +16,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/BumpyClock/hermes"
@@ -34,30 +32,25 @@ func main() {
 	fmt.Println("----------------------------------------")
 	basicCustomClient(testURL)
 
-	// Example 2: Client with proxy support
-	fmt.Println("\n2. Client with Proxy Support")
-	fmt.Println("----------------------------")
-	proxyClient(testURL)
-
-	// Example 3: Client with custom TLS settings
-	fmt.Println("\n3. Client with Custom TLS Settings")
+	// Example 2: Client with custom TLS settings
+	fmt.Println("\n2. Client with Custom TLS Settings")
 	fmt.Println("----------------------------------")
 	tlsClient(testURL)
 
-	// Example 4: High-performance client for batch processing
-	fmt.Println("\n4. High-Performance Batch Client")
+	// Example 3: High-performance client for batch processing
+	fmt.Println("\n3. High-Performance Batch Client")
 	fmt.Println("--------------------------------")
 	highPerformanceClient(testURL)
 
-	// Example 5: Client with custom headers and authentication
-	fmt.Println("\n5. Client with Custom Headers")
+	// Example 4: Client with custom headers and authentication
+	fmt.Println("\n4. Client with Custom Headers")
 	fmt.Println("-----------------------------")
 	customHeadersClient(testURL)
 
 	fmt.Println("\n🎉 All examples completed!")
 }
 
-// basicCustomClient demonstrates basic HTTP client customization
+// basicCustomClient demonstrates basic HTTP client customization.
 func basicCustomClient(testURL string) {
 	// Create custom HTTP client with specific settings
 	httpClient := &http.Client{
@@ -67,13 +60,13 @@ func basicCustomClient(testURL string) {
 			MaxIdleConns:        50,
 			MaxIdleConnsPerHost: 10,
 			IdleConnTimeout:     90 * time.Second,
-			
+
 			// Dial settings
 			DialContext: (&net.Dialer{
 				Timeout:   10 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
-			
+
 			// Response settings
 			ResponseHeaderTimeout: 10 * time.Second,
 			DisableCompression:    false,
@@ -90,41 +83,7 @@ func basicCustomClient(testURL string) {
 	parseAndDisplay(client, testURL, "Basic Custom Client")
 }
 
-// proxyClient demonstrates HTTP client with proxy support
-func proxyClient(testURL string) {
-	// Note: This example shows proxy configuration but doesn't use a real proxy
-	// Uncomment and modify the proxy URL if you have a proxy server
-	
-	// proxyURL, _ := url.Parse("http://proxy.example.com:8080")
-	
-	httpClient := &http.Client{
-		Timeout: 30 * time.Second,
-		Transport: &http.Transport{
-			// Proxy configuration (commented out for demo)
-			// Proxy: http.ProxyURL(proxyURL),
-			
-			// For demo, we'll use ProxyFromEnvironment which checks env vars
-			Proxy: func(req *http.Request) (*url.URL, error) {
-				// In real usage, return proxyURL for proxy routing
-				// For this demo, we'll not use a proxy
-				fmt.Printf("🔄 Proxy check for: %s (no proxy configured)\n", req.URL.Host)
-				return nil, nil // No proxy
-			},
-			
-			MaxIdleConns:    20,
-			IdleConnTimeout: 60 * time.Second,
-		},
-	}
-
-	client := hermes.New(
-		hermes.WithHTTPClient(httpClient),
-		hermes.WithUserAgent("ProxyClient/1.0"),
-	)
-
-	parseAndDisplay(client, testURL, "Proxy Client (demo)")
-}
-
-// tlsClient demonstrates custom TLS configuration
+// tlsClient demonstrates custom TLS configuration.
 func tlsClient(testURL string) {
 	httpClient := &http.Client{
 		Timeout: 30 * time.Second,
@@ -133,18 +92,18 @@ func tlsClient(testURL string) {
 				// Security settings
 				MinVersion: tls.VersionTLS12,
 				MaxVersion: tls.VersionTLS13,
-				
+
 				// Certificate verification (be careful with these in production)
 				InsecureSkipVerify: false,
 				ServerName:         "", // Leave empty to use hostname from URL
-				
+
 				// Cipher suite preferences (optional)
 				PreferServerCipherSuites: true,
 			},
-			
+
 			// TLS handshake timeout
 			TLSHandshakeTimeout: 10 * time.Second,
-			
+
 			MaxIdleConns:    30,
 			IdleConnTimeout: 90 * time.Second,
 		},
@@ -159,7 +118,7 @@ func tlsClient(testURL string) {
 	parseAndDisplay(client, testURL, "Custom TLS Client")
 }
 
-// highPerformanceClient demonstrates optimized client for batch processing
+// highPerformanceClient demonstrates optimized client for batch processing.
 func highPerformanceClient(testURL string) {
 	httpClient := &http.Client{
 		Timeout: 20 * time.Second, // Shorter timeout for batch processing
@@ -168,17 +127,17 @@ func highPerformanceClient(testURL string) {
 			MaxIdleConns:        200,
 			MaxIdleConnsPerHost: 50,
 			IdleConnTimeout:     120 * time.Second,
-			
+
 			// Faster connection establishment
 			DialContext: (&net.Dialer{
 				Timeout:   5 * time.Second,
 				KeepAlive: 60 * time.Second,
 			}).DialContext,
-			
+
 			// Optimized timeouts
 			ResponseHeaderTimeout: 5 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
-			
+
 			// Connection reuse
 			DisableKeepAlives: false,
 			ForceAttemptHTTP2: true,
@@ -195,7 +154,7 @@ func highPerformanceClient(testURL string) {
 	parseAndDisplay(client, testURL, "High-Performance Client")
 }
 
-// customHeadersClient demonstrates client with custom transport for headers
+// customHeadersClient demonstrates client with custom transport for headers.
 func customHeadersClient(testURL string) {
 	// Create a custom transport that adds authentication headers
 	baseTransport := &http.Transport{
@@ -226,7 +185,7 @@ func customHeadersClient(testURL string) {
 	parseAndDisplay(client, testURL, "Custom Headers Client")
 }
 
-// customHeaderTransport wraps an http.Transport to add custom headers
+// customHeaderTransport wraps an http.Transport to add custom headers.
 type customHeaderTransport struct {
 	Transport http.RoundTripper
 	Headers   map[string]string
@@ -237,17 +196,17 @@ func (t *customHeaderTransport) RoundTrip(req *http.Request) (*http.Response, er
 	for key, value := range t.Headers {
 		req.Header.Set(key, value)
 	}
-	
+
 	fmt.Printf("🔧 Added %d custom headers to request\n", len(t.Headers))
-	
+
 	// Use the wrapped transport
 	return t.Transport.RoundTrip(req)
 }
 
-// parseAndDisplay parses a URL and displays the results
+// parseAndDisplay parses a URL and displays the results.
 func parseAndDisplay(client *hermes.Client, testURL, clientName string) {
 	fmt.Printf("Testing with %s...\n", clientName)
-	
+
 	start := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -273,7 +232,7 @@ func parseAndDisplay(client *hermes.Client, testURL, clientName string) {
 	}
 }
 
-// truncate shortens a string to the specified length with ellipsis
+// truncate shortens a string to the specified length with ellipsis.
 func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s

@@ -10,7 +10,7 @@ import (
 
 // MakeLinksAbsolute converts all relative URLs in the document to absolute URLs
 // This exactly matches the JavaScript makeLinksAbsolute implementation
-// JavaScript: export default function makeLinksAbsolute($content, $, url)
+// JavaScript: export default function makeLinksAbsolute($content, $, url).
 func MakeLinksAbsolute(doc *goquery.Document, rootURL string) *goquery.Document {
 	// Check for base tag first (JavaScript behavior)
 	// JavaScript: const baseUrl = $('base').attr('href');
@@ -21,7 +21,7 @@ func MakeLinksAbsolute(doc *goquery.Document, rootURL string) *goquery.Document 
 			baseURL = baseHref
 		}
 	}
-	
+
 	parsedBase, err := url.Parse(baseURL)
 	if err != nil {
 		return doc
@@ -30,7 +30,7 @@ func MakeLinksAbsolute(doc *goquery.Document, rootURL string) *goquery.Document 
 	// JavaScript: ['href', 'src'].forEach(attr => absolutize($, url, attr));
 	absolutize(doc, parsedBase, "href")
 	absolutize(doc, parsedBase, "src")
-	
+
 	// JavaScript: absolutizeSet($, url, $content);
 	absolutizeSet(doc, parsedBase)
 
@@ -38,7 +38,7 @@ func MakeLinksAbsolute(doc *goquery.Document, rootURL string) *goquery.Document 
 }
 
 // absolutize processes a specific attribute across all elements
-// JavaScript: function absolutize($, rootUrl, attr)
+// JavaScript: function absolutize($, rootUrl, attr).
 func absolutize(doc *goquery.Document, baseURL *url.URL, attr string) {
 	// JavaScript: $(`[${attr}]`).each((_, node) => {
 	doc.Find("[" + attr + "]").Each(func(index int, element *goquery.Selection) {
@@ -47,7 +47,7 @@ func absolutize(doc *goquery.Document, baseURL *url.URL, attr string) {
 		if !exists || urlValue == "" {
 			return
 		}
-		
+
 		// JavaScript: const absoluteUrl = URL.resolve(baseUrl || rootUrl, url);
 		absoluteURL := makeAbsoluteURL(urlValue, baseURL)
 		if absoluteURL != "" {
@@ -57,7 +57,7 @@ func absolutize(doc *goquery.Document, baseURL *url.URL, attr string) {
 }
 
 // absolutizeSet processes srcset attributes for responsive images
-// JavaScript: function absolutizeSet($, rootUrl, $content)
+// JavaScript: function absolutizeSet($, rootUrl, $content).
 func absolutizeSet(doc *goquery.Document, baseURL *url.URL) {
 	// JavaScript: $('[srcset]', $content).each((_, node) => {
 	doc.Find("[srcset]").Each(func(index int, element *goquery.Selection) {
@@ -66,17 +66,17 @@ func absolutizeSet(doc *goquery.Document, baseURL *url.URL) {
 		if !exists || urlSet == "" {
 			return
 		}
-		
+
 		// JavaScript regex: /(?:\s*)(\S+(?:\s*[\d.]+[wx])?)(?:\s*,\s*)?/g
 		// a comma should be considered part of the candidate URL unless preceded by a descriptor
 		// descriptors can only contain positive numbers followed immediately by either 'w' or 'x'
 		candidateRegex := regexp.MustCompile(`(?:\s*)(\S+(?:\s*[\d.]+[wx])?)(?:\s*,\s*)?`)
 		candidates := candidateRegex.FindAllString(urlSet, -1)
-		
+
 		if len(candidates) == 0 {
 			return
 		}
-		
+
 		// JavaScript: const absoluteCandidates = candidates.map(candidate => {
 		var absoluteCandidates []string
 		for _, candidate := range candidates {
@@ -84,7 +84,7 @@ func absolutizeSet(doc *goquery.Document, baseURL *url.URL) {
 			// descriptors are separated from the URLs by unescaped whitespace
 			trimmed := strings.TrimSpace(candidate)
 			trimmed = strings.TrimSuffix(trimmed, ",")
-			
+
 			// JavaScript: .split(/\s+/)
 			parts := strings.Fields(trimmed)
 			if len(parts) > 0 {
@@ -94,7 +94,7 @@ func absolutizeSet(doc *goquery.Document, baseURL *url.URL) {
 				absoluteCandidates = append(absoluteCandidates, strings.Join(parts, " "))
 			}
 		}
-		
+
 		// JavaScript: const absoluteUrlSet = [...new Set(absoluteCandidates)].join(', ');
 		// Remove duplicates and join
 		unique := make(map[string]bool)
@@ -105,13 +105,13 @@ func absolutizeSet(doc *goquery.Document, baseURL *url.URL) {
 				finalCandidates = append(finalCandidates, candidate)
 			}
 		}
-		
+
 		absoluteURLSet := strings.Join(finalCandidates, ", ")
 		element.SetAttr("srcset", absoluteURLSet)
 	})
 }
 
-// makeAbsoluteURL converts a potentially relative URL to absolute using the base URL
+// makeAbsoluteURL converts a potentially relative URL to absolute using the base URL.
 func makeAbsoluteURL(href string, base *url.URL) string {
 	// Skip if already absolute
 	if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") {
@@ -143,7 +143,7 @@ func makeAbsoluteURL(href string, base *url.URL) string {
 	return absoluteURL.String()
 }
 
-// ArticleBaseURL extracts the base URL for the article, removing fragments and query parameters
+// ArticleBaseURL extracts the base URL for the article, removing fragments and query parameters.
 func ArticleBaseURL(rawURL string) string {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -157,7 +157,7 @@ func ArticleBaseURL(rawURL string) string {
 	return parsedURL.String()
 }
 
-// RemoveAnchor removes the anchor/fragment from a URL
+// RemoveAnchor removes the anchor/fragment from a URL.
 func RemoveAnchor(rawURL string) string {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -168,7 +168,7 @@ func RemoveAnchor(rawURL string) string {
 	return parsedURL.String()
 }
 
-// ValidateURL checks if a URL is valid and well-formed
+// ValidateURL checks if a URL is valid and well-formed.
 func ValidateURL(rawURL string) bool {
 	if rawURL == "" {
 		return false
@@ -192,7 +192,7 @@ func ValidateURL(rawURL string) bool {
 	return true
 }
 
-// GetDomain extracts the domain from a URL
+// GetDomain extracts the domain from a URL.
 func GetDomain(rawURL string) string {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -201,14 +201,10 @@ func GetDomain(rawURL string) string {
 
 	// Remove www. prefix if present
 	host := parsedURL.Host
-	if strings.HasPrefix(host, "www.") {
-		host = host[4:]
-	}
-
-	return host
+	return strings.TrimPrefix(host, "www.")
 }
 
-// GetBaseDomain extracts the base domain (removing subdomains) from a URL
+// GetBaseDomain extracts the base domain (removing subdomains) from a URL.
 func GetBaseDomain(rawURL string) string {
 	domain := GetDomain(rawURL)
 	if domain == "" {
@@ -224,7 +220,7 @@ func GetBaseDomain(rawURL string) string {
 	return domain
 }
 
-// SanitizeURL cleans up a URL by removing tracking parameters and normalizing
+// SanitizeURL cleans up a URL by removing tracking parameters and normalizing.
 func SanitizeURL(rawURL string) string {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {

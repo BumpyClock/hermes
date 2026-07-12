@@ -180,12 +180,12 @@ func TestNoNewFields(t *testing.T) {
 	if result.ThemeColor != "" {
 		t.Errorf("Expected empty theme color, got '%s'", result.ThemeColor)
 	}
-	
+
 	if result.VideoURL != "" {
 		t.Errorf("Expected empty video URL, got '%s'", result.VideoURL)
 	}
 
-	if result.VideoMetadata != nil && len(result.VideoMetadata) > 0 {
+	if len(result.VideoMetadata) > 0 {
 		t.Errorf("Expected empty video metadata, got %v", result.VideoMetadata)
 	}
 

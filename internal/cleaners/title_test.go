@@ -10,7 +10,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// TestCleanTitle_BasicFunctionality tests the core title cleaning functionality
+// TestCleanTitle_BasicFunctionality tests the core title cleaning functionality.
 func TestCleanTitle_BasicFunctionality(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -77,7 +77,7 @@ func TestCleanTitle_BasicFunctionality(t *testing.T) {
 	}
 }
 
-// TestCleanTitle_LongTitleFallback tests the H1 fallback for overly long titles
+// TestCleanTitle_LongTitleFallback tests the H1 fallback for overly long titles.
 func TestCleanTitle_LongTitleFallback(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -126,7 +126,7 @@ func TestCleanTitle_LongTitleFallback(t *testing.T) {
 	}
 }
 
-// TestResolveSplitTitle_BreadcrumbTitles tests complex breadcrumb title resolution
+// TestResolveSplitTitle_BreadcrumbTitles tests complex breadcrumb title resolution.
 func TestResolveSplitTitle_BreadcrumbTitles(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -170,7 +170,7 @@ func TestResolveSplitTitle_BreadcrumbTitles(t *testing.T) {
 	}
 }
 
-// TestResolveSplitTitle_DomainCleaning tests fuzzy domain name removal
+// TestResolveSplitTitle_DomainCleaning tests fuzzy domain name removal.
 func TestResolveSplitTitle_DomainCleaning(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -214,7 +214,7 @@ func TestResolveSplitTitle_DomainCleaning(t *testing.T) {
 	}
 }
 
-// TestExtractBreadcrumbTitle tests breadcrumb title extraction logic
+// TestExtractBreadcrumbTitle tests breadcrumb title extraction logic.
 func TestExtractBreadcrumbTitle(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -252,7 +252,7 @@ func TestExtractBreadcrumbTitle(t *testing.T) {
 	}
 }
 
-// TestCleanDomainFromTitle tests domain removal with fuzzy matching
+// TestCleanDomainFromTitle tests domain removal with fuzzy matching.
 func TestCleanDomainFromTitle(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -296,7 +296,7 @@ func TestCleanDomainFromTitle(t *testing.T) {
 	}
 }
 
-// TestLevenshteinRatio tests the fuzzy string matching
+// TestLevenshteinRatio tests the fuzzy string matching.
 func TestLevenshteinRatio(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -340,7 +340,7 @@ func TestLevenshteinRatio(t *testing.T) {
 	}
 }
 
-// TestSplitTitleWithSeparators tests separator preservation during splitting
+// TestSplitTitleWithSeparators tests separator preservation during splitting.
 func TestSplitTitleWithSeparators(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -390,7 +390,7 @@ func TestSplitTitleWithSeparators(t *testing.T) {
 	}
 }
 
-// TestCleanTitle_JavaScriptCompatibility tests for 100% JavaScript compatibility
+// TestCleanTitle_JavaScriptCompatibility tests for 100% JavaScript compatibility.
 func TestCleanTitle_JavaScriptCompatibility(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -444,7 +444,7 @@ func TestCleanTitle_JavaScriptCompatibility(t *testing.T) {
 	}
 }
 
-// Helper function for floating point comparison
+// Helper function for floating point comparison.
 func abs(x float64) float64 {
 	if x < 0 {
 		return -x

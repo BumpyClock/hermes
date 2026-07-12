@@ -3,25 +3,25 @@
 
 package custom
 
-// GetNBCNewsExtractor returns the custom extractor for www.nbcnews.com
+// GetNBCNewsExtractor returns the custom extractor for www.nbcnews.com.
 func GetNBCNewsExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.nbcnews.com",
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
 				"div.article-hero-headline h1",
 				"div.article-hed h1",
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
 				"div.article-inline-byline span.byline-name",
 				"span.byline_author",
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="article:published"]`, "value"},
@@ -30,13 +30,13 @@ func GetNBCNewsExtractor() *CustomExtractor {
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="og:image"]`, "value"},
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
@@ -44,11 +44,11 @@ func GetNBCNewsExtractor() *CustomExtractor {
 					"div.article-body",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				// No transforms in JavaScript version
 			},
-			
+
 			Clean: []string{
 				// No clean selectors in JavaScript version
 			},

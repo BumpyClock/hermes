@@ -3,27 +3,27 @@
 
 package custom
 
-// GetGothamistComExtractor returns the custom extractor for gothamist.com and related city sites
+// GetGothamistComExtractor returns the custom extractor for gothamist.com and related city sites.
 func GetGothamistComExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "gothamist.com",
-		
+
 		// SupportedDomains from JavaScript version
 		SupportedDomains: []string{
 			"chicagoist.com",
-			"laist.com", 
+			"laist.com",
 			"sfist.com",
 			"shanghaiist.com",
 			"dcist.com",
 		},
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
 				"h1",
 				".entry-header h1",
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
 				// Comment from JavaScript: "There are multiple article-metadata and byline-author classes, but the main article's is the 3rd child of the l-container class"
@@ -31,7 +31,7 @@ func GetGothamistComExtractor() *CustomExtractor {
 				".author",
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{"meta[name=\"article:published_time\"]", "value"},
@@ -40,19 +40,13 @@ func GetGothamistComExtractor() *CustomExtractor {
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
-		
-		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				// null in JavaScript version = empty selectors
-			},
-		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{"meta[name=\"og:image\"]", "value"},
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
@@ -60,7 +54,7 @@ func GetGothamistComExtractor() *CustomExtractor {
 					".entry-body",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				// String transforms for image classes to figures
 				"div.image-none":  &StringTransform{TargetTag: "figure"},
@@ -70,10 +64,10 @@ func GetGothamistComExtractor() *CustomExtractor {
 				"div.image-right": &StringTransform{TargetTag: "figure"},
 				".image-right i":  &StringTransform{TargetTag: "figcaption"},
 			},
-			
+
 			Clean: []string{
 				".image-none br",
-				".image-left br", 
+				".image-left br",
 				".image-right br",
 				".galleryEase",
 			},

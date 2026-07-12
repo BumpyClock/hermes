@@ -13,7 +13,7 @@ import "github.com/PuerkitoBio/goquery"
 // likely represent section headers rather than the main title.
 //
 // :param doc: A goquery Document to process
-// :return: The modified goquery Document (returned for convenience, mutation is in-place)
+// :return: The modified goquery Document (returned for convenience, mutation is in-place).
 func CleanHOnes(doc *goquery.Document) *goquery.Document {
 	// Find all H1 elements in the document
 	hOnes := doc.Find("h1")

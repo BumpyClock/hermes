@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/encoding/unicode"
 )
 
-// DetectAndDecodeText detects encoding and converts to UTF-8
+// DetectAndDecodeText detects encoding and converts to UTF-8.
 func DetectAndDecodeText(data []byte, contentType string) (string, error) {
 	// First try to get encoding from content type
 	if enc := getEncodingFromContentType(contentType); enc != nil {
@@ -49,7 +49,7 @@ func DetectAndDecodeText(data []byte, contentType string) (string, error) {
 	return string(decoded), nil
 }
 
-// getEncodingFromContentType extracts encoding from Content-Type header
+// getEncodingFromContentType extracts encoding from Content-Type header.
 func getEncodingFromContentType(contentType string) encoding.Encoding {
 	if contentType == "" {
 		return nil
@@ -69,7 +69,7 @@ func getEncodingFromContentType(contentType string) encoding.Encoding {
 	return nil
 }
 
-// getEncodingFromHTML tries to extract encoding from HTML meta tags
+// getEncodingFromHTML tries to extract encoding from HTML meta tags.
 func getEncodingFromHTML(data []byte) encoding.Encoding {
 	// Look for charset in first 1KB of HTML
 	searchData := data
@@ -95,7 +95,7 @@ func getEncodingFromHTML(data []byte) encoding.Encoding {
 	return nil
 }
 
-// getEncodingByName returns encoding by charset name
+// getEncodingByName returns encoding by charset name.
 func getEncodingByName(charset string) encoding.Encoding {
 	charset = strings.ToLower(charset)
 	charset = strings.ReplaceAll(charset, "_", "-")
@@ -194,7 +194,7 @@ func getEncodingByName(charset string) encoding.Encoding {
 	}
 }
 
-// IsTextContent checks if content type indicates text content
+// IsTextContent checks if content type indicates text content.
 func IsTextContent(contentType string) bool {
 	if contentType == "" {
 		return false
@@ -209,23 +209,23 @@ func IsTextContent(contentType string) bool {
 }
 
 // GetEncodingFromMeta extracts encoding from HTML meta tags
-// This matches the JavaScript getEncoding function behavior
+// This matches the JavaScript getEncoding function behavior.
 func GetEncodingFromMeta(htmlContent string) encoding.Encoding {
 	// First try HTML meta tag parsing
 	if enc := getEncodingFromHTML([]byte(htmlContent)); enc != nil {
 		return enc
 	}
-	
+
 	// Fallback to default
 	return unicode.UTF8
 }
 
-// GetEncodingByCharset returns encoding by charset name (public wrapper)
+// GetEncodingByCharset returns encoding by charset name (public wrapper).
 func GetEncodingByCharset(charset string) encoding.Encoding {
 	return getEncodingByName(charset)
 }
 
-// NormalizeHTML performs basic HTML normalization
+// NormalizeHTML performs basic HTML normalization.
 func NormalizeHTML(html string) string {
 	// Convert line endings
 	html = strings.ReplaceAll(html, "\r\n", "\n")

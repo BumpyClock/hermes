@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestExcerptExtractor_MetaTagExtraction tests excerpt extraction from meta tags
+// TestExcerptExtractor_MetaTagExtraction tests excerpt extraction from meta tags.
 func TestExcerptExtractor_MetaTagExtraction(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -64,14 +64,14 @@ func TestExcerptExtractor_MetaTagExtraction(t *testing.T) {
 
 			extractor := NewGenericExcerptExtractor()
 			metaCache := buildMetaCache(doc)
-			
+
 			result := extractor.Extract(doc, "", metaCache)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-// TestExcerptExtractor_ContentFallback tests fallback to content extraction
+// TestExcerptExtractor_ContentFallback tests fallback to content extraction.
 func TestExcerptExtractor_ContentFallback(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -118,14 +118,14 @@ func TestExcerptExtractor_ContentFallback(t *testing.T) {
 
 			extractor := NewGenericExcerptExtractor()
 			metaCache := buildMetaCache(doc)
-			
+
 			result := extractor.Extract(doc, tt.content, metaCache)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-// TestEllipsize tests the ellipsize functionality
+// TestEllipsize tests the ellipsize functionality.
 func TestEllipsize(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -173,7 +173,7 @@ func TestEllipsize(t *testing.T) {
 	}
 }
 
-// TestClean tests the clean function for excerpt content
+// TestClean tests the clean function for excerpt content.
 func TestClean(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -215,14 +215,13 @@ func TestClean(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			doc, _ := goquery.NewDocumentFromReader(strings.NewReader("<html></html>"))
-			result := clean(tt.content, doc, tt.maxLength)
+			result := clean(tt.content, tt.maxLength)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-// TestExcerptExtractor_JavaScriptCompatibility tests compatibility with JavaScript version
+// TestExcerptExtractor_JavaScriptCompatibility tests compatibility with JavaScript version.
 func TestExcerptExtractor_JavaScriptCompatibility(t *testing.T) {
 	// Test cases that match the JavaScript behavior exactly
 	tests := []struct {
@@ -243,15 +242,15 @@ func TestExcerptExtractor_JavaScriptCompatibility(t *testing.T) {
 			expected:    "OpenGraph description",
 		},
 		{
-			name: "JavaScript compatibility - content fallback behavior",
-			html: `<html><head></head><body></body></html>`,
+			name:        "JavaScript compatibility - content fallback behavior",
+			html:        `<html><head></head><body></body></html>`,
 			content:     "This is the extracted article content that should be used as fallback when no meta description is available.",
 			description: "Should fall back to content when no meta tags present",
 			expected:    "This is the extracted article content that should be used as fallback when no meta description is available.",
 		},
 		{
-			name: "JavaScript compatibility - content slicing behavior",
-			html: `<html><head></head><body></body></html>`,
+			name:        "JavaScript compatibility - content slicing behavior",
+			html:        `<html><head></head><body></body></html>`,
 			content:     strings.Repeat("A very long article with lots of content. ", 50), // Creates ~2000+ char content
 			description: "Should slice content to maxLength*5 before processing (matches JS behavior)",
 			expected:    ellipsize(strings.Repeat("A very long article with lots of content. ", 50)[:200*5], 200),
@@ -265,12 +264,12 @@ func TestExcerptExtractor_JavaScriptCompatibility(t *testing.T) {
 
 			extractor := NewGenericExcerptExtractor()
 			metaCache := buildMetaCache(doc)
-			
+
 			result := extractor.Extract(doc, tt.content, metaCache)
-			
+
 			// Verify result matches expected
 			assert.Equal(t, tt.expected, result, tt.description)
-			
+
 			// Additional verification for JavaScript compatibility
 			if strings.Contains(result, "&hellip;") {
 				// JavaScript ellipsize adds ellipsis on top of maxLength, but trims trailing spaces
@@ -282,7 +281,7 @@ func TestExcerptExtractor_JavaScriptCompatibility(t *testing.T) {
 	}
 }
 
-// Helper function to build meta cache (simulating what would be done in the actual parser)
+// Helper function to build meta cache (simulating what would be done in the actual parser).
 func buildMetaCache(doc *goquery.Document) []string {
 	var metaNames []string
 	doc.Find("meta[name]").Each(func(i int, s *goquery.Selection) {

@@ -11,14 +11,14 @@ import (
 	"sync"
 )
 
-// Package-level cache for extractors and domain mappings
+// Package-level cache for extractors and domain mappings.
 var (
 	allExtractors     map[string]*CustomExtractor
 	domainToExtractor map[string]*CustomExtractor
 	extractorOnce     sync.Once
 )
 
-// initializeExtractors builds the extractor maps once and caches them
+// initializeExtractors builds the extractor maps once and caches them.
 func initializeExtractors() {
 	extractorOnce.Do(func() {
 		allExtractors = buildAllExtractors()
@@ -26,12 +26,12 @@ func initializeExtractors() {
 	})
 }
 
-// buildAllExtractors creates the complete extractor map
+// buildAllExtractors creates the complete extractor map.
 func buildAllExtractors() map[string]*CustomExtractor {
 	extractors := map[string]*CustomExtractor{
 		// Content Platform Extractors - PHASE 7 COMPLETE ✅ (15 extractors)
 		"MediumExtractor":         GetMediumExtractor(),
-		"BlogspotExtractor":       GetBlogspotExtractor(),
+		"BloggerExtractor":        GetBloggerExtractor(),
 		"BuzzFeedExtractor":       GetBuzzFeedExtractor(),
 		"HuffingtonPostExtractor": GetHuffingtonPostExtractor(),
 		"VoxExtractor":            GetVoxExtractor(),
@@ -45,26 +45,24 @@ func buildAllExtractors() map[string]*CustomExtractor {
 		"PastebinExtractor":       GetPastebinExtractor(),
 		"GeniusExtractor":         GetGeniusExtractor(),
 		"ThoughtCatalogExtractor": GetThoughtCatalogExtractor(),
-		
-		// Legacy blogger extractor (maintained for compatibility)
-		"BloggerExtractor": GetBloggerExtractor(),
-		
+
 		// High-priority news sites (14 extractors) - PHASE 7 COMPLETE ✅
-		"NYTimesExtractor":           GetNYTimesExtractor(),
-		"WashingtonPostExtractor":    GetWashingtonPostExtractor(),
-		"CNNExtractor":               GetCNNExtractor(),
-		"TheGuardianExtractor":       GetTheGuardianExtractor(),
-		"BloombergExtractor":         GetBloombergExtractor(),
-		"ReutersExtractor":           GetReutersExtractor(),
-		"PoliticoExtractor":          GetPoliticoExtractor(),
-		"NPRExtractor":               GetNPRExtractor(),
-		"ABCNewsExtractor":           GetABCNewsExtractor(),
-		"NBCNewsExtractor":           GetNBCNewsExtractor(),
-		"LATimesExtractor":           GetLATimesExtractor(),
-		"ChicagoTribuneExtractor":    GetChicagoTribuneExtractor(),
-		"NYDailyNewsExtractor":       GetNYDailyNewsExtractor(),
-		"MiamiHeraldExtractor":       GetMiamiHeraldExtractor(),
-		
+		"NYTimesExtractor":        GetNYTimesExtractor(),
+		"WashingtonPostExtractor": GetWashingtonPostExtractor(),
+		"CNNExtractor":            GetCNNExtractor(),
+		"TheGuardianExtractor":    GetTheGuardianExtractor(),
+		"BloombergExtractor":      GetBloombergExtractor(),
+		"ReutersExtractor":        GetReutersExtractor(),
+		"PoliticoExtractor":       GetPoliticoExtractor(),
+		"NPRExtractor":            GetNPRExtractor(),
+		"ABCNewsExtractor":        GetABCNewsExtractor(),
+		"BBCExtractor":            GetBBCExtractor(),
+		"NBCNewsExtractor":        GetNBCNewsExtractor(),
+		"LATimesExtractor":        GetLATimesExtractor(),
+		"ChicagoTribuneExtractor": GetChicagoTribuneExtractor(),
+		"NYDailyNewsExtractor":    GetNYDailyNewsExtractor(),
+		"MiamiHeraldExtractor":    GetMiamiHeraldExtractor(),
+
 		// Entertainment & Lifestyle Extractors - COMPLETED ✅ (15 extractors)
 		"NewYorkerExtractor":    GetNewYorkerExtractor(),
 		"TheAtlanticExtractor":  GetTheAtlanticExtractor(),
@@ -81,103 +79,33 @@ func buildAllExtractors() map[string]*CustomExtractor {
 		// "Refinery29Extractor":   GetRefinery29Extractor(), // disabled temporarily
 		"PopSugarExtractor":     GetPopSugarExtractor(),
 		"LittleThingsExtractor": GetLittleThingsExtractor(),
-		
+
 		// Sports Site Extractors - PHASE 7 COMPLETE ✅ (5 extractors)
-		"SIExtractor":           GetWwwSiComExtractor(),
-		"CBSSportsExtractor":    GetWwwCbssportsComExtractor(),
-		"SBNationExtractor":     GetWwwSbnationComExtractor(),
-		"DeadspinExtractor":     GetDeadspinComExtractor(),
-		"247SportsExtractor":    GetTwofortysevensportsComExtractor(),
-		
-		// TODO: Add remaining 125+ custom extractors here following this pattern:
-		// "BBCExtractor": GetBBCExtractor(),
-		// "WSJExtractor": GetWSJExtractor(),
-		// "ForbesExtractor": GetForbesExtractor(),
-		// "BusinessInsiderExtractor": GetBusinessInsiderExtractor(),
-		// "TechCrunchExtractor": GetTechCrunchExtractor(),
-		// "TheAtlanticExtractor": GetTheAtlanticExtractor(),
-		// "WiredExtractor": GetWiredExtractor(),
-		// "VoxExtractor": GetVoxExtractor(),
-		// "BuzzFeedExtractor": GetBuzzFeedExtractor(),
-		// "VICEExtractor": GetVICEExtractor(),
-		// "HuffingtonPostExtractor": GetHuffingtonPostExtractor(),
-		// 
-		// Remaining News Sites (16 extractors)
-		// "CBSNewsExtractor": GetCBSNewsExtractor(),
-		// "FoxNewsExtractor": GetFoxNewsExtractor(),
-		// "USATodayExtractor": GetUSATodayExtractor(),
-		// "NYPostExtractor": GetNYPostExtractor(),
-		// "BostonExtractor": GetBostonExtractor(),
-		// And 11 more news extractors...
-		//
-		// Tech Sites (25 extractors)
-		// "ArsTechnicaExtractor": GetArsTechnicaExtractor(),
-		// "TheVergeExtractor": GetTheVergeExtractor(),
-		// "EngadgetExtractor": GetEngadgetExtractor(),
-		// "CNETExtractor": GetCNETExtractor(),
-		// "GizmodoExtractor": GetGizmodoExtractor(),
-		// And 20 more tech extractors...
-		//
-		// Entertainment & Lifestyle (15 extractors) - COMPLETED ✅
-		// "NewYorkerExtractor": GetNewYorkerExtractor(),        [COMPLETED]
-		// "TheAtlanticExtractor": GetTheAtlanticExtractor(),    [COMPLETED]
-		// "NYMagExtractor": GetNYMagExtractor(),                [COMPLETED]
-		// "TMZExtractor": GetTMZExtractor(),                    [COMPLETED]
-		// "EOnlineExtractor": GetEOnlineExtractor(),            [COMPLETED]
-		// "PeopleExtractor": GetPeopleExtractor(),              [COMPLETED]
-		// "USMagazineExtractor": GetUSMagazineExtractor(),      [COMPLETED]
-		// "DeadlineExtractor": GetDeadlineExtractor(),          [COMPLETED]
-		// "PitchforkExtractor": GetPitchforkExtractor(),        [COMPLETED]
-		// "RollingStoneExtractor": GetRollingStoneExtractor(),  [COMPLETED]
-		// "UproxxExtractor": GetUproxxExtractor(),              [COMPLETED]
-		// "BustleExtractor": GetBustleExtractor(),              [COMPLETED]
-		// "Refinery29Extractor": GetRefinery29Extractor(),     [COMPLETED]
-		// "PopSugarExtractor": GetPopSugarExtractor(),          [COMPLETED]
-		// "LittleThingsExtractor": GetLittleThingsExtractor(),  [COMPLETED]
-		//
-		// Sports (15 extractors)
-		// "ESPNExtractor": GetESPNExtractor(),
-		// "SIExtractor": GetSIExtractor(),
-		// "CBSSportsExtractor": GetCBSSportsExtractor(),
-		// "NBCSportsExtractor": GetNBCSportsExtractor(),
-		// "FOXSportsExtractor": GetFOXSportsExtractor(),
-		// And 10 more sports extractors...
-		//
-		// Business & Finance (15 extractors)
-		// "WSJExtractor": GetWSJExtractor(),
-		// "FTExtractor": GetFTExtractor(),
-		// "EconomistExtractor": GetEconomistExtractor(),
-		// "MarketWatchExtractor": GetMarketWatchExtractor(),
-		// "CNBCExtractor": GetCNBCExtractor(),
-		// And 10 more business extractors...
-		//
-		// Science & Education Extractors - PHASE SCIENCE COMPLETE ✅ (15 extractors)
-		"WwwNationalgeographicComExtractor": GetWwwNationalgeographicComExtractor(),
+		"SIExtractor":        GetWwwSiComExtractor(),
+		"CBSSportsExtractor": GetWwwCbssportsComExtractor(),
+		"SBNationExtractor":  GetWwwSbnationComExtractor(),
+		"DeadspinExtractor":  GetDeadspinComExtractor(),
+		"247SportsExtractor": GetTwofortysevensportsComExtractor(),
+
+		// Science & Education Extractors
+		"WwwNationalgeographicComExtractor":  GetWwwNationalgeographicComExtractor(),
 		"NewsNationalgeographicComExtractor": GetNewsNationalgeographicComExtractor(),
-		"BiorxivOrgExtractor":               GetBiorxivOrgExtractor(),
-		"ClinicaltrialsGovExtractor":        GetClinicaltrialsGovExtractor(),
-		"ScienceflyComExtractor":            GetScienceflyComExtractor(),
-		"WwwIpaGoJpExtractor":               GetWwwIpaGoJpExtractor(),
-		"WwwJnsaOrgExtractor":               GetWwwJnsaOrgExtractor(),
-		"ScanNetsecurityNeJpExtractor":      GetScanNetsecurityNeJpExtractor(),
-		"SectIijAdJpExtractor":              GetSectIijAdJpExtractor(),
-		"TechlogIijAdJpExtractor":           GetTechlogIijAdJpExtractor(),
-		"JvndbJvnJpExtractor":               GetJvndbJvnJpExtractor(),
-		"PhpspotOrgExtractor":               GetPhpspotOrgExtractor(),
-		"WwwFortinetComExtractor":           GetWwwFortinetComExtractor(),
-		"ArstechnicaComExtractor":           GetArstechnicaComExtractor(), // Already implemented tech site with scientific content
-		//
-		// Additional Lifestyle & Culture (5+ extractors still needed)  
-		// "VanityFairExtractor": GetVanityFairExtractor(),     [TODO]
-		// "GQExtractor": GetGQExtractor(),                     [TODO]
-		// "EsquireExtractor": GetEsquireExtractor(),           [TODO]
-		// "MensHealthExtractor": GetMensHealthExtractor(),     [TODO]
-		// "WomensHealthExtractor": GetWomensHealthExtractor(), [TODO]
-		// And more lifestyle extractors to be implemented...
-		//
-		// International Extractors - PHASE INTERNATIONAL COMPLETE ✅ (15+ extractors)
+		"BiorxivOrgExtractor":                GetBiorxivOrgExtractor(),
+		"ClinicaltrialsGovExtractor":         GetClinicaltrialsGovExtractor(),
+		"ScienceflyComExtractor":             GetScienceflyComExtractor(),
+		"WwwIpaGoJpExtractor":                GetWwwIpaGoJpExtractor(),
+		"WwwJnsaOrgExtractor":                GetWwwJnsaOrgExtractor(),
+		"ScanNetsecurityNeJpExtractor":       GetScanNetsecurityNeJpExtractor(),
+		"SectIijAdJpExtractor":               GetSectIijAdJpExtractor(),
+		"TechlogIijAdJpExtractor":            GetTechlogIijAdJpExtractor(),
+		"JvndbJvnJpExtractor":                GetJvndbJvnJpExtractor(),
+		"PhpspotOrgExtractor":                GetPhpspotOrgExtractor(),
+		"WwwFortinetComExtractor":            GetWwwFortinetComExtractor(),
+		"ArstechnicaComExtractor":            GetArstechnicaComExtractor(),
+
+		// International Extractors
 		"LemondeFrExtractor":            GetWwwLemondeFrExtractor(),
-		"SpektrumDeExtractor":           GetWwwSpektrumDeExtractor(),  
+		"SpektrumDeExtractor":           GetWwwSpektrumDeExtractor(),
 		"AbendblattDeExtractor":         GetWwwAbendblattDeExtractor(),
 		"EpaperZeitDeExtractor":         GetEpaperZeitDeExtractor(),
 		"GrueneDeExtractor":             GetWwwGrueneDeExtractor(),
@@ -190,81 +118,83 @@ func buildAllExtractors() map[string]*CustomExtractor {
 		"ItmediaCoJpExtractor":          GetWwwItmediaCoJpExtractor(),
 		"NewsMynaviJpExtractor":         GetNewsMynaviJpExtractor(),
 		"Publickey1JpExtractor":         GetWwwPublickey1JpExtractor(),
-		
+
 		// Additional Japanese Site Extractors - JAPANESE PHASE COMPLETE ✅ (15+ extractors)
-		"BookwalkerJpExtractor":         GetBookwalkerJpExtractor(),
-		"BuzzapJpExtractor":             GetBuzzapJpExtractor(),
-		"GetnewsJpExtractor":            GetGetnewsJpExtractor(),
-		"LifehackerJpExtractor":         GetWwwLifehackerJpExtractor(),
-		"WeeklyAsciiJpExtractor":        GetWeeklyAsciiJpExtractor(),
-		"RbbtodayComExtractor":          GetWwwRbbtodayComExtractor(),
-		"MoongiftJpExtractor":           GetWwwMoongiftJpExtractor(),
-		"OssnewsJpExtractor":            GetWwwOssnewsJpExtractor(),
-		"TakagihiromitsuJpExtractor":    GetTakagihiromitsuJpExtractor(),
-		
-		"MaTtiasBeExtractor":            GetMaTtiasBeExtractor(),
-		
+		"BookwalkerJpExtractor":      GetBookwalkerJpExtractor(),
+		"BuzzapJpExtractor":          GetBuzzapJpExtractor(),
+		"GetnewsJpExtractor":         GetGetnewsJpExtractor(),
+		"LifehackerJpExtractor":      GetWwwLifehackerJpExtractor(),
+		"WeeklyAsciiJpExtractor":     GetWeeklyAsciiJpExtractor(),
+		"RbbtodayComExtractor":       GetWwwRbbtodayComExtractor(),
+		"MoongiftJpExtractor":        GetWwwMoongiftJpExtractor(),
+		"OssnewsJpExtractor":         GetWwwOssnewsJpExtractor(),
+		"TakagihiromitsuJpExtractor": GetTakagihiromitsuJpExtractor(),
+
+		"MaTtiasBeExtractor": GetMaTtiasBeExtractor(),
+
 		// Major Portal Extractors - PHASE PORTALS COMPLETE ✅ (4 extractors)
-		"AOLExtractor":                  GetWwwAolComExtractor(),
-		"YahooExtractor":                GetWwwYahooComExtractor(),
-		"MSNExtractor":                  GetWwwMsnComExtractor(),
-		"SlateExtractor":                GetWwwSlateComExtractor(),
-		
+		"AOLExtractor":   GetWwwAolComExtractor(),
+		"YahooExtractor": GetWwwYahooComExtractor(),
+		"MSNExtractor":   GetWwwMsnComExtractor(),
+		"SlateExtractor": GetWwwSlateComExtractor(),
+
 		// Tech Sites Extractors - TECH PHASE COMPLETE ✅ (21 extractors)
-		"WwwThevergeComExtractor":       GetWwwThevergeComExtractor(),
-		"WwwWiredComExtractor":          GetWwwWiredComExtractor(),
+		"WwwThevergeComExtractor":         GetWwwThevergeComExtractor(),
+		"WwwWiredComExtractor":            GetWwwWiredComExtractor(),
 		"WwwRockpapershotgunComExtractor": GetWwwRockpapershotgunComExtractor(),
-		"PolygonExtractor":              GetPolygonExtractor(),
-		"WwwEngadgetComExtractor":       GetWwwEngadgetComExtractor(),
-		"WwwCnetComExtractor":           GetWwwCnetComExtractor(),
-		"WwwPhoronixComExtractor":       GetWwwPhoronixComExtractor(),
-		"WwwMacrumorsComExtractor":      GetWwwMacrumorsComExtractor(),
-		"WwwAndroidcentralComExtractor": GetWwwAndroidcentralComExtractor(),
-		"MashableComExtractor":          GetMashableComExtractor(),
-		"WwwGizmodoJpExtractor":         GetWwwGizmodoJpExtractor(),
-		"JapanCnetComExtractor":         GetJapanCnetComExtractor(),
-		"WwwInfoqComExtractor":          GetWwwInfoqComExtractor(),
-		"WiredJpExtractor":              GetWiredJpExtractor(),
-		
+		"PolygonExtractor":                GetPolygonExtractor(),
+		"WwwEngadgetComExtractor":         GetWwwEngadgetComExtractor(),
+		"WwwCnetComExtractor":             GetWwwCnetComExtractor(),
+		"WwwPhoronixComExtractor":         GetWwwPhoronixComExtractor(),
+		"WwwMacrumorsComExtractor":        GetWwwMacrumorsComExtractor(),
+		"WwwAndroidcentralComExtractor":   GetWwwAndroidcentralComExtractor(),
+		"MashableComExtractor":            GetMashableComExtractor(),
+		"WwwGizmodoJpExtractor":           GetWwwGizmodoJpExtractor(),
+		"JapanCnetComExtractor":           GetJapanCnetComExtractor(),
+		"WwwInfoqComExtractor":            GetWwwInfoqComExtractor(),
+		"WiredJpExtractor":                GetWiredJpExtractor(),
+		"TechCrunchExtractor":             GetTechCrunchExtractor(),
+		"AppleNewsroomExtractor":          GetAppleNewsroomExtractor(),
+
 		// Regional/Local News - PHASE REGIONAL COMPLETE ✅ (4 extractors)
-		"AlComExtractor":                GetWwwAlComExtractor(),
-		"AmericanowExtractor":           GetWwwAmericanowComExtractor(),
-		"GothamistExtractor":            GetGothamistComExtractor(),
-		"InquisitrExtractor":            GetWwwInquisitrComExtractor(),
-		"RawStoryExtractor":             GetWwwRawstoryComExtractor(),
-		
-		// Lifestyle & Entertainment - PHASE LIFESTYLE COMPLETE ✅ (3 extractors)  
-		"ApartmentTherapyExtractor":     GetWwwApartmenttherapyComExtractor(),
-		"BroadwayWorldExtractor":        GetWwwBroadwayworldComExtractor(),
-		"DMagazineExtractor":            GetWwwDmagazineComExtractor(),
-		
+		"AlComExtractor":      GetWwwAlComExtractor(),
+		"AmericanowExtractor": GetWwwAmericanowComExtractor(),
+		"GothamistExtractor":  GetGothamistComExtractor(),
+		"InquisitrExtractor":  GetWwwInquisitrComExtractor(),
+		"RawStoryExtractor":   GetWwwRawstoryComExtractor(),
+
+		// Lifestyle & Entertainment - PHASE LIFESTYLE COMPLETE ✅ (3 extractors)
+		"ApartmentTherapyExtractor": GetWwwApartmenttherapyComExtractor(),
+		"BroadwayWorldExtractor":    GetWwwBroadwayworldComExtractor(),
+		"DMagazineExtractor":        GetWwwDmagazineComExtractor(),
+
 		// International Sites - PHASE INTERNATIONAL EXPANDING ✅ (1 new extractor)
-		"ElecomCoJpExtractor":           GetWwwElecomCoJpExtractor(),
+		"ElecomCoJpExtractor": GetWwwElecomCoJpExtractor(),
 		// Note: Many international extractors already implemented in previous phases
-		
+
 		// Blog & Commentary Sites - NEW ✅ (1 extractor)
-		"DaringFireballExtractor":       GetDaringFireballExtractor(),
-		
+		"DaringFireballExtractor": GetDaringFireballExtractor(),
+
 		// Specialty/Business Sites - PHASE SPECIALTY COMPLETE ✅ (3 extractors)
-		"FastCompanyExtractor":          GetWwwFastcompanyComExtractor(),
-		"MentalFlossExtractor":          GetWwwMentalflossComExtractor(),
-		"FoolExtractor":                 GetWwwFoolComExtractor(),
-		
+		"FastCompanyExtractor": GetWwwFastcompanyComExtractor(),
+		"MentalFlossExtractor": GetWwwMentalflossComExtractor(),
+		"FoolExtractor":        GetWwwFoolComExtractor(),
+
 		// Media & Broadcast News - PHASE BROADCAST COMPLETE ✅ (5 extractors)
-		"TodayExtractor":                GetWwwTodayComExtractor(),
-		"OpposingViewsExtractor":        GetWwwOpposingviewsComExtractor(),
-		"LadBibleExtractor":             GetWwwLadbibleComExtractor(),
-		"WesternJournalismExtractor":    GetWwwWesternjournalismComExtractor(),
-		"NDTVExtractor":                 GetWwwNdtvComExtractor(),
+		"TodayExtractor":             GetWwwTodayComExtractor(),
+		"OpposingViewsExtractor":     GetWwwOpposingviewsComExtractor(),
+		"LadBibleExtractor":          GetWwwLadbibleComExtractor(),
+		"WesternJournalismExtractor": GetWwwWesternjournalismComExtractor(),
+		"NDTVExtractor":              GetWwwNdtvComExtractor(),
 	}
-	
+
 	return extractors
 }
 
 // buildDomainMap creates a domain-to-extractor lookup map for O(1) access
 // Normalizes domains to lowercase and detects conflicts during initialization
 // Iterates extractors in sorted order to ensure deterministic conflict resolution (first-seen wins)
-// Guards against nil extractors by skipping them
+// Guards against nil extractors by skipping them.
 func buildDomainMap(extractors map[string]*CustomExtractor) map[string]*CustomExtractor {
 	domainMap := make(map[string]*CustomExtractor)
 	// ownerNames maps domain to the extractor name that owns it (for O(1) conflict lookups)
@@ -329,7 +259,7 @@ func buildDomainMap(extractors map[string]*CustomExtractor) map[string]*CustomEx
 }
 
 // GetAllCustomExtractors returns all registered custom extractors
-// Returns a shallow copy to prevent external mutation of the internal cache
+// Returns a shallow copy to prevent external mutation of the internal cache.
 func GetAllCustomExtractors() map[string]*CustomExtractor {
 	initializeExtractors()
 	// Return a shallow copy to prevent external mutation
@@ -340,21 +270,21 @@ func GetAllCustomExtractors() map[string]*CustomExtractor {
 	return copy
 }
 
-// GetAllCustomExtractorsList returns a list of all custom extractor names
+// GetAllCustomExtractorsList returns a list of all custom extractor names.
 func GetAllCustomExtractorsList() []string {
 	extractors := GetAllCustomExtractors()
 	names := make([]string, 0, len(extractors))
-	
+
 	for name := range extractors {
 		names = append(names, name)
 	}
-	
+
 	return names
 }
 
 // GetCustomExtractorByDomain returns a custom extractor for a specific domain
 // Uses O(1) cached lookup map for optimal performance
-// Domain matching is case-insensitive
+// Domain matching is case-insensitive.
 func GetCustomExtractorByDomain(domain string) (*CustomExtractor, bool) {
 	initializeExtractors()
 	// Normalize domain to lowercase for case-insensitive matching
@@ -363,20 +293,20 @@ func GetCustomExtractorByDomain(domain string) (*CustomExtractor, bool) {
 	return extractor, found
 }
 
-// CountCustomExtractors returns the total number of custom extractors
+// CountCustomExtractors returns the total number of custom extractors.
 func CountCustomExtractors() int {
 	return len(GetAllCustomExtractors())
 }
 
-// GetCustomExtractorDomains returns all domains covered by custom extractors
+// GetCustomExtractorDomains returns all domains covered by custom extractors.
 func GetCustomExtractorDomains() []string {
 	extractors := GetAllCustomExtractors()
 	domains := make([]string, 0)
-	
+
 	for _, extractor := range extractors {
 		domains = append(domains, extractor.Domain)
 		domains = append(domains, extractor.SupportedDomains...)
 	}
-	
+
 	return domains
 }

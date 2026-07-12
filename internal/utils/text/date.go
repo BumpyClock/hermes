@@ -9,7 +9,13 @@ import (
 	"github.com/markusmobius/go-dateparser"
 )
 
-// ParseDate attempts to parse a date string using various methods
+var (
+	htmlTagDateRE      = regexp.MustCompile(`<[^>]*>`)
+	spaceDateRE        = regexp.MustCompile(`\s+`)
+	nonPrintableDateRE = regexp.MustCompile(`[^\x20-\x7E]`)
+)
+
+// ParseDate attempts to parse a date string using various methods.
 func ParseDate(dateStr string) (*time.Time, error) {
 	if dateStr == "" {
 		return nil, fmt.Errorf("empty date string")
@@ -67,7 +73,7 @@ func ParseDate(dateStr string) (*time.Time, error) {
 	return nil, fmt.Errorf("unable to parse date: %s", dateStr)
 }
 
-// cleanDateString performs basic cleaning on date strings
+// cleanDateString performs basic cleaning on date strings.
 func cleanDateString(dateStr string) string {
 	// Trim whitespace
 	dateStr = strings.TrimSpace(dateStr)
@@ -81,25 +87,22 @@ func cleanDateString(dateStr string) string {
 	}
 
 	// Remove HTML tags if any
-	htmlTagRegex := regexp.MustCompile(`<[^>]*>`)
-	dateStr = htmlTagRegex.ReplaceAllString(dateStr, "")
+	dateStr = htmlTagDateRE.ReplaceAllString(dateStr, "")
 
 	// Remove extra whitespace
-	spaceRegex := regexp.MustCompile(`\s+`)
-	dateStr = spaceRegex.ReplaceAllString(dateStr, " ")
+	dateStr = spaceDateRE.ReplaceAllString(dateStr, " ")
 
 	// Remove non-printable characters
-	nonPrintableRegex := regexp.MustCompile(`[^\x20-\x7E]`)
-	dateStr = nonPrintableRegex.ReplaceAllString(dateStr, "")
+	dateStr = nonPrintableDateRE.ReplaceAllString(dateStr, "")
 
 	return strings.TrimSpace(dateStr)
 }
 
-// ParseDateFromMeta parses dates from meta tag content
+// ParseDateFromMeta parses dates from meta tag content.
 func ParseDateFromMeta(content string) (*time.Time, error) {
 	// Meta tags often have ISO format
 	content = strings.TrimSpace(content)
-	
+
 	// Common meta tag date formats
 	metaFormats := []string{
 		time.RFC3339,
@@ -119,14 +122,14 @@ func ParseDateFromMeta(content string) (*time.Time, error) {
 	return ParseDate(content)
 }
 
-// IsValidDate checks if a parsed date is reasonable
+// IsValidDate checks if a parsed date is reasonable.
 func IsValidDate(t *time.Time) bool {
 	if t == nil {
 		return false
 	}
 
 	now := time.Now()
-	
+
 	// Date should be after 1990 and not in the future (with some tolerance)
 	minDate := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
 	maxDate := now.Add(24 * time.Hour) // Allow 1 day in future
@@ -134,7 +137,7 @@ func IsValidDate(t *time.Time) bool {
 	return t.After(minDate) && t.Before(maxDate)
 }
 
-// FormatDateForJSON formats date for JSON output (compatible with JS version)
+// FormatDateForJSON formats date for JSON output (compatible with JS version).
 func FormatDateForJSON(t *time.Time) string {
 	if t == nil {
 		return ""

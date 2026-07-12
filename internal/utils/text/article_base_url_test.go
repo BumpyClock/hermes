@@ -7,11 +7,11 @@ import (
 	"testing"
 )
 
-// TestIsGoodSegment tests the IsGoodSegment function with various inputs
+// TestIsGoodSegment tests the IsGoodSegment function with various inputs.
 func TestIsGoodSegment(t *testing.T) {
 	testCases := []struct {
-		segment                 string
-		index                   int
+		segment                string
+		index                  int
 		firstSegmentHasLetters bool
 		expected               bool
 		desc                   string
@@ -59,7 +59,7 @@ func TestIsGoodSegment(t *testing.T) {
 	}
 }
 
-// TestArticleBaseURL tests the main ArticleBaseURL function
+// TestArticleBaseURL tests the main ArticleBaseURL function.
 func TestArticleBaseURL(t *testing.T) {
 	testCases := []struct {
 		inputURL string
@@ -134,7 +134,7 @@ func TestArticleBaseURL(t *testing.T) {
 	}
 }
 
-// TestArticleBaseURLWithParsedURL tests ArticleBaseURL with pre-parsed URLs
+// TestArticleBaseURLWithParsedURL tests ArticleBaseURL with pre-parsed URLs.
 func TestArticleBaseURLWithParsedURL(t *testing.T) {
 	testURL := "http://example.com/foo/bar/page=10"
 	parsedURL, err := url.Parse(testURL)
@@ -150,7 +150,7 @@ func TestArticleBaseURLWithParsedURL(t *testing.T) {
 	}
 }
 
-// TestArticleBaseURLEdgeCases tests additional edge cases and malformed URLs
+// TestArticleBaseURLEdgeCases tests additional edge cases and malformed URLs.
 func TestArticleBaseURLEdgeCases(t *testing.T) {
 	testCases := []struct {
 		inputURL string
@@ -173,7 +173,7 @@ func TestArticleBaseURLEdgeCases(t *testing.T) {
 			"http://example.com/article",
 			"pagination parameter gets removed from parent dir reference",
 		},
-		
+
 		// Complex pagination patterns
 		{
 			"http://example.com/news/category/page/5",
@@ -190,7 +190,7 @@ func TestArticleBaseURLEdgeCases(t *testing.T) {
 			"http://example.com/forum/thread",
 			"full paging parameter gets removed completely",
 		},
-		
+
 		// File extensions and special cases
 		{
 			"http://example.com/article.php?page=2",
@@ -207,7 +207,7 @@ func TestArticleBaseURLEdgeCases(t *testing.T) {
 			"http://example.com/script.js.bak",
 			"non-alpha extension should be kept",
 		},
-		
+
 		// Multiple segments and complex paths
 		{
 			"http://example.com/a/b/c/d/e/f/g",
@@ -219,7 +219,7 @@ func TestArticleBaseURLEdgeCases(t *testing.T) {
 			"http://example.com/1/2/3/4/5/article",
 			"numeric segments after second should be kept",
 		},
-		
+
 		// Protocol variations
 		{
 			"https://example.com/article/page=1",
@@ -244,7 +244,7 @@ func TestArticleBaseURLEdgeCases(t *testing.T) {
 	}
 }
 
-// TestArticleBaseURLJavaScriptCompatibility tests exact JavaScript compatibility
+// TestArticleBaseURLJavaScriptCompatibility tests exact JavaScript compatibility.
 func TestArticleBaseURLJavaScriptCompatibility(t *testing.T) {
 	// These are the exact test cases from the JavaScript test file
 	testCases := []struct {

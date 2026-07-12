@@ -8,16 +8,16 @@ import (
 )
 
 // WwwThevergeComExtractor provides the custom extraction rules for www.theverge.com
-// JavaScript equivalent: export const WwwThevergeComExtractor = { ... }
+// JavaScript equivalent: export const WwwThevergeComExtractor = { ... }.
 var WwwThevergeComExtractor = &CustomExtractor{
 	Domain: "www.theverge.com",
-	
+
 	// Removed polygon.com support - dedicated extractor exists
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{"h1"},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"author\"]", "value"},
@@ -25,25 +25,25 @@ var WwwThevergeComExtractor = &CustomExtractor{
 			[]string{"meta[name=\"cse-authors\"]", "value"},
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"article:published_time\"]", "value"},
 		},
 	},
-	
+
 	Dek: &FieldExtractor{
 		Selectors: []interface{}{
 			".p-dek",
 		},
 	},
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
@@ -61,7 +61,7 @@ var WwwThevergeComExtractor = &CustomExtractor{
 				"div.c-entry-content",
 			},
 		},
-		
+
 		// Transform functions for The Verge-specific content
 		Transforms: map[string]TransformFunction{
 			// Transform lazy-loaded images
@@ -80,23 +80,23 @@ var WwwThevergeComExtractor = &CustomExtractor{
 				},
 			},
 		},
-		
+
 		// Clean selectors - remove unwanted elements
 		Clean: []string{
 			".aside",
 			"img.c-dynamic-image", // images come from noscript transform
 			// Remove excessive image galleries to reduce character count
 			".duet--article--image-gallery-two-up .kqz8fh5 .kqz8fh8 .kqz8fh7",
-			".duet--article--image-gallery-two-up .kqz8fha .kqz8fh9", 
+			".duet--article--image-gallery-two-up .kqz8fha .kqz8fh9",
 			"div[class*='image-gallery'] img[srcset]", // Remove srcset attributes
-			".duet--media--content-warning", // Remove content warnings
-			"._1etxtj1", // Remove image gallery navigation
+			".duet--media--content-warning",           // Remove content warnings
+			"._1etxtj1",                               // Remove image gallery navigation
 			// Remove topic follow sections and related content
 			".c-related-list",
-			".c-entry-group-labels", 
+			".c-entry-group-labels",
 			".c-follow-button",
 			".tly2fw0", // Follow topics section
-			"button", // Interactive buttons
+			"button",   // Interactive buttons
 			// Remove navigation elements
 			".c-image-gallery__nav",
 			"[class*='follow']", // Follow buttons/sections
@@ -104,7 +104,7 @@ var WwwThevergeComExtractor = &CustomExtractor{
 	},
 }
 
-// GetWwwThevergeComExtractor returns The Verge custom extractor
+// GetWwwThevergeComExtractor returns The Verge custom extractor.
 func GetWwwThevergeComExtractor() *CustomExtractor {
 	return WwwThevergeComExtractor
 }

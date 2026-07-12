@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestContentCleanerIntegration tests the content cleaner in isolation and with the generic extractor
+// TestContentCleanerIntegration tests the content cleaner in isolation and with the generic extractor.
 func TestContentCleanerIntegration(t *testing.T) {
 	t.Run("real world article cleaning", func(t *testing.T) {
 		// Complex HTML with many cleaning challenges
@@ -254,7 +254,7 @@ func TestContentCleanerIntegration(t *testing.T) {
 	})
 }
 
-// TestContentCleanerStandalone tests the content cleaner as a standalone utility
+// TestContentCleanerStandalone tests the content cleaner as a standalone utility.
 func TestContentCleanerStandalone(t *testing.T) {
 	t.Run("can be used independently", func(t *testing.T) {
 		// Test that the content cleaner can be used as a standalone utility
@@ -287,8 +287,8 @@ func TestContentCleanerStandalone(t *testing.T) {
 		// Verify cleaning worked
 		assert.Contains(t, cleanedHTML, "Content with")
 		assert.Contains(t, cleanedHTML, "https://example.com/test") // Absolute link
-		assert.NotContains(t, cleanedHTML, "analytics()")             // Script removed
-		assert.NotContains(t, cleanedHTML, "spacer.gif")             // Spacer removed
-		assert.NotContains(t, cleanedHTML, ".hidden")                // Style removed
+		assert.NotContains(t, cleanedHTML, "analytics()")           // Script removed
+		assert.NotContains(t, cleanedHTML, "spacer.gif")            // Spacer removed
+		assert.NotContains(t, cleanedHTML, ".hidden")               // Style removed
 	})
 }

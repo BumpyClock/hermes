@@ -8,41 +8,41 @@ import (
 )
 
 // WwwFortinetComExtractor provides the custom extraction rules for www.fortinet.com
-// JavaScript equivalent: export const WwwFortinetComExtractor = { ... }
+// JavaScript equivalent: export const WwwFortinetComExtractor = { ... }.
 var WwwFortinetComExtractor = &CustomExtractor{
 	Domain: "www.fortinet.com",
-	
+
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
 			"h1",
 		},
 	},
-	
+
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
 			".b15-blog-meta__author",
 		},
 	},
-	
+
 	DatePublished: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"article:published_time\"]", "value"},
 		},
 	},
-	
+
 	LeadImageURL: &FieldExtractor{
 		Selectors: []interface{}{
 			[]string{"meta[name=\"og:image\"]", "value"},
 		},
 	},
-	
+
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
 				"div.responsivegrid.aem-GridColumn.aem-GridColumn--default--12",
 			},
 		},
-		
+
 		// Transform functions for Fortinet-specific content
 		// JavaScript: transforms: { noscript: $node => { ... } }
 		Transforms: map[string]TransformFunction{
@@ -61,13 +61,10 @@ var WwwFortinetComExtractor = &CustomExtractor{
 				},
 			},
 		},
-		
-		// Clean selectors (none in JavaScript)
-		Clean: []string{},
 	},
 }
 
-// GetWwwFortinetComExtractor returns the Fortinet custom extractor
+// GetWwwFortinetComExtractor returns the Fortinet custom extractor.
 func GetWwwFortinetComExtractor() *CustomExtractor {
 	return WwwFortinetComExtractor
 }

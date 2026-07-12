@@ -172,6 +172,7 @@ func TestCleanLeadImageURLValidated_WhitespaceHandling(t *testing.T) {
 	}
 }
 
+//nolint:gosec // Test fixture intentionally includes URL credentials to verify URL preservation.
 func TestCleanLeadImageURLValidated_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -253,25 +254,25 @@ func TestCleanLeadImageURLValidatedString_BackwardCompatibility(t *testing.T) {
 	}
 }
 
-// stringPtrLeadImage returns a pointer to a string (helper for tests)
+// stringPtrLeadImage returns a pointer to a string (helper for tests).
 func stringPtrLeadImage(s string) *string {
 	return &s
 }
 
-// BenchmarkCleanLeadImageURLValidated benchmarks the URL cleaning function
+// BenchmarkCleanLeadImageURLValidated benchmarks the URL cleaning function.
 func BenchmarkCleanLeadImageURLValidated(b *testing.B) {
 	url := "https://example.com/path/to/image.jpg"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		CleanLeadImageURLValidated(url)
 	}
 }
 
-// BenchmarkCleanLeadImageURLValidated_Invalid benchmarks with invalid URLs
+// BenchmarkCleanLeadImageURLValidated_Invalid benchmarks with invalid URLs.
 func BenchmarkCleanLeadImageURLValidated_Invalid(b *testing.B) {
 	url := "not a valid url at all"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		CleanLeadImageURLValidated(url)

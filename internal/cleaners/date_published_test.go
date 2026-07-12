@@ -30,7 +30,7 @@ func TestCleanDatePublished(t *testing.T) {
 			input:    "1640995200000", // January 1, 2022 00:00:00 UTC
 			expected: stringPtr("2022-01-01T00:00:00.000Z"),
 		},
-		
+
 		// Second timestamps
 		{
 			name:     "second timestamp",
@@ -171,7 +171,7 @@ func TestCleanDatePublished(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CleanDatePublished(tt.input, tt.timezone, tt.format)
-			
+
 			if tt.expected == nil {
 				// For relative time tests, just check that we get some valid result or nil
 				if strings.Contains(tt.name, "ago") || strings.Contains(tt.name, "now") {
@@ -182,11 +182,11 @@ func TestCleanDatePublished(t *testing.T) {
 						assert.NoError(t, err, "Result should be valid ISO string: %s", *result)
 					}
 				} else {
-					assert.Nil(t, result, 
+					assert.Nil(t, result,
 						"CleanDatePublished(%q) should return nil, got %v", tt.input, result)
 				}
 			} else {
-				assert.NotNil(t, result, 
+				assert.NotNil(t, result,
 					"CleanDatePublished(%q) should not return nil", tt.input)
 				if result != nil {
 					assert.Equal(t, *tt.expected, *result,
@@ -212,7 +212,7 @@ func TestCleanDatePublishedJavaScriptCompatibility(t *testing.T) {
 			note:     "Millisecond timestamps should convert exactly",
 		},
 		{
-			name:     "second timestamp exact", 
+			name:     "second timestamp exact",
 			input:    "1609459200",
 			expected: stringPtr("2021-01-01T00:00:00.000Z"),
 			note:     "Second timestamps should convert exactly",
@@ -234,18 +234,18 @@ func TestCleanDatePublishedJavaScriptCompatibility(t *testing.T) {
 	for _, tt := range compatTests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CleanDatePublished(tt.input, "", "")
-			
+
 			if tt.expected == nil {
-				assert.Nil(t, result, 
-					"JavaScript compatibility test failed: %s\nCleanDatePublished(%q) should return nil", 
+				assert.Nil(t, result,
+					"JavaScript compatibility test failed: %s\nCleanDatePublished(%q) should return nil",
 					tt.note, tt.input)
 			} else {
 				assert.NotNil(t, result,
-					"JavaScript compatibility test failed: %s\nCleanDatePublished(%q) should not return nil", 
+					"JavaScript compatibility test failed: %s\nCleanDatePublished(%q) should not return nil",
 					tt.note, tt.input)
 				if result != nil {
 					assert.Equal(t, *tt.expected, *result,
-						"JavaScript compatibility test failed: %s\nCleanDatePublished(%q) = %q, expected %q", 
+						"JavaScript compatibility test failed: %s\nCleanDatePublished(%q) = %q, expected %q",
 						tt.note, tt.input, *result, *tt.expected)
 				}
 			}
@@ -268,7 +268,7 @@ func TestCleanDateString(t *testing.T) {
 		{
 			name:     "case insensitive",
 			input:    "PUBLISHED: 2021-01-01",
-			expected: "2021-01-01", 
+			expected: "2021-01-01",
 		},
 		{
 			name:     "meridian dots to m",
@@ -297,7 +297,7 @@ func TestCleanDateString(t *testing.T) {
 }
 
 func TestCreateDate(t *testing.T) {
-	// Test the createDate helper function  
+	// Test the createDate helper function
 	tests := []struct {
 		name     string
 		input    string
@@ -306,9 +306,9 @@ func TestCreateDate(t *testing.T) {
 		isValid  bool
 	}{
 		{
-			name:     "ISO format",
-			input:    "2021-01-01T00:00:00Z",
-			isValid:  true,
+			name:    "ISO format",
+			input:   "2021-01-01T00:00:00Z",
+			isValid: true,
 		},
 		{
 			name:     "with timezone",
@@ -317,43 +317,41 @@ func TestCreateDate(t *testing.T) {
 			isValid:  true,
 		},
 		{
-			name:     "relative time - minutes ago",
-			input:    "5 minutes ago",
-			isValid:  true,
+			name:    "relative time - minutes ago",
+			input:   "5 minutes ago",
+			isValid: true,
 		},
 		{
-			name:     "relative time - now",
-			input:    "just now",
-			isValid:  true,
+			name:    "relative time - now",
+			input:   "just now",
+			isValid: true,
 		},
 		{
-			name:     "invalid date",
-			input:    "not a date",
-			isValid:  false,
+			name:    "invalid date",
+			input:   "not a date",
+			isValid: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := createDate(tt.input, tt.timezone, tt.format)
-			
+
 			if tt.isValid {
 				assert.NotNil(t, result, "createDate should return valid time for %q", tt.input)
 				if result != nil {
 					// Check that it's a reasonable time (not zero time)
 					assert.False(t, result.IsZero(), "createDate should not return zero time for %q", tt.input)
 				}
-			} else {
+			} else if result != nil {
 				// For invalid dates, we might get nil or zero time
-				if result != nil {
-					assert.True(t, result.IsZero(), "createDate should return zero time for invalid input %q", tt.input)
-				}
+				assert.True(t, result.IsZero(), "createDate should return zero time for invalid input %q", tt.input)
 			}
 		})
 	}
 }
 
-// Helper function to create string pointers for test cases
+// Helper function to create string pointers for test cases.
 func stringPtr(s string) *string {
 	return &s
 }

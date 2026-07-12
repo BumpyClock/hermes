@@ -1,4 +1,4 @@
-// ABOUTME: JavaScript compatibility verification tests comparing Go extractor behavior against expected JavaScript outputs  
+// ABOUTME: JavaScript compatibility verification tests comparing Go extractor behavior against expected JavaScript outputs
 // ABOUTME: Comprehensive test suite validating exact behavioral match with original JavaScript implementation
 
 package generic
@@ -10,10 +10,12 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
 
 // TestJavaScriptCompatibility_ContentExtractor performs comprehensive validation
-// that the Go implementation matches JavaScript behavior exactly
+// that the Go implementation matches JavaScript behavior exactly.
 func TestJavaScriptCompatibility_ContentExtractor(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -197,18 +199,18 @@ func TestJavaScriptCompatibility_ContentExtractor(t *testing.T) {
 
 			// Validate content was extracted
 			assert.NotEmpty(t, result, "Should extract content")
-			assert.GreaterOrEqual(t, len(result), tc.minLength, 
+			assert.GreaterOrEqual(t, len(result), tc.minLength,
 				"Content should meet minimum length requirement")
 
 			// Validate expected content is present
 			for _, expected := range tc.expected {
-				assert.Contains(t, result, expected, 
+				assert.Contains(t, result, expected,
 					"Should contain expected content: %s", expected)
 			}
 
 			// Validate unwanted content is filtered out
 			for _, notExpected := range tc.notExpected {
-				assert.NotContains(t, result, notExpected, 
+				assert.NotContains(t, result, notExpected,
 					"Should not contain filtered content: %s", notExpected)
 			}
 
@@ -218,21 +220,21 @@ func TestJavaScriptCompatibility_ContentExtractor(t *testing.T) {
 	}
 }
 
-// TestJavaScriptCompatibility_NodeSufficiency validates the 100-character threshold
+// TestJavaScriptCompatibility_NodeSufficiency validates the 100-character threshold.
 func TestJavaScriptCompatibility_NodeSufficiency(t *testing.T) {
 	testCases := []struct {
-		name      string
-		content   string
+		name       string
+		content    string
 		sufficient bool
 	}{
 		{
-			name:       "Exactly 100 characters should be sufficient", 
+			name:       "Exactly 100 characters should be sufficient",
 			content:    strings.Repeat("x", 100),
 			sufficient: true,
 		},
 		{
 			name:       "99 characters should be insufficient",
-			content:    strings.Repeat("x", 99), 
+			content:    strings.Repeat("x", 99),
 			sufficient: false,
 		},
 		{
@@ -246,7 +248,7 @@ func TestJavaScriptCompatibility_NodeSufficiency(t *testing.T) {
 			sufficient: true,
 		},
 		{
-			name:       "Short snippet should be insufficient", 
+			name:       "Short snippet should be insufficient",
 			content:    "Brief text",
 			sufficient: false,
 		},
@@ -259,16 +261,16 @@ func TestJavaScriptCompatibility_NodeSufficiency(t *testing.T) {
 			require.NoError(t, err)
 
 			node := doc.Find("div").First()
-			result := NodeIsSufficient(node)
+			result := dom.NodeIsSufficient(node)
 
-			assert.Equal(t, tc.sufficient, result, 
-				"NodeIsSufficient should match expected result for content length: %d", 
+			assert.Equal(t, tc.sufficient, result,
+				"NodeIsSufficient should match expected result for content length: %d",
 				len(tc.content))
 		})
 	}
 }
 
-// TestJavaScriptCompatibility_OptionsCascading validates that options cascade correctly
+// TestJavaScriptCompatibility_OptionsCascading validates that options cascade correctly.
 func TestJavaScriptCompatibility_OptionsCascading(t *testing.T) {
 	// HTML that should fail with strict options but succeed with relaxed options
 	challengingHTML := `<html>
@@ -297,15 +299,15 @@ func TestJavaScriptCompatibility_OptionsCascading(t *testing.T) {
 	result := extractor.Extract(params, ExtractorOptions{})
 
 	assert.NotEmpty(t, result, "Should extract content through options cascading")
-	assert.Contains(t, result, "challenging to extract", 
+	assert.Contains(t, result, "challenging to extract",
 		"Should contain the challenging content")
-	assert.Contains(t, result, "valuable information", 
+	assert.Contains(t, result, "valuable information",
 		"Should preserve valuable information")
 
 	t.Logf("Cascading extraction successful: %d characters extracted", len(result))
 }
 
-// TestJavaScriptCompatibility_SpaceNormalization validates whitespace handling
+// TestJavaScriptCompatibility_SpaceNormalization validates whitespace handling.
 func TestJavaScriptCompatibility_SpaceNormalization(t *testing.T) {
 	html := `<div>
 		<p>Content   with    multiple     spaces

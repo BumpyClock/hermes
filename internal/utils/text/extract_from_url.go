@@ -24,7 +24,7 @@ import (
 // the content of the first capture group from the first regex that matches the URL.
 func ExtractFromURL(url string, regexList []*regexp.Regexp) (string, bool) {
 	for _, re := range regexList {
-		if matches := re.FindStringSubmatch(url); matches != nil && len(matches) > 1 {
+		if matches := re.FindStringSubmatch(url); len(matches) > 1 {
 			return matches[1], true
 		}
 	}

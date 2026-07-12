@@ -14,19 +14,19 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// Lead image URL meta tags in priority order (most distinct first)
+// Lead image URL meta tags in priority order (most distinct first).
 var LEAD_IMAGE_URL_META_TAGS = []string{
 	"og:image",
 	"twitter:image",
 	"image_src",
 }
 
-// Fallback selectors for lead image extraction
+// Fallback selectors for lead image extraction.
 var LEAD_IMAGE_URL_SELECTORS = []string{
 	"link[rel=image_src]",
 }
 
-// Positive hints that increase image score
+// Positive hints that increase image score.
 var POSITIVE_LEAD_IMAGE_URL_HINTS = []string{
 	"upload",
 	"wp-content",
@@ -35,7 +35,7 @@ var POSITIVE_LEAD_IMAGE_URL_HINTS = []string{
 	"wp-image",
 }
 
-// Negative hints that decrease image score
+// Negative hints that decrease image score.
 var NEGATIVE_LEAD_IMAGE_URL_HINTS = []string{
 	"spacer", "sprite", "blank", "throbber", "gradient", "tile", "bg",
 	"background", "icon", "social", "header", "hdr", "advert", "spinner",
@@ -43,7 +43,7 @@ var NEGATIVE_LEAD_IMAGE_URL_HINTS = []string{
 	"twitter", "theme", "promo", "ads", "wp-includes",
 }
 
-// Compiled regexes for URL scoring
+// Compiled regexes for URL scoring.
 var (
 	POSITIVE_LEAD_IMAGE_URL_HINTS_RE = regexp.MustCompile("(?i)" + strings.Join(POSITIVE_LEAD_IMAGE_URL_HINTS, "|"))
 	NEGATIVE_LEAD_IMAGE_URL_HINTS_RE = regexp.MustCompile("(?i)" + strings.Join(NEGATIVE_LEAD_IMAGE_URL_HINTS, "|"))
@@ -52,7 +52,7 @@ var (
 	PHOTO_HINTS_RE                   = regexp.MustCompile(`(?i)figure|photo|image|caption`) // From constants.go
 )
 
-// ExtractorImageParams contains parameters for image extraction
+// ExtractorImageParams contains parameters for image extraction.
 type ExtractorImageParams struct {
 	Doc       *goquery.Document
 	Content   string
@@ -60,19 +60,19 @@ type ExtractorImageParams struct {
 	HTML      string
 }
 
-// GenericLeadImageExtractor implements lead image extraction logic
+// GenericLeadImageExtractor implements lead image extraction logic.
 type GenericLeadImageExtractor struct{}
 
-// NewGenericLeadImageExtractor creates a new lead image extractor
+// NewGenericLeadImageExtractor creates a new lead image extractor.
 func NewGenericLeadImageExtractor() *GenericLeadImageExtractor {
 	return &GenericLeadImageExtractor{}
 }
 
 // Extract finds the lead image URL from the document using scoring and fallback strategies
-// Matches JavaScript behavior: meta tags → content images → fallback selectors
+// Matches JavaScript behavior: meta tags → content images → fallback selectors.
 func (e *GenericLeadImageExtractor) Extract(params ExtractorImageParams) *string {
 	doc := params.Doc
-	
+
 	// JavaScript: if (!$.browser && $('head').length === 0) - handle headless HTML
 	if doc.Find("head").Length() == 0 {
 		// Prepend HTML to first element to ensure proper parsing
@@ -106,7 +106,7 @@ func (e *GenericLeadImageExtractor) Extract(params ExtractorImageParams) *string
 }
 
 // extractFromMetaTags extracts image URL from meta tags using priority order
-// Handles both standard meta[name] and OpenGraph meta[property] tags
+// Handles both standard meta[name] and OpenGraph meta[property] tags.
 func (e *GenericLeadImageExtractor) extractFromMetaTags(doc *goquery.Document, metaCache map[string]string) *string {
 	for _, metaName := range LEAD_IMAGE_URL_META_TAGS {
 		// Try both name and property attributes for maximum compatibility
@@ -114,43 +114,43 @@ func (e *GenericLeadImageExtractor) extractFromMetaTags(doc *goquery.Document, m
 			fmt.Sprintf("meta[name=\"%s\"]", metaName),
 			fmt.Sprintf("meta[property=\"%s\"]", metaName),
 		}
-		
+
 		for _, selector := range selectors {
 			nodes := doc.Find(selector)
 			if nodes.Length() == 0 {
 				continue
 			}
-			
+
 			// Check both content and value attributes
 			var imageUrl string
 			nodes.Each(func(i int, node *goquery.Selection) {
 				if imageUrl != "" {
 					return // Already found
 				}
-				
+
 				// Try content attribute first (standard for OpenGraph)
 				if content, exists := node.Attr("content"); exists && content != "" {
 					imageUrl = content
 					return
 				}
-				
+
 				// Try value attribute (original JavaScript behavior)
 				if value, exists := node.Attr("value"); exists && value != "" {
 					imageUrl = value
 					return
 				}
 			})
-			
+
 			if imageUrl != "" {
 				return &imageUrl
 			}
 		}
 	}
-	
+
 	return nil
 }
 
-// extractFromContent scores images in content and returns the highest scoring one
+// extractFromContent scores images in content and returns the highest scoring one.
 func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, content string) *string {
 	contentSelection := doc.Find(content)
 	if contentSelection.Length() == 0 {
@@ -186,7 +186,7 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 	// Find the highest scoring image
 	var topUrl string
 	topScore := 0
-	
+
 	for url, score := range imgScores {
 		if score > topScore {
 			topUrl = url
@@ -201,7 +201,7 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 	return nil
 }
 
-// extractFromSelectors tries fallback selectors for image URLs
+// extractFromSelectors tries fallback selectors for image URLs.
 func (e *GenericLeadImageExtractor) extractFromSelectors(doc *goquery.Document) *string {
 	for _, selector := range LEAD_IMAGE_URL_SELECTORS {
 		node := doc.Find(selector).First()
@@ -228,7 +228,7 @@ func (e *GenericLeadImageExtractor) extractFromSelectors(doc *goquery.Document) 
 	return nil
 }
 
-// scoreImageUrl scores URLs based on hints and file extensions
+// scoreImageUrl scores URLs based on hints and file extensions.
 func scoreImageUrl(url string) int {
 	url = strings.TrimSpace(url)
 	score := 0
@@ -254,7 +254,7 @@ func scoreImageUrl(url string) int {
 	return score
 }
 
-// scoreAttr gives bonus for alt attribute (non-presentational)
+// scoreAttr gives bonus for alt attribute (non-presentational).
 func scoreAttr(img *goquery.Selection) int {
 	if _, exists := img.Attr("alt"); exists {
 		return 5
@@ -262,7 +262,7 @@ func scoreAttr(img *goquery.Selection) int {
 	return 0
 }
 
-// scoreByParents looks for figure-like containers and photo hints in parents
+// scoreByParents looks for figure-like containers and photo hints in parents.
 func scoreByParents(img *goquery.Selection) int {
 	score := 0
 
@@ -297,7 +297,7 @@ func scoreByParents(img *goquery.Selection) int {
 	return score
 }
 
-// scoreBySibling checks for caption-like siblings
+// scoreBySibling checks for caption-like siblings.
 func scoreBySibling(img *goquery.Selection) int {
 	score := 0
 	sibling := img.Next()
@@ -317,7 +317,7 @@ func scoreBySibling(img *goquery.Selection) int {
 	return score
 }
 
-// scoreByDimensions scores based on image dimensions
+// scoreByDimensions scores based on image dimensions.
 func scoreByDimensions(img *goquery.Selection) int {
 	score := 0
 	src, _ := img.Attr("src")
@@ -360,19 +360,19 @@ func scoreByDimensions(img *goquery.Selection) int {
 	return score
 }
 
-// scoreByPosition gives bonus to images earlier in the content
+// scoreByPosition gives bonus to images earlier in the content.
 func scoreByPosition(imgs []interface{}, index int) float64 {
 	return float64(len(imgs))/2.0 - float64(index)
 }
 
-// getSig gets the signature (class + id) of an element for scoring
+// getSig gets the signature (class + id) of an element for scoring.
 func getSig(node *goquery.Selection) string {
 	class, _ := node.Attr("class")
 	id, _ := node.Attr("id")
 	return fmt.Sprintf("%s %s", class, id)
 }
 
-// cleanImage validates and cleans image URLs
+// cleanImage validates and cleans image URLs.
 func cleanImage(imageUrl string) *string {
 	imageUrl = strings.TrimSpace(imageUrl)
 	if imageUrl == "" {

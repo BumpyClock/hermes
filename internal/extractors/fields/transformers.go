@@ -10,105 +10,94 @@ import (
 	"time"
 )
 
-// FieldTransformer converts extracted data to standard formats
+// FieldTransformer converts extracted data to standard formats.
 type FieldTransformer interface {
 	Transform(value interface{}) interface{}
 	TargetType() string
 }
 
-// StringTransformer normalizes string fields
+// StringTransformer normalizes string fields.
 type StringTransformer struct{}
 
-// NewStringTransformer creates a new string transformer
+// NewStringTransformer creates a new string transformer.
 func NewStringTransformer() *StringTransformer {
 	return &StringTransformer{}
 }
 
-// Transform normalizes a string value
+// Transform normalizes a string value.
 func (st *StringTransformer) Transform(value interface{}) interface{} {
 	str, ok := value.(string)
 	if !ok {
 		return value
 	}
-	
+
 	// Trim whitespace and normalize spaces
 	str = strings.TrimSpace(str)
 	str = normalizeSpaces(str)
-	
+
 	return str
 }
 
-// TargetType returns the target type
+// TargetType returns the target type.
 func (st *StringTransformer) TargetType() string {
 	return "string"
 }
 
-// URLTransformer resolves and normalizes URL fields
+// URLTransformer resolves and normalizes URL fields.
 type URLTransformer struct {
 	baseURL string
 }
 
-// NewURLTransformer creates a new URL transformer with base URL for relative resolution
+// NewURLTransformer creates a new URL transformer with base URL for relative resolution.
 func NewURLTransformer(baseURL string) *URLTransformer {
 	return &URLTransformer{
 		baseURL: baseURL,
 	}
 }
 
-// Transform resolves and normalizes a URL
+// Transform resolves and normalizes a URL.
 func (ut *URLTransformer) Transform(value interface{}) interface{} {
 	str, ok := value.(string)
 	if !ok {
 		return value
 	}
-	
+
 	str = strings.TrimSpace(str)
 	if str == "" {
 		return ""
 	}
-	
+
 	// Parse the URL
 	parsedURL, err := url.Parse(str)
 	if err != nil {
 		return str // Return original if parsing fails
 	}
-	
+
 	// Resolve relative URLs
 	if ut.baseURL != "" && !parsedURL.IsAbs() {
 		if baseURL, err := url.Parse(ut.baseURL); err == nil {
 			parsedURL = baseURL.ResolveReference(parsedURL)
 		}
 	}
-	
+
 	// Normalize the URL
 	return normalizeURL(parsedURL)
 }
 
-// TargetType returns the target type
+// TargetType returns the target type.
 func (ut *URLTransformer) TargetType() string {
 	return "string"
 }
 
-// DateTransformer parses and normalizes date fields
-type DateTransformer struct {
-	outputFormat string
-}
+// DateTransformer parses and normalizes date fields.
+type DateTransformer struct{}
 
-// NewDateTransformer creates a new date transformer
+// NewDateTransformer creates a new date transformer.
 func NewDateTransformer() *DateTransformer {
-	return &DateTransformer{
-		outputFormat: time.RFC3339,
-	}
+	return &DateTransformer{}
 }
 
-// NewDateTransformerWithFormat creates a date transformer with custom output format
-func NewDateTransformerWithFormat(format string) *DateTransformer {
-	return &DateTransformer{
-		outputFormat: format,
-	}
-}
-
-// Transform parses and formats a date
+// Transform parses and formats a date.
 func (dt *DateTransformer) Transform(value interface{}) interface{} {
 	switch v := value.(type) {
 	case string:
@@ -123,19 +112,19 @@ func (dt *DateTransformer) Transform(value interface{}) interface{} {
 	}
 }
 
-// TargetType returns the target type
+// TargetType returns the target type.
 func (dt *DateTransformer) TargetType() string {
 	return "time.Time"
 }
 
-// ArrayTransformer processes array fields
+// ArrayTransformer processes array fields.
 type ArrayTransformer struct {
 	elementTransformer FieldTransformer
 	deduplicateItems   bool
 	maxItems           int
 }
 
-// NewArrayTransformer creates a new array transformer
+// NewArrayTransformer creates a new array transformer.
 func NewArrayTransformer(elementTransformer FieldTransformer) *ArrayTransformer {
 	return &ArrayTransformer{
 		elementTransformer: elementTransformer,
@@ -144,20 +133,20 @@ func NewArrayTransformer(elementTransformer FieldTransformer) *ArrayTransformer 
 	}
 }
 
-// SetDeduplication enables or disables item deduplication
+// SetDeduplication enables or disables item deduplication.
 func (at *ArrayTransformer) SetDeduplication(enabled bool) {
 	at.deduplicateItems = enabled
 }
 
-// SetMaxItems sets the maximum number of items
+// SetMaxItems sets the maximum number of items.
 func (at *ArrayTransformer) SetMaxItems(max int) {
 	at.maxItems = max
 }
 
-// Transform processes an array of values
+// Transform processes an array of values.
 func (at *ArrayTransformer) Transform(value interface{}) interface{} {
 	var items []interface{}
-	
+
 	switch v := value.(type) {
 	case []interface{}:
 		items = v
@@ -178,17 +167,17 @@ func (at *ArrayTransformer) Transform(value interface{}) interface{} {
 	default:
 		return value
 	}
-	
+
 	// Transform each element
 	var transformedItems []interface{}
 	seen := make(map[string]bool)
-	
+
 	for _, item := range items {
 		transformed := item
 		if at.elementTransformer != nil {
 			transformed = at.elementTransformer.Transform(item)
 		}
-		
+
 		// Handle deduplication
 		if at.deduplicateItems {
 			key := getStringRepresentation(transformed)
@@ -197,19 +186,19 @@ func (at *ArrayTransformer) Transform(value interface{}) interface{} {
 			}
 			seen[key] = true
 		}
-		
+
 		transformedItems = append(transformedItems, transformed)
-		
+
 		// Check item limit
 		if at.maxItems > 0 && len(transformedItems) >= at.maxItems {
 			break
 		}
 	}
-	
+
 	return transformedItems
 }
 
-// TargetType returns the target type
+// TargetType returns the target type.
 func (at *ArrayTransformer) TargetType() string {
 	if at.elementTransformer != nil {
 		return "[]" + at.elementTransformer.TargetType()
@@ -217,32 +206,32 @@ func (at *ArrayTransformer) TargetType() string {
 	return "[]interface{}"
 }
 
-// JSONTransformer handles structured JSON data
+// JSONTransformer handles structured JSON data.
 type JSONTransformer struct {
 	fieldMappings map[string]FieldTransformer
 }
 
-// NewJSONTransformer creates a new JSON transformer
+// NewJSONTransformer creates a new JSON transformer.
 func NewJSONTransformer() *JSONTransformer {
 	return &JSONTransformer{
 		fieldMappings: make(map[string]FieldTransformer),
 	}
 }
 
-// AddFieldMapping adds a transformer for a specific field
+// AddFieldMapping adds a transformer for a specific field.
 func (jt *JSONTransformer) AddFieldMapping(fieldName string, transformer FieldTransformer) {
 	jt.fieldMappings[fieldName] = transformer
 }
 
-// Transform processes structured data
+// Transform processes structured data.
 func (jt *JSONTransformer) Transform(value interface{}) interface{} {
 	data, ok := value.(map[string]interface{})
 	if !ok {
 		return value
 	}
-	
+
 	transformed := make(map[string]interface{})
-	
+
 	for key, val := range data {
 		if transformer, exists := jt.fieldMappings[key]; exists {
 			transformed[key] = transformer.Transform(val)
@@ -250,26 +239,26 @@ func (jt *JSONTransformer) Transform(value interface{}) interface{} {
 			transformed[key] = val
 		}
 	}
-	
+
 	return transformed
 }
 
-// TargetType returns the target type
+// TargetType returns the target type.
 func (jt *JSONTransformer) TargetType() string {
 	return "map[string]interface{}"
 }
 
 // Helper functions
 
-// normalizeSpaces normalizes whitespace in a string
+// normalizeSpaces normalizes whitespace in a string.
 func normalizeSpaces(s string) string {
 	// Replace multiple consecutive whitespace characters with single space
 	var result strings.Builder
 	var lastWasSpace bool
-	
+
 	for _, char := range s {
 		isSpace := char == ' ' || char == '\t' || char == '\n' || char == '\r'
-		
+
 		if isSpace {
 			if !lastWasSpace {
 				result.WriteRune(' ')
@@ -280,17 +269,17 @@ func normalizeSpaces(s string) string {
 			lastWasSpace = false
 		}
 	}
-	
+
 	return result.String()
 }
 
-// normalizeURL normalizes a URL by removing unnecessary components
+// normalizeURL normalizes a URL by removing unnecessary components.
 func normalizeURL(parsedURL *url.URL) string {
 	// Remove fragment unless it's meaningful
 	if parsedURL.Fragment != "" && !isMeaningfulFragment(parsedURL.Fragment) {
 		parsedURL.Fragment = ""
 	}
-	
+
 	// Normalize query parameters (could be enhanced)
 	if parsedURL.RawQuery != "" {
 		values := parsedURL.Query()
@@ -301,28 +290,28 @@ func normalizeURL(parsedURL *url.URL) string {
 		}
 		parsedURL.RawQuery = values.Encode()
 	}
-	
+
 	// Remove default ports
 	if (parsedURL.Scheme == "http" && parsedURL.Port() == "80") ||
 		(parsedURL.Scheme == "https" && parsedURL.Port() == "443") {
 		parsedURL.Host = parsedURL.Hostname()
 	}
-	
+
 	return parsedURL.String()
 }
 
-// isMeaningfulFragment checks if a URL fragment is meaningful (not just tracking)
+// isMeaningfulFragment checks if a URL fragment is meaningful (not just tracking).
 func isMeaningfulFragment(fragment string) bool {
 	// Consider fragments meaningful if they look like section references
 	meaningfulPrefixes := []string{"section", "chapter", "page", "anchor", "content"}
-	
+
 	lower := strings.ToLower(fragment)
 	for _, prefix := range meaningfulPrefixes {
 		if strings.HasPrefix(lower, prefix) {
 			return true
 		}
 	}
-	
+
 	// Also consider fragments with letters and numbers meaningful
 	hasLetters := false
 	hasNumbers := false
@@ -334,11 +323,11 @@ func isMeaningfulFragment(fragment string) bool {
 			hasNumbers = true
 		}
 	}
-	
+
 	return hasLetters && hasNumbers
 }
 
-// parseDate attempts to parse a date string using common formats
+// parseDate attempts to parse a date string using common formats.
 func parseDate(dateStr string) (time.Time, error) {
 	formats := []string{
 		time.RFC3339,
@@ -355,25 +344,25 @@ func parseDate(dateStr string) (time.Time, error) {
 		"Mon, 02 Jan 2006 15:04:05 MST",
 		"Mon, 02 Jan 2006 15:04:05 -0700",
 	}
-	
+
 	for _, format := range formats {
 		if t, err := time.Parse(format, dateStr); err == nil {
 			return t, nil
 		}
 	}
-	
+
 	return time.Time{}, fmt.Errorf("unable to parse date with any known format")
 }
 
-// getStringRepresentation returns a string representation of any value for deduplication
+// getStringRepresentation returns a string representation of any value for deduplication.
 func getStringRepresentation(value interface{}) string {
 	switch v := value.(type) {
 	case string:
 		return v
 	case int:
-		return string(rune(v))
+		return runeString(v)
 	case float64:
-		return string(rune(int(v)))
+		return runeString(int(v))
 	case bool:
 		if v {
 			return "true"
@@ -384,19 +373,26 @@ func getStringRepresentation(value interface{}) string {
 	}
 }
 
-// ChainTransformer chains multiple transformers together
+func runeString(v int) string {
+	if v < 0 || v > 0x10FFFF {
+		return ""
+	}
+	return string(rune(v))
+}
+
+// ChainTransformer chains multiple transformers together.
 type ChainTransformer struct {
 	transformers []FieldTransformer
 }
 
-// NewChainTransformer creates a new chain transformer
+// NewChainTransformer creates a new chain transformer.
 func NewChainTransformer(transformers ...FieldTransformer) *ChainTransformer {
 	return &ChainTransformer{
 		transformers: transformers,
 	}
 }
 
-// Transform applies all transformers in sequence
+// Transform applies all transformers in sequence.
 func (ct *ChainTransformer) Transform(value interface{}) interface{} {
 	result := value
 	for _, transformer := range ct.transformers {
@@ -405,7 +401,7 @@ func (ct *ChainTransformer) Transform(value interface{}) interface{} {
 	return result
 }
 
-// TargetType returns the target type of the last transformer
+// TargetType returns the target type of the last transformer.
 func (ct *ChainTransformer) TargetType() string {
 	if len(ct.transformers) > 0 {
 		return ct.transformers[len(ct.transformers)-1].TargetType()

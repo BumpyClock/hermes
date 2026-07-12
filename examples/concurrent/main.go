@@ -19,12 +19,12 @@ import (
 	"github.com/BumpyClock/hermes"
 )
 
-// ProcessResult holds the result of processing a single URL
+// ProcessResult holds the result of processing a single URL.
 type ProcessResult struct {
-	URL       string
-	Result    *hermes.Result
-	Duration  time.Duration
-	Error     error
+	URL      string
+	Result   *hermes.Result
+	Duration time.Duration
+	Error    error
 }
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 	urls := []string{
 		"https://httpbin.org/html",
 		"https://httpbin.org/delay/1",
-		"https://httpbin.org/delay/2", 
+		"https://httpbin.org/delay/2",
 		"https://example.com",
 		"https://httpbin.org/status/200",
 		"https://httpbin.org/json",
@@ -65,7 +65,7 @@ func main() {
 	displayResults(results)
 }
 
-// processURLsConcurrently processes multiple URLs with controlled concurrency
+// processURLsConcurrently processes multiple URLs with controlled concurrency.
 func processURLsConcurrently(client *hermes.Client, urls []string, maxConcurrency int) []ProcessResult {
 	results := make([]ProcessResult, len(urls))
 	semaphore := make(chan struct{}, maxConcurrency) // Semaphore for concurrency control
@@ -92,7 +92,7 @@ func processURLsConcurrently(client *hermes.Client, urls []string, maxConcurrenc
 			if result.Error != nil {
 				fmt.Printf("❌ [%d/%d] Failed: %s (%v)\n", index+1, len(urls), u, result.Duration)
 			} else {
-				fmt.Printf("✅ [%d/%d] Success: %s (%v) - %d words\n", 
+				fmt.Printf("✅ [%d/%d] Success: %s (%v) - %d words\n",
 					index+1, len(urls), u, result.Duration, result.Result.WordCount)
 			}
 		}(i, url)
@@ -105,16 +105,12 @@ func processURLsConcurrently(client *hermes.Client, urls []string, maxConcurrenc
 	return results
 }
 
-// processSingleURL processes a single URL and returns the result with timing
+// processSingleURL processes a single URL and returns the result with timing.
 func processSingleURL(client *hermes.Client, url string) ProcessResult {
 	start := time.Now()
-	
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
-	defer cancel()
 
-	// Parse the URL
-	result, err := client.Parse(ctx, url)
+	// Client timeout is configured once in main; per-call context only carries cancellation.
+	result, err := client.Parse(context.Background(), url)
 	duration := time.Since(start)
 
 	return ProcessResult{
@@ -125,7 +121,7 @@ func processSingleURL(client *hermes.Client, url string) ProcessResult {
 	}
 }
 
-// displayResults shows a summary of all processing results
+// displayResults shows a summary of all processing results.
 func displayResults(results []ProcessResult) {
 	fmt.Println("📊 Processing Summary")
 	fmt.Println("====================")
@@ -137,7 +133,7 @@ func displayResults(results []ProcessResult) {
 	// Collect statistics
 	for _, result := range results {
 		totalDuration += result.Duration
-		
+
 		if result.Error != nil {
 			failureCount++
 		} else {
@@ -147,13 +143,13 @@ func displayResults(results []ProcessResult) {
 	}
 
 	// Display summary statistics
-	fmt.Printf("✅ Successful: %d/%d (%.1f%%)\n", 
+	fmt.Printf("✅ Successful: %d/%d (%.1f%%)\n",
 		successCount, len(results), float64(successCount)/float64(len(results))*100)
-	fmt.Printf("❌ Failed: %d/%d (%.1f%%)\n", 
+	fmt.Printf("❌ Failed: %d/%d (%.1f%%)\n",
 		failureCount, len(results), float64(failureCount)/float64(len(results))*100)
 	fmt.Printf("📝 Total words extracted: %d\n", totalWords)
 	fmt.Printf("⏱️  Total processing time: %v\n", totalDuration)
-	
+
 	if successCount > 0 {
 		avgDuration := totalDuration / time.Duration(len(results))
 		fmt.Printf("⏱️  Average processing time: %v\n", avgDuration)
@@ -163,10 +159,10 @@ func displayResults(results []ProcessResult) {
 	// Show detailed results
 	fmt.Println("\n📋 Detailed Results")
 	fmt.Println("==================")
-	
+
 	for i, result := range results {
 		fmt.Printf("[%d] %s (%v)\n", i+1, result.URL, result.Duration)
-		
+
 		if result.Error != nil {
 			if parseErr, ok := result.Error.(*hermes.ParseError); ok {
 				fmt.Printf("    ❌ Error [%s]: %v\n", parseErr.Code, parseErr.Err)
@@ -182,7 +178,7 @@ func displayResults(results []ProcessResult) {
 	}
 }
 
-// truncate shortens a string to the specified length with ellipsis
+// truncate shortens a string to the specified length with ellipsis.
 func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s

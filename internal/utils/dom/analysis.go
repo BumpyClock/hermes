@@ -5,26 +5,31 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/BumpyClock/hermes/internal/cache"
+
 	"github.com/BumpyClock/hermes/internal/pools"
 )
 
 // LinkDensity calculates the density of links in an element
-// Returns the ratio of link text length to total text length
+// Returns the ratio of link text length to total text length.
 func LinkDensity(element *goquery.Selection) float64 {
-	// Use the optimized cached version for better performance
-	return cache.OptimizedLinkDensity(element)
+	totalText := strings.TrimSpace(element.Text())
+	if totalText == "" {
+		return 0
+	}
+
+	linkText := strings.TrimSpace(element.Find("a").Text())
+	return float64(len(linkText)) / float64(len(totalText))
 }
 
 // NodeIsSufficient determines if a node has enough content to be considered sufficient
 // This exactly matches the JavaScript nodeIsSufficient implementation
-// JavaScript: export default function nodeIsSufficient($node) { return $node.text().trim().length >= 100; }
+// JavaScript: export default function nodeIsSufficient($node) { return $node.text().trim().length >= 100; }.
 func NodeIsSufficient(element *goquery.Selection) bool {
 	// JavaScript: return $node.text().trim().length >= 100;
 	return len(strings.TrimSpace(element.Text())) >= 100
 }
 
-// WithinComment checks if an element is within a comment section
+// WithinComment checks if an element is within a comment section.
 func WithinComment(element *goquery.Selection) bool {
 	// Check if element or any parent has comment-related classes/IDs
 	current := element
@@ -54,7 +59,7 @@ func WithinComment(element *goquery.Selection) bool {
 	return false
 }
 
-// IsWordpress detects if a page is likely WordPress-based
+// IsWordpress detects if a page is likely WordPress-based.
 func IsWordpress(doc *goquery.Document) bool {
 	// Check for WordPress generator meta tag
 	generator := doc.Find(`meta[name="generator"]`)
@@ -92,7 +97,7 @@ func IsWordpress(doc *goquery.Document) bool {
 	return false
 }
 
-// HasSentenceEnd checks if text ends with proper sentence punctuation
+// HasSentenceEnd checks if text ends with proper sentence punctuation.
 func HasSentenceEnd(text string) bool {
 	text = strings.TrimSpace(text)
 	if len(text) == 0 {
@@ -103,7 +108,7 @@ func HasSentenceEnd(text string) bool {
 	return lastChar == "." || lastChar == "!" || lastChar == "?" || lastChar == ":" || lastChar == ";"
 }
 
-// DetectTextDirection attempts to detect the text direction (LTR/RTL) of content
+// DetectTextDirection attempts to detect the text direction (LTR/RTL) of content.
 func DetectTextDirection(text string) string {
 	if len(text) == 0 {
 		return "ltr"
@@ -134,7 +139,7 @@ func DetectTextDirection(text string) string {
 	return "ltr"
 }
 
-// GetContentScore calculates a basic content score for an element
+// GetContentScore calculates a basic content score for an element.
 func GetContentScore(element *goquery.Selection) float64 {
 	text := strings.TrimSpace(element.Text())
 	textLength := len(text)
@@ -178,7 +183,7 @@ func GetContentScore(element *goquery.Selection) float64 {
 	return score
 }
 
-// CountWords counts the number of words in text
+// CountWords counts the number of words in text.
 func CountWords(text string) int {
 	text = strings.TrimSpace(text)
 	if len(text) == 0 {
@@ -189,7 +194,7 @@ func CountWords(text string) int {
 	return len(words)
 }
 
-// CountSentences estimates the number of sentences in text
+// CountSentences estimates the number of sentences in text.
 func CountSentences(text string) int {
 	if len(text) == 0 {
 		return 0
@@ -211,10 +216,17 @@ func CountSentences(text string) int {
 	return sentences
 }
 
-// IsLikelyArticleElement checks if an element is likely to contain article content
+// IsLikelyArticleElement checks if an element is likely to contain article content.
 func IsLikelyArticleElement(element *goquery.Selection) bool {
 	tagName := goquery.NodeName(element)
-	
+	textLength := len(strings.TrimSpace(element.Text()))
+	paragraphs := element.Find("p").Length()
+	linkDensity := LinkDensity(element)
+
+	if textLength < 10 || linkDensity > 0.2 {
+		return false
+	}
+
 	// Check tag name
 	if tagName == "article" || tagName == "main" {
 		return true
@@ -237,8 +249,5 @@ func IsLikelyArticleElement(element *goquery.Selection) bool {
 	}
 
 	// Check if it has good content characteristics
-	textLength := len(strings.TrimSpace(element.Text()))
-	paragraphs := element.Find("p").Length()
-	
-	return textLength > 500 && paragraphs >= 2 && LinkDensity(element) < 0.3
+	return textLength > 500 && paragraphs >= 2 && linkDensity < 0.3
 }

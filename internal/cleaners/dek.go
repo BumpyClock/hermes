@@ -4,9 +4,11 @@
 package cleaners
 
 import (
+	"html"
 	"strings"
-	
+
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
@@ -22,13 +24,14 @@ import (
 // - Normalizes whitespace using normalizeSpaces
 //
 // JavaScript equivalent:
-// export default function cleanDek(dek, { $, excerpt }) {
-//   if (dek.length > 1000 || dek.length < 5) return null;
-//   if (excerpt && excerptContent(excerpt, 10) === excerptContent(dek, 10)) return null;
-//   const dekText = stripTags(dek, $);
-//   if (TEXT_LINK_RE.test(dekText)) return null;
-//   return normalizeSpaces(dekText.trim());
-// }
+//
+//	export default function cleanDek(dek, { $, excerpt }) {
+//	  if (dek.length > 1000 || dek.length < 5) return null;
+//	  if (excerpt && excerptContent(excerpt, 10) === excerptContent(dek, 10)) return null;
+//	  const dekText = stripTags(dek, $);
+//	  if (TEXT_LINK_RE.test(dekText)) return null;
+//	  return normalizeSpaces(dekText.trim());
+//	}
 func CleanDek(dek string, _ *goquery.Document, excerpt string) *string {
 	// Sanity check that we didn't get too short or long of a dek
 	if len(dek) > 1000 || len(dek) < 5 {
@@ -55,8 +58,8 @@ func CleanDek(dek string, _ *goquery.Document, excerpt string) *string {
 	}
 
 	// Normalize spaces and trim whitespace
-	cleaned := text.NormalizeSpaces(strings.TrimSpace(dekText))
-	
+	cleaned := text.NormalizeSpaces(strings.TrimSpace(html.UnescapeString(dekText)))
+
 	// Final check - if after cleaning it's too short, reject it
 	if len(cleaned) < 5 {
 		return nil

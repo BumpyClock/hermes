@@ -5,15 +5,15 @@ package custom
 
 import (
 	"strings"
-	
+
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GetNYTimesExtractor returns the custom extractor for www.nytimes.com
+// GetNYTimesExtractor returns the custom extractor for www.nytimes.com.
 func GetNYTimesExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain: "www.nytimes.com",
-		
+
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
 				`h1[data-testid="headline"]`,
@@ -23,7 +23,7 @@ func GetNYTimesExtractor() *CustomExtractor {
 				"h1 .balancedHeadline",
 			},
 		},
-		
+
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="author"]`, "value"},
@@ -32,7 +32,7 @@ func GetNYTimesExtractor() *CustomExtractor {
 				[]string{`meta[name="byl"]`, "value"},
 			},
 		},
-		
+
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
@@ -41,7 +41,7 @@ func GetNYTimesExtractor() *CustomExtractor {
 					"article#story",
 				},
 			},
-			
+
 			Transforms: map[string]TransformFunction{
 				"img.g-lazy": &FunctionTransform{
 					Fn: func(node *goquery.Selection) error {
@@ -49,20 +49,20 @@ func GetNYTimesExtractor() *CustomExtractor {
 						if !exists {
 							return nil
 						}
-						
+
 						// Replace {{size}} placeholder with 640px width
 						width := "640"
 						src = strings.ReplaceAll(src, "{{size}}", width)
 						node.SetAttr("src", src)
-						
+
 						return nil
 					},
 				},
 			},
-			
+
 			Clean: []string{
 				".ad",
-				"header#story-header", 
+				"header#story-header",
 				".story-body-1 .lede.video",
 				".visually-hidden",
 				"#newsletter-promo",
@@ -75,14 +75,14 @@ func GetNYTimesExtractor() *CustomExtractor {
 				".story-footer-links",
 			},
 		},
-		
+
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="article:published_time"]`, "value"},
 				[]string{`meta[name="article:published"]`, "value"},
 			},
 		},
-		
+
 		LeadImageURL: &FieldExtractor{
 			Selectors: []interface{}{
 				[]string{`meta[name="og:image"]`, "value"},

@@ -72,8 +72,8 @@ func TestNodeIsSufficient(t *testing.T) {
 			sufficient: true,
 		},
 		{
-			name: "insufficient short content",
-			html: `<div>Short text</div>`,
+			name:       "insufficient short content",
+			html:       `<div>Short text</div>`,
 			sufficient: false,
 		},
 		{
@@ -111,9 +111,9 @@ func TestNodeIsSufficient(t *testing.T) {
 
 func TestWithinComment(t *testing.T) {
 	tests := []struct {
-		name     string
-		html     string
-		selector string
+		name      string
+		html      string
+		selector  string
 		inComment bool
 	}{
 		{
@@ -283,11 +283,11 @@ func TestDetectTextDirection(t *testing.T) {
 
 func TestGetContentScore(t *testing.T) {
 	tests := []struct {
-		name          string
-		html          string
-		minScore      float64
-		hasPositive   bool
-		hasNegative   bool
+		name        string
+		html        string
+		minScore    float64
+		hasPositive bool
+		hasNegative bool
 	}{
 		{
 			name: "high quality content",
@@ -312,8 +312,8 @@ func TestGetContentScore(t *testing.T) {
 			hasNegative: true,
 		},
 		{
-			name: "empty content",
-			html: `<div></div>`,
+			name:        "empty content",
+			html:        `<div></div>`,
 			minScore:    0.0,
 			hasPositive: false,
 			hasNegative: false,

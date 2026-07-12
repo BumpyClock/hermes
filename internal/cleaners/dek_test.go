@@ -1,4 +1,4 @@
-// ABOUTME: Comprehensive test suite for dek (description/subtitle) cleaner 
+// ABOUTME: Comprehensive test suite for dek (description/subtitle) cleaner
 // ABOUTME: Tests dek validation, HTML tag removal, link detection, and excerpt comparison
 
 package cleaners
@@ -126,7 +126,7 @@ func TestCleanDek(t *testing.T) {
 		{
 			name:     "dek with nested HTML",
 			dek:      "<p>This is <span>nested <strong>HTML</strong></span> content</p>",
-			expected: stringPtr("This is nested HTML contentnested HTML"), // StripTags duplicates nested content
+			expected: stringPtr("This is nested HTML content"),
 		},
 
 		// Special characters
@@ -145,16 +145,16 @@ func TestCleanDek(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CleanDek(tt.dek, doc, tt.excerpt)
-			
+
 			if tt.expected == nil {
-				assert.Nil(t, result, 
+				assert.Nil(t, result,
 					"CleanDek(%q, %q) should return nil", tt.dek, tt.excerpt)
 			} else {
-				assert.NotNil(t, result, 
+				assert.NotNil(t, result,
 					"CleanDek(%q, %q) should not return nil", tt.dek, tt.excerpt)
 				if result != nil {
 					assert.Equal(t, *tt.expected, *result,
-						"CleanDek(%q, %q) = %q, expected %q", 
+						"CleanDek(%q, %q) = %q, expected %q",
 						tt.dek, tt.excerpt, *result, *tt.expected)
 				}
 			}
@@ -203,18 +203,18 @@ func TestCleanDekJavaScriptCompatibility(t *testing.T) {
 	for _, tt := range compatTests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CleanDek(tt.dek, doc, tt.excerpt)
-			
+
 			if tt.expected == nil {
-				assert.Nil(t, result, 
-					"JavaScript compatibility test failed: %s\nCleanDek(%q, %q) should return nil", 
+				assert.Nil(t, result,
+					"JavaScript compatibility test failed: %s\nCleanDek(%q, %q) should return nil",
 					tt.note, tt.dek, tt.excerpt)
 			} else {
 				assert.NotNil(t, result,
-					"JavaScript compatibility test failed: %s\nCleanDek(%q, %q) should not return nil", 
+					"JavaScript compatibility test failed: %s\nCleanDek(%q, %q) should not return nil",
 					tt.note, tt.dek, tt.excerpt)
 				if result != nil {
 					assert.Equal(t, *tt.expected, *result,
-						"JavaScript compatibility test failed: %s\nCleanDek(%q, %q) = %q, expected %q", 
+						"JavaScript compatibility test failed: %s\nCleanDek(%q, %q) = %q, expected %q",
 						tt.note, tt.dek, tt.excerpt, *result, *tt.expected)
 				}
 			}
@@ -273,12 +273,12 @@ func TestCleanDekExcerptComparison(t *testing.T) {
 	for _, tt := range excerptTests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CleanDek(tt.dek, doc, tt.excerpt)
-			
+
 			if tt.expected {
-				assert.NotNil(t, result, 
+				assert.NotNil(t, result,
 					"CleanDek(%q, %q) should be allowed", tt.dek, tt.excerpt)
 			} else {
-				assert.Nil(t, result, 
+				assert.Nil(t, result,
 					"CleanDek(%q, %q) should be rejected due to excerpt similarity", tt.dek, tt.excerpt)
 			}
 		})
@@ -323,7 +323,7 @@ func TestCleanDekHTMLStripping(t *testing.T) {
 	for _, tt := range htmlTests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CleanDek(tt.input, doc, "")
-			
+
 			assert.NotNil(t, result, "Should return valid result")
 			if result != nil {
 				assert.Equal(t, tt.expected, *result,
@@ -339,14 +339,14 @@ func TestCleanDekPerformance(t *testing.T) {
 
 	// Test with a reasonably large dek (under 1000 chars)
 	largeDek := strings.Repeat("This is a test sentence. ", 30) // 30 sentences, about 750 chars
-	
+
 	result := CleanDek(largeDek, doc, "")
-	
+
 	// Should handle large content efficiently
 	assert.NotNil(t, result, "Should handle large dek")
 	if result != nil {
 		assert.True(t, len(*result) > 0, "Should return non-empty result")
-		assert.True(t, strings.Contains(*result, "This is a test sentence."), 
+		assert.True(t, strings.Contains(*result, "This is a test sentence."),
 			"Should preserve content")
 	}
 }

@@ -4,7 +4,7 @@
 //
 // JavaScript Compatibility: Maintains exact extraction order and logic:
 // 1. extractFromMeta() with AUTHOR_META_TAGS priority
-// 2. extractFromSelectors() with AUTHOR_SELECTORS priority  
+// 2. extractFromSelectors() with AUTHOR_SELECTORS priority
 // 3. BYLINE_SELECTORS_RE with /^[\n\s]*By/i pattern matching
 // 4. cleanAuthor() with CLEAN_AUTHOR_RE for 'By' prefix removal
 //
@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
@@ -41,7 +42,7 @@ var AUTHOR_META_TAGS = []string{
 	"authors",
 }
 
-// AUTHOR_MAX_LENGTH - maximum length for valid author names
+// AUTHOR_MAX_LENGTH - maximum length for valid author names.
 const AUTHOR_MAX_LENGTH = 300
 
 // AUTHOR_SELECTORS - ordered list of CSS selectors to find likely article authors
@@ -73,7 +74,7 @@ var AUTHOR_SELECTORS = []string{
 }
 
 // BYLINE_SELECTORS_RE - selectors with regex patterns for byline content
-// Matches /^[\n\s]*By/i pattern from JavaScript
+// Matches /^[\n\s]*By/i pattern from JavaScript.
 var bylineRe = regexp.MustCompile(`(?i)^[\n\s]*By`)
 var BYLINE_SELECTORS_RE = [][2]interface{}{
 	{"#byline", bylineRe},
@@ -81,38 +82,19 @@ var BYLINE_SELECTORS_RE = [][2]interface{}{
 }
 
 // CLEAN_AUTHOR_RE - regex for cleaning author prefixes
-// Matches /^\s*(posted |written )?by\s*:?\s*(.*)/i from JavaScript
+// Matches /^\s*(posted |written )?by\s*:?\s*(.*)/i from JavaScript.
 var CLEAN_AUTHOR_RE = regexp.MustCompile(`(?i)^\s*(posted |written )?by\s*:?\s*(.*)`)
 
-// GenericAuthorExtractor provides author extraction functionality
+// GenericAuthorExtractor provides author extraction functionality.
 type GenericAuthorExtractor struct{}
 
 // Extract extracts author information from HTML using the three-tier strategy
-// Returns *string to allow nil for no author found (matching JavaScript behavior)
+// Returns *string to allow nil for no author found (matching JavaScript behavior).
 func (e *GenericAuthorExtractor) Extract(doc *goquery.Selection, metaCache []string) *string {
 	var author string
 
 	// First, check to see if we have a matching meta tag that we can make use of.
-	// Need to get the document from the selection for meta tag extraction
-	var document *goquery.Document
-	if doc.Is("html") {
-		// Already a document root
-		if docRoot := doc.Get(0); docRoot != nil && docRoot.Type == 9 { // NodeDocument
-			document = goquery.NewDocumentFromNode(docRoot)
-		}
-	}
-	if document == nil {
-		// Create a document from the current HTML
-		if html, err := doc.Html(); err == nil {
-			if strings.Contains(html, "<html") {
-				document, _ = goquery.NewDocumentFromReader(strings.NewReader(html))
-			} else {
-				document, _ = goquery.NewDocumentFromReader(strings.NewReader("<html>" + html + "</html>"))
-			}
-		}
-	}
-	
-	if document != nil {
+	if document := documentFromSelection(doc); document != nil {
 		authorPtr := dom.ExtractFromMeta(document, AUTHOR_META_TAGS, metaCache, true)
 		if authorPtr != nil {
 			author = *authorPtr
@@ -152,7 +134,7 @@ func (e *GenericAuthorExtractor) Extract(doc *goquery.Selection, metaCache []str
 }
 
 // cleanAuthor cleans author strings by removing prefixes like "By", "posted by", etc.
-// Matches the JavaScript cleanAuthor function exactly
+// Matches the JavaScript cleanAuthor function exactly.
 func cleanAuthor(author string) string {
 	// Apply the CLEAN_AUTHOR_RE regex to remove prefixes
 	matches := CLEAN_AUTHOR_RE.FindStringSubmatch(author)
