@@ -4,8 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/BumpyClock/hermes/internal/extractors/custom"
 	"github.com/PuerkitoBio/goquery"
+
+	"github.com/BumpyClock/hermes/internal/extractors/custom"
 )
 
 func TestProcessCustomContentPreservesGothamistImageCaption(t *testing.T) {
