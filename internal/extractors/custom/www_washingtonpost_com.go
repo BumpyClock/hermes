@@ -14,6 +14,8 @@ func GetWashingtonPostExtractor() *CustomExtractor {
 
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
+				"#topper-text-elems h1",
+				"article header h1",
 				"h1",
 				"#topper-headline-wrapper",
 			},
@@ -21,6 +23,7 @@ func GetWashingtonPostExtractor() *CustomExtractor {
 
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
+				[]string{`meta[name="author"]`, "value"},
 				".pb-author-name",
 			},
 		},

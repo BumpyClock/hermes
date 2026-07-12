@@ -19,13 +19,10 @@ func DetectByHTML(doc *goquery.Document) Extractor {
 	// const selector = Reflect.ownKeys(Detectors).find(s => $(s).length > 0);
 	// return Detectors[selector];
 
-	// Initialize the detectors map matching JavaScript behavior
-	detectors := getDetectors()
-
 	// Find the first selector that matches elements in the document
-	for selector, extractor := range detectors {
-		if doc.Find(selector).Length() > 0 {
-			return extractor
+	for _, detector := range htmlDetectors {
+		if doc.Find(detector.selector).Length() > 0 {
+			return detector.extractor
 		}
 	}
 
@@ -33,15 +30,17 @@ func DetectByHTML(doc *goquery.Document) Extractor {
 	return nil
 }
 
-// getDetectors returns the mapping of CSS selectors to extractors
 // JavaScript equivalent: const Detectors = { ... }.
-func getDetectors() map[string]Extractor {
-	return map[string]Extractor{
-		// Match JavaScript selector exactly: 'meta[name="al:ios:app_name"][value="Medium"]'
-		`meta[name="al:ios:app_name"][value="Medium"]`: &MediumExtractor{},
-		// Match JavaScript selector exactly: 'meta[name="generator"][value="blogger"]'
-		`meta[name="generator"][value="blogger"]`: &BloggerExtractor{},
-	}
+type htmlDetector struct {
+	selector  string
+	extractor Extractor
+}
+
+var htmlDetectors = [...]htmlDetector{
+	// Match JavaScript selector exactly: 'meta[name="al:ios:app_name"][value="Medium"]'
+	{selector: `meta[name="al:ios:app_name"][value="Medium"]`, extractor: &MediumExtractor{}},
+	// Match JavaScript selector exactly: 'meta[name="generator"][value="blogger"]'
+	{selector: `meta[name="generator"][value="blogger"]`, extractor: &BloggerExtractor{}},
 }
 
 // MediumExtractor represents the Medium.com custom extractor.

@@ -47,7 +47,7 @@ var WwwPublickey1JpExtractor = &CustomExtractor{
 		},
 
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
+		DisableDefaultCleaner: true,
 
 		// Clean navigation and ads
 		Clean: []string{

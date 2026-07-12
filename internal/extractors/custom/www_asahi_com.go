@@ -47,7 +47,7 @@ var WwwAsahiComExtractor = &CustomExtractor{
 		},
 
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
+		DisableDefaultCleaner: true,
 
 		// Clean selectors to remove ads and unwanted content
 		Clean: []string{

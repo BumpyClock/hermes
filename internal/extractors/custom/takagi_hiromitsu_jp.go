@@ -33,8 +33,8 @@ var TakagihiromitsuJpExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				"div.body",
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 	},
 }
 

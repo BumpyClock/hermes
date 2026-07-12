@@ -36,8 +36,8 @@ var YouTubeCustomExtractor = &CustomExtractor{
 				"ytd-expandable-video-description-body-renderer #description",
 				[]string{"#player-api", "#description"},
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 
 		// Transform functions for YouTube-specific content
 		Transforms: map[string]TransformFunction{

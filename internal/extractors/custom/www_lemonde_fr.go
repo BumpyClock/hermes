@@ -10,12 +10,14 @@ var WwwLemondeFrExtractor = &CustomExtractor{
 
 	Title: &FieldExtractor{
 		Selectors: []interface{}{
+			"h1",
 			"h1.article__title",
 		},
 	},
 
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
+			".article__author-link",
 			".author__name",
 		},
 	},

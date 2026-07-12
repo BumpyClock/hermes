@@ -34,8 +34,8 @@ var BuzzFeedCustomExtractor = &CustomExtractor{
 				[]string{`div[class^="featureimage_featureImageWrapper"]`, ".js-subbuzz-wrapper"},
 				[]string{".js-subbuzz-wrapper"},
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 
 		// Transform functions for BuzzFeed-specific content
 		Transforms: map[string]TransformFunction{

@@ -31,8 +31,8 @@ var WwwIpaGoJpExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				"#ipar_main",
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 
 		// Clean selectors
 		Clean: []string{

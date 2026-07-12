@@ -35,7 +35,7 @@ var MediumCustomExtractor = &CustomExtractor{
 		},
 
 		// Clean selectors - remove unwanted elements
-		Clean: []string{"span a", "svg"},
+		Clean: []string{"button", "svg", `[class*="follow"]`},
 
 		// Transform functions for Medium-specific content
 		Transforms: map[string]TransformFunction{

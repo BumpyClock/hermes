@@ -39,8 +39,8 @@ var TechlogIijAdJpExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				"div.entry-content",
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 
 		// Clean selectors
 		Clean: []string{

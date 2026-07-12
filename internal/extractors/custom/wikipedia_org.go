@@ -23,8 +23,8 @@ var WikipediaCustomExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				"#mw-content-text",
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 
 		// Transform top infobox to an image with caption
 		Transforms: map[string]TransformFunction{

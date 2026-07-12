@@ -19,6 +19,7 @@ var TimesofindiaIndiatimesComExtractor = &CustomExtractor{
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
+				"div[data-articlebody]",
 				"div.contentwrapper:has(section)",
 			},
 		},
@@ -34,7 +35,7 @@ var TimesofindiaIndiatimesComExtractor = &CustomExtractor{
 		},
 
 		// JavaScript: defaultCleaner: false
-		DefaultCleaner: false,
+		DisableDefaultCleaner: true,
 	},
 
 	DatePublished: &FieldExtractor{

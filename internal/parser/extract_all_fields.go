@@ -9,12 +9,14 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/net/html"
 
 	"github.com/BumpyClock/hermes/internal/cleaners"
 	"github.com/BumpyClock/hermes/internal/extractors/custom"
@@ -428,42 +430,15 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 	// Extract content using custom selectors
 	if customExtractor.Content != nil && len(customExtractor.Content.Selectors) > 0 {
 		for _, selector := range customExtractor.Content.Selectors {
-			var contentHTML string
+			contentElements := contentElementsForSelector(doc, selector)
 
-			// Handle array selectors (multi-match like [".c-entry-hero .e-image", ".c-entry-intro", ".c-entry-content"])
-			if selectorArray, ok := selector.([]interface{}); ok {
-				var combinedContent strings.Builder
-				for _, selectorItem := range selectorArray {
-					if selectorStr, ok := selectorItem.(string); ok {
-						contentElements := doc.Find(selectorStr)
-						if contentElements.Length() > 0 {
-							contentElements.Each(func(i int, el *goquery.Selection) {
-								if html, err := el.Html(); err == nil && strings.TrimSpace(html) != "" {
-									combinedContent.WriteString(html)
-									combinedContent.WriteString("\n")
-								}
-							})
-						}
-					}
-				}
-				contentHTML = strings.TrimSpace(combinedContent.String())
-			} else if selectorStr, ok := selector.(string); ok {
-				// Handle single string selectors - get ALL matching elements
-				contentElements := doc.Find(selectorStr)
-				if contentElements.Length() > 0 {
-					var combinedContent strings.Builder
-					contentElements.Each(func(i int, el *goquery.Selection) {
-						if html, err := el.Html(); err == nil && strings.TrimSpace(html) != "" {
-							combinedContent.WriteString(html)
-							combinedContent.WriteString("\n")
-						}
-					})
-					contentHTML = strings.TrimSpace(combinedContent.String())
-				}
+			// Process the first selector with non-empty raw content, preserving fallback order.
+			if contentElements == nil || !hasCustomContent(contentElements) {
+				continue
 			}
 
-			// If we found content, process it and break
-			if contentHTML != "" && strings.TrimSpace(contentHTML) != "" {
+			contentHTML, err := processCustomContent(contentElements, doc, customExtractor.Content, result.Title, targetURL)
+			if err == nil && strings.TrimSpace(contentHTML) != "" {
 				// Apply content type conversion with security sanitization
 				result.Content = formatContent(contentHTML, opts.ContentType)
 
@@ -474,8 +449,8 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 
 				// Calculate word count
 				result.WordCount = calculateWordCount(result.Content)
-				break
 			}
+			break
 		}
 	}
 
@@ -597,6 +572,155 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 	}
 
 	return result
+}
+
+func contentElementsForSelector(doc *goquery.Document, selector interface{}) *goquery.Selection {
+	var selectors []string
+	switch selector := selector.(type) {
+	case string:
+		selectors = []string{selector}
+	case []string:
+		selectors = selector
+	case []interface{}:
+		selectors = make([]string, 0, len(selector))
+		for _, selectorItem := range selector {
+			if selectorString, ok := selectorItem.(string); ok {
+				selectors = append(selectors, selectorString)
+			}
+		}
+	}
+	if len(selectors) == 0 {
+		return nil
+	}
+	return doc.Find(strings.Join(selectors, ","))
+}
+
+func hasCustomContent(contentElements *goquery.Selection) bool {
+	for _, element := range contentElements.Nodes {
+		for child := element.FirstChild; child != nil; child = child.NextSibling {
+			if child.Type == html.TextNode && strings.TrimSpace(child.Data) == "" {
+				continue
+			}
+			return true
+		}
+	}
+	return false
+}
+
+func processCustomContent(contentElements *goquery.Selection, doc *goquery.Document, extractor *custom.ContentExtractor, title, targetURL string) (string, error) {
+	var combinedContent strings.Builder
+	var processErr error
+
+	contentElements = outermostContentElements(contentElements)
+	contentElements.EachWithBreak(func(_ int, element *goquery.Selection) bool {
+		contentDoc, err := goquery.NewDocumentFromReader(strings.NewReader("<div></div>"))
+		if err != nil {
+			processErr = fmt.Errorf("create custom content wrapper: %w", err)
+			return false
+		}
+		wrapper := contentDoc.Find("div").First()
+		wrapper.AppendSelection(element.Clone())
+
+		type transformMatch struct {
+			selector  string
+			transform custom.TransformFunction
+			match     *goquery.Selection
+			depth     int
+			index     int
+		}
+
+		selectors := make([]string, 0, len(extractor.Transforms))
+		for selector := range extractor.Transforms {
+			selectors = append(selectors, selector)
+		}
+		sort.Strings(selectors)
+
+		matches := make([]transformMatch, 0)
+		seen := make(map[*html.Node]struct{})
+		for _, selector := range selectors {
+			transform := extractor.Transforms[selector]
+			wrapper.Find(selector).Each(func(index int, match *goquery.Selection) {
+				node := match.Get(0)
+				if _, ok := seen[node]; ok {
+					return
+				}
+				seen[node] = struct{}{}
+
+				depth := 0
+				for ancestor := node; ancestor != nil; ancestor = ancestor.Parent {
+					depth++
+				}
+				matches = append(matches, transformMatch{
+					selector:  selector,
+					transform: transform,
+					match:     match,
+					depth:     depth,
+					index:     index,
+				})
+			})
+		}
+		sort.Slice(matches, func(i, j int) bool {
+			if matches[i].depth != matches[j].depth {
+				return matches[i].depth > matches[j].depth
+			}
+			if matches[i].selector != matches[j].selector {
+				return matches[i].selector < matches[j].selector
+			}
+			return matches[i].index < matches[j].index
+		})
+
+		for _, match := range matches {
+			if transformErr := match.transform.Transform(match.match); transformErr != nil {
+				processErr = fmt.Errorf("transform custom content selector %q: %w", match.selector, transformErr)
+				return false
+			}
+		}
+
+		for _, selector := range extractor.Clean {
+			wrapper.Find(selector).Remove()
+		}
+
+		content := wrapper.Children().First()
+		if !extractor.DisableDefaultCleaner {
+			content = cleaners.ExtractCleanNode(content, doc, cleaners.ContentCleanOptions{
+				CleanConditionally: true,
+				Title:              title,
+				URL:                targetURL,
+			})
+		}
+
+		html, err := content.Html()
+		if err != nil {
+			processErr = fmt.Errorf("serialize custom content: %w", err)
+			return false
+		}
+		if strings.TrimSpace(html) != "" {
+			combinedContent.WriteString(html)
+			combinedContent.WriteByte('\n')
+		}
+		return true
+	})
+
+	if processErr != nil {
+		return "", processErr
+	}
+	return strings.TrimSpace(combinedContent.String()), nil
+}
+
+func outermostContentElements(contentElements *goquery.Selection) *goquery.Selection {
+	selected := make(map[*html.Node]struct{}, contentElements.Length())
+	for _, node := range contentElements.Nodes {
+		selected[node] = struct{}{}
+	}
+
+	return contentElements.FilterFunction(func(_ int, element *goquery.Selection) bool {
+		for ancestor := element.Get(0).Parent; ancestor != nil; ancestor = ancestor.Parent {
+			if _, ok := selected[ancestor]; ok {
+				return false
+			}
+		}
+		return true
+	})
 }
 
 // parseDate parses a date string into a time.Time.

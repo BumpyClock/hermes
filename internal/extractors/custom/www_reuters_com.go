@@ -10,6 +10,7 @@ func GetReutersExtractor() *CustomExtractor {
 
 		Title: &FieldExtractor{
 			Selectors: []interface{}{
+				`h1[data-testid="Heading"]`,
 				`h1[class*="ArticleHeader-headline-"]`,
 				"h1.article-headline",
 			},
@@ -17,6 +18,8 @@ func GetReutersExtractor() *CustomExtractor {
 
 		Author: &FieldExtractor{
 			Selectors: []interface{}{
+				`[data-testid="AuthorName"]`,
+				[]string{`meta[name="article:author"]`, "value"},
 				[]string{`meta[name="og:article:author"]`, "value"},
 				".author",
 			},
@@ -24,6 +27,7 @@ func GetReutersExtractor() *CustomExtractor {
 
 		DatePublished: &FieldExtractor{
 			Selectors: []interface{}{
+				[]string{`meta[name="article:published_time"]`, "value"},
 				[]string{`meta[name="og:article:published_time"]`, "value"},
 			},
 		},
@@ -37,6 +41,7 @@ func GetReutersExtractor() *CustomExtractor {
 		Content: &ContentExtractor{
 			FieldExtractor: &FieldExtractor{
 				Selectors: []interface{}{
+					`[data-testid="ArticleBody"]`,
 					"div.ArticleBodyWrapper",
 					"#article-text",
 				},
@@ -49,6 +54,8 @@ func GetReutersExtractor() *CustomExtractor {
 			},
 
 			Clean: []string{
+				`[data-testid="promo-box"]`,
+				`[data-testid="ContextWidget"]`,
 				`div[class^="ArticleBody-byline-container-"]`,
 				"#article-byline .author",
 			},

@@ -26,20 +26,19 @@ type CustomExtractor struct {
 // FieldExtractor defines how to extract a specific field from a document
 // JavaScript equivalent: { selectors: [...], allowMultiple: bool }.
 type FieldExtractor struct {
-	Selectors      []interface{} `json:"selectors"`      // Can be string or [string, string] for [selector, attribute]
-	AllowMultiple  bool          `json:"allowMultiple"`  // Allow multiple values
-	DefaultCleaner bool          `json:"defaultCleaner"` // Apply default field cleaner
-	Format         string        `json:"format"`         // Date format (for date fields)
-	Timezone       string        `json:"timezone"`       // Timezone (for date fields)
+	Selectors     []interface{} `json:"selectors"`     // Can be string or [string, string] for [selector, attribute]
+	AllowMultiple bool          `json:"allowMultiple"` // Allow multiple values
+	Format        string        `json:"format"`        // Date format (for date fields)
+	Timezone      string        `json:"timezone"`      // Timezone (for date fields)
 }
 
 // ContentExtractor defines how to extract and clean main content
 // JavaScript equivalent: { selectors: [...], clean: [...], transforms: {...} }.
 type ContentExtractor struct {
 	*FieldExtractor
-	Clean          []string                     `json:"clean"`          // Selectors to remove from content
-	Transforms     map[string]TransformFunction `json:"transforms"`     // Element transformations
-	DefaultCleaner bool                         `json:"defaultCleaner"` // Apply default content cleaner
+	Clean                 []string                     `json:"clean"`                 // Selectors to remove from content
+	Transforms            map[string]TransformFunction `json:"transforms"`            // Element transformations
+	DisableDefaultCleaner bool                         `json:"disableDefaultCleaner"` // Skip default content cleaning; zero value enables it
 }
 
 // TransformFunction represents a function that transforms DOM elements

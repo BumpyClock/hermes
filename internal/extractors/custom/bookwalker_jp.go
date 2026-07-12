@@ -46,7 +46,7 @@ var BookwalkerJpExtractor = &CustomExtractor{
 		},
 
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
+		DisableDefaultCleaner: true,
 
 		// Clean trial labels and promotional content
 		Clean: []string{

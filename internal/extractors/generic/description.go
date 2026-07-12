@@ -5,6 +5,7 @@ package generic
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -82,7 +83,8 @@ func (extractor *GenericDescriptionExtractor) isValidDescription(description str
 	}
 
 	// Should be reasonable length (not too short, not too long)
-	if len(description) < 10 || len(description) > 300 {
+	descriptionLength := utf8.RuneCountInString(description)
+	if descriptionLength < 10 || descriptionLength > 500 {
 		return false
 	}
 

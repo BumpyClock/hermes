@@ -5,9 +5,12 @@ import (
 	"time"
 )
 
+// DefaultUserAgent matches current stable Chrome's reduced User-Agent format.
+const DefaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
+
 // Request headers that match the JavaScript version.
 var REQUEST_HEADERS = map[string]string{
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36",
+	"User-Agent": DefaultUserAgent,
 }
 
 // Standard HTTP headers for web content fetching.

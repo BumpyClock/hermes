@@ -54,6 +54,9 @@ func GetTheGuardianExtractor() *CustomExtractor {
 			},
 
 			Clean: []string{
+				"aside",
+				`[data-gu-name="after-content"]`,
+				`[data-component="related-content"]`,
 				".hide-on-mobile",
 				".inline-icon",
 			},

@@ -1,4 +1,4 @@
-// ABOUTME: InfoQ custom extractor with DefaultCleaner false handling
+// ABOUTME: InfoQ custom extractor with default cleaning disabled
 // ABOUTME: 100% JavaScript-compatible port of src/extractors/custom/www.infoq.com/index.js
 
 package custom
@@ -46,8 +46,8 @@ var WwwInfoqComExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				"div.article__data",
 			},
-			DefaultCleaner: false, // defaultCleaner: false in JavaScript
 		},
+		DisableDefaultCleaner: true, // JavaScript disables default cleaning.
 	},
 }
 

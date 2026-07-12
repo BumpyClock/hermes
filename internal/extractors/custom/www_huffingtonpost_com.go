@@ -25,8 +25,8 @@ var HuffingtonPostCustomExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				"div.entry__body",
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 
 		// Clean selectors - remove unwanted elements
 		Clean: []string{

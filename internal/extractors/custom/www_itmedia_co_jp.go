@@ -53,7 +53,7 @@ var WwwItmediaCoJpExtractor = &CustomExtractor{
 		},
 
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
+		DisableDefaultCleaner: true,
 
 		// Clean social sharing content
 		Clean: []string{

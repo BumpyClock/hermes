@@ -7,7 +7,15 @@ import (
 	"time"
 
 	"github.com/BumpyClock/hermes/internal/parser"
+	"github.com/BumpyClock/hermes/internal/resource"
 	"github.com/BumpyClock/hermes/internal/validation"
+)
+
+const (
+	// DefaultUserAgent matches current stable Chrome's reduced User-Agent format.
+	DefaultUserAgent = resource.DefaultUserAgent
+	// FacebookCrawlerUserAgent can be supplied with WithUserAgent for crawler-specific responses.
+	FacebookCrawlerUserAgent = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
 )
 
 // Client is a thread-safe, reusable parser client for extracting content from web pages.
@@ -37,7 +45,7 @@ type Client struct {
 func New(opts ...Option) *Client {
 	// Default configuration
 	c := &Client{
-		userAgent:            "Hermes/1.0",
+		userAgent:            DefaultUserAgent,
 		timeout:              30 * time.Second,
 		allowPrivateNetworks: false,
 		contentType:          "html",

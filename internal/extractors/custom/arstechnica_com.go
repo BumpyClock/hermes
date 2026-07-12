@@ -13,11 +13,12 @@ var ArstechnicaComExtractor = &CustomExtractor{
 	Domain: "arstechnica.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{"title"},
+		Selectors: []interface{}{"article h1", "h1", "title"},
 	},
 
 	Author: &FieldExtractor{
 		Selectors: []interface{}{
+			[]string{"meta[name=\"author\"]", "value"},
 			"*[rel=\"author\"] *[itemprop=\"name\"]",
 		},
 	},
@@ -43,6 +44,7 @@ var ArstechnicaComExtractor = &CustomExtractor{
 	Content: &ContentExtractor{
 		FieldExtractor: &FieldExtractor{
 			Selectors: []interface{}{
+				"article",
 				"div[itemprop=\"articleBody\"]",
 			},
 		},
@@ -62,6 +64,7 @@ var ArstechnicaComExtractor = &CustomExtractor{
 
 		// Clean selectors - remove unwanted elements
 		Clean: []string{
+			"article > header",
 			// Remove enlarge links and separators inside image captions.
 			"figcaption .enlarge-link",
 			"figcaption .sep",

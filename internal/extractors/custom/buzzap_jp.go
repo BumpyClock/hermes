@@ -34,7 +34,7 @@ var BuzzapJpExtractor = &CustomExtractor{
 		},
 
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
+		DisableDefaultCleaner: true,
 	},
 }
 

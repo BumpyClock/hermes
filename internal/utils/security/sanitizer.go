@@ -19,14 +19,15 @@ func createArticlePolicy() *bluemonday.Policy {
 	// Allow common article formatting
 	p.AllowElements("p", "br", "strong", "b", "em", "i", "u", "h1", "h2", "h3", "h4", "h5", "h6")
 	p.AllowElements("ul", "ol", "li", "blockquote", "pre", "code")
-	p.AllowElements("img", "a", "span", "div")
+	p.AllowElements("img", "a", "span", "div", "figure", "figcaption")
 
 	// Allow links with href
 	p.AllowAttrs("href").OnElements("a")
 	p.RequireNoReferrerOnLinks(true)
+	p.AllowURLSchemes("http", "https")
 
 	// Allow images with src, alt, width, height
-	p.AllowAttrs("src", "alt", "width", "height", "srcset", "sizes").OnElements("img")
+	p.AllowAttrs("src", "alt", "width", "height").OnElements("img")
 
 	// Allow basic styling classes (but sanitize the actual CSS)
 	p.AllowAttrs("class").OnElements("div", "span", "p", "img", "a")

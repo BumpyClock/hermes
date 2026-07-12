@@ -56,6 +56,7 @@ func buildAllExtractors() map[string]*CustomExtractor {
 		"PoliticoExtractor":       GetPoliticoExtractor(),
 		"NPRExtractor":            GetNPRExtractor(),
 		"ABCNewsExtractor":        GetABCNewsExtractor(),
+		"BBCExtractor":            GetBBCExtractor(),
 		"NBCNewsExtractor":        GetNBCNewsExtractor(),
 		"LATimesExtractor":        GetLATimesExtractor(),
 		"ChicagoTribuneExtractor": GetChicagoTribuneExtractor(),
@@ -152,6 +153,8 @@ func buildAllExtractors() map[string]*CustomExtractor {
 		"JapanCnetComExtractor":           GetJapanCnetComExtractor(),
 		"WwwInfoqComExtractor":            GetWwwInfoqComExtractor(),
 		"WiredJpExtractor":                GetWiredJpExtractor(),
+		"TechCrunchExtractor":             GetTechCrunchExtractor(),
+		"AppleNewsroomExtractor":          GetAppleNewsroomExtractor(),
 
 		// Regional/Local News - PHASE REGIONAL COMPLETE ✅ (4 extractors)
 		"AlComExtractor":      GetWwwAlComExtractor(),

@@ -31,8 +31,8 @@ var JvndbJvnJpExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				"#news-list",
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 	},
 }
 

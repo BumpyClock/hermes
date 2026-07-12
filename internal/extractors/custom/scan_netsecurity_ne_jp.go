@@ -39,8 +39,8 @@ var ScanNetsecurityNeJpExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				"div.arti-content.arti-content--thumbnail",
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 
 		// Clean selectors
 		Clean: []string{

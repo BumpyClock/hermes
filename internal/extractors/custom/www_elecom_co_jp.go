@@ -30,8 +30,8 @@ func GetWwwElecomCoJpExtractor() *CustomExtractor {
 				Selectors: []interface{}{
 					"td.TableMain2",
 				},
-				DefaultCleaner: false, // Explicit defaultCleaner: false from JavaScript
 			},
+			DisableDefaultCleaner: true, // JavaScript disables default cleaning.
 
 			Transforms: map[string]TransformFunction{
 				// Transform table to set width=auto

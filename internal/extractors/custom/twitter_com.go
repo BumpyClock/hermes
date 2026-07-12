@@ -23,8 +23,8 @@ var TwitterCustomExtractor = &CustomExtractor{
 			Selectors: []interface{}{
 				`.permalink[role=main]`,
 			},
-			DefaultCleaner: false,
 		},
+		DisableDefaultCleaner: true,
 
 		// Transform functions for Twitter-specific content
 		Transforms: map[string]TransformFunction{

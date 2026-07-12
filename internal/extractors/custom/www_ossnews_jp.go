@@ -40,7 +40,7 @@ var WwwOssnewsJpExtractor = &CustomExtractor{
 		},
 
 		// defaultCleaner: false in JavaScript
-		DefaultCleaner: false,
+		DisableDefaultCleaner: true,
 	},
 }
 
