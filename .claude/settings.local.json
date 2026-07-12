@@ -55,7 +55,8 @@
       "Bash(./hermes.exe parse \"https://www.polygon.com/windstorm-the-legend-of-khiimori-gamescom-preview/\" -f markdown)",
       "Bash(./hermes.exe:*)",
       "Bash(git log:*)",
-      "WebFetch(domain:www.engadget.com)"
+      "WebFetch(domain:www.engadget.com)",
+      "Bash(git status:*)"
     ],
     "deny": [],
     "ask": [],
