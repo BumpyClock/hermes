@@ -43,9 +43,9 @@ func TestNewExtractorsIntegration(t *testing.T) {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}
 
-	// Test theme color extraction (note: there may be integration issues with theme color in the full pipeline)
-	// The extractor works correctly in isolation as shown by unit tests
-	t.Logf("Theme color: '%s' (expected: '#007acc')", result.ThemeColor)
+	if result.ThemeColor != "#007acc" {
+		t.Errorf("Expected theme color '#007acc', got %q", result.ThemeColor)
+	}
 
 	// Test favicon extraction (should resolve the relative URL or find apple-touch-icon)
 	if result.Favicon == "" {
@@ -97,8 +97,36 @@ func TestThemeColorFallback(t *testing.T) {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}
 
-	// Theme color integration issue - extractor works in isolation but may not in full pipeline
-	t.Logf("Theme color from tile fallback: '%s' (expected: '#da532c')", result.ThemeColor)
+	if result.ThemeColor != "#da532c" {
+		t.Errorf("Expected tile color '#da532c', got %q", result.ThemeColor)
+	}
+}
+
+func TestParseHTMLPreservesDocumentBase(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		base     string
+		wantBase string
+	}{
+		{name: "absolute", base: "https://cdn.example/assets/", wantBase: "https://cdn.example/assets/"},
+		{name: "root-relative", base: "/assets/", wantBase: "https://example.com/assets/"},
+		{name: "scheme-relative", base: "//cdn.example/assets/", wantBase: "https://cdn.example/assets/"},
+	} {
+		html := `<html><head><base href="` + test.base + `"></head><body><article><p>This article contains enough text to preserve its main content through extraction. The article includes an image and <a href="next">a relative link</a>.</p><img src="photo.jpg" srcset="small.jpg 1x, large.jpg 2x" width="640" height="480" alt="Article photo"><img src="//images.example/photo.jpg" alt="Second photo"></article></body></html>`
+		for _, format := range []string{"html", "markdown"} {
+			t.Run(test.name+"/"+format, func(t *testing.T) {
+				result, err := New(WithContentType(format)).ParseHTML(context.Background(), html, "https://example.com/page")
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, expected := range []string{test.wantBase + "next", test.wantBase + "photo.jpg", "https://images.example/photo.jpg"} {
+					if !strings.Contains(result.Content, expected) {
+						t.Errorf("Content does not contain %q: %s", expected, result.Content)
+					}
+				}
+			})
+		}
+	}
 }
 
 func TestVideoTwitterFallback(t *testing.T) {

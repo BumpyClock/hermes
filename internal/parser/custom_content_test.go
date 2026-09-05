@@ -52,6 +52,31 @@ func TestCustomExtractorPreservesRawContentSelectorFallbackOrder(t *testing.T) {
 	}
 }
 
+func TestCustomContentFallbackDefaults(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		opts        ParserOptions
+		wantContent bool
+	}{
+		{name: "empty options", wantContent: true},
+		{name: "explicit fallback", opts: ParserOptions{ContentType: "html", Fallback: true}, wantContent: true},
+		{name: "explicit no fallback", opts: ParserOptions{ContentType: "html", Fallback: false}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := New().ParseHTML(`<html><body><main><p>Short generic fallback.</p></main></body></html>`, "https://arstechnica.com/example", &test.opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result.ExtractorUsed != "custom:arstechnica.com" {
+				t.Fatalf("extractor used %q, want custom:arstechnica.com", result.ExtractorUsed)
+			}
+			if strings.Contains(result.Content, "Short generic fallback.") != test.wantContent {
+				t.Fatalf("content = %q, want fallback content: %v", result.Content, test.wantContent)
+			}
+		})
+	}
+}
+
 func TestContentElementsForSelectorGroupsPreserveSourceOrderAndDeduplicate(t *testing.T) {
 	for name, selector := range map[string]interface{}{
 		"string slice":    []string{".second", ".first", ".first"},

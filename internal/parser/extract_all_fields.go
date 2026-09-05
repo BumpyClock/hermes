@@ -48,15 +48,12 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 		return nil, fmt.Errorf("extraction cancelled: %w", ctx.Err())
 	default:
 	}
-	// Merge provided options with defaults to ensure reasonable behavior
+	// An explicit content type preserves the caller's fallback preference.
+	if opts.ContentType == "" && !opts.Fallback && opts.Headers == nil {
+		opts.Fallback = true
+	}
 	if opts.ContentType == "" {
 		opts.ContentType = "html"
-	}
-	// Enable fallback by default if no explicit preference is given
-	// This is detected by checking if ALL options are zero values (empty struct)
-	if opts.ContentType == "html" && !opts.Fallback && opts.Headers == nil {
-		// Likely an empty ParserOptions{}, so enable fallback for better UX
-		opts.Fallback = true
 	}
 
 	// Create base result

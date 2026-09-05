@@ -4,9 +4,11 @@
 package generic
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/net/html/atom"
 
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/text"
@@ -56,8 +58,16 @@ func (e *GenericContentExtractor) Extract(params ExtractorParams, opts Extractor
 	// Merge with default options
 	mergedOpts := e.mergeOptions(opts)
 
-	// Create a fresh document for each attempt
 	doc := params.Doc
+	sourceHTML := params.HTML
+	if sourceHTML == "" {
+		// Retries need the source before candidate extraction changes the document.
+		var err error
+		sourceHTML, err = doc.Html()
+		if err != nil {
+			return ""
+		}
+	}
 
 	// First attempt with current options
 	node := e.GetContentNode(doc, params.Title, params.URL, mergedOpts)
@@ -81,7 +91,7 @@ func (e *GenericContentExtractor) Extract(params ExtractorParams, opts Extractor
 		}
 
 		retry.disable(&mergedOpts)
-		freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(params.HTML))
+		freshDoc, err := goquery.NewDocumentFromReader(strings.NewReader(sourceHTML))
 		if err != nil {
 			continue
 		}
@@ -167,13 +177,15 @@ func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery
 		defaultCleaner = true // JavaScript default behavior
 	}
 
-	// Get the document and apply cleaning functions
-	// NOTE: Go DOM functions operate on entire document, not individual selections
-	doc := opts.Doc
-
-	// Rewrite the tag name to div if it's a top level node like body or html
-	// to avoid later complications with multiple body tags.
-	doc = dom.RewriteTopLevel(doc)
+	// Scope the document helpers to a copy of the selected article.
+	// A separate document would leave the returned selection unchanged.
+	cleaned := article.Clone()
+	cleaned.Filter("html, body").Each(func(_ int, selection *goquery.Selection) {
+		node := selection.Get(0)
+		node.Data = "div"
+		node.DataAtom = atom.Div
+	})
+	doc := &goquery.Document{Selection: cleaned}
 
 	// Drop small images and spacer images
 	// Only do this if defaultCleaner is set to true;
@@ -182,8 +194,18 @@ func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery
 		doc = dom.CleanImages(doc)
 	}
 
-	// Make links absolute
-	doc = dom.MakeLinksAbsolute(doc, opts.URL)
+	// The article clone does not include the source document's head.
+	baseURL := opts.URL
+	if opts.Doc != nil {
+		if baseHref := opts.Doc.Find("base").First().AttrOr("href", ""); baseHref != "" {
+			if pageURL, err := url.Parse(opts.URL); err == nil {
+				if resolvedBase, err := pageURL.Parse(baseHref); err == nil {
+					baseURL = resolvedBase.String()
+				}
+			}
+		}
+	}
+	doc = dom.MakeLinksAbsolute(doc, baseURL)
 
 	// Mark elements to keep that would normally be removed.
 	// E.g., stripJunkTags will remove iframes, so we're going to mark
@@ -206,7 +228,7 @@ func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery
 	// too many in-article lists being removed. Consider a better
 	// way to detect menus particularly and remove them.
 	// Also optionally running, since it can be overly aggressive.
-	if defaultCleaner {
+	if defaultCleaner && opts.CleanConditionally {
 		doc = dom.CleanTags(doc)
 	}
 
@@ -216,9 +238,5 @@ func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery
 	// Remove unnecessary attributes
 	dom.CleanAttributes(doc)
 
-	// After cleaning the document, we need to find the corresponding element
-	// This is a limitation of the Go approach - we clean the entire document
-	// but need to return the specific article node
-	// For now, return the original article selection as the DOM cleaning affected the whole document
-	return article
+	return cleaned
 }
