@@ -51,6 +51,23 @@ func TestGenericContentExtractorRetriesWithoutHTML(t *testing.T) {
 	assert.Contains(t, result, `href="https://example.com/next"`)
 }
 
+func TestCleanContentHonorsCleanConditionally(t *testing.T) {
+	for _, enabled := range []bool{false, true} {
+		doc, err := goquery.NewDocumentFromReader(strings.NewReader(`<article><p>Brief report.</p><table><tr><td>42</td></tr></table></article>`))
+		require.NoError(t, err)
+		cleaned := CleanContent(doc.Find("article"), CleanContentOptions{Doc: doc, CleanConditionally: enabled})
+		assert.Equal(t, !enabled, cleaned.Find("table").Length() > 0)
+	}
+}
+
+func TestGenericContentExtractorRelaxedRetryPreservesTable(t *testing.T) {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(`<html><body><article><p>Brief report.</p><table><tr><td>42</td></tr></table></article></body></html>`))
+	require.NoError(t, err)
+	extractor := NewGenericContentExtractor()
+	result := extractor.Extract(ExtractorParams{Doc: doc, URL: "https://example.com/page"}, extractor.DefaultOpts)
+	assert.Contains(t, result, `<table><tbody><tr><td>42</td></tr></tbody></table>`)
+}
+
 func TestCleanContentPreservesDocumentBase(t *testing.T) {
 	source := `<html><head><base href="https://cdn.example/assets/"></head><body><article><p>Article text with <a href="next">a link</a>.</p><img src="photo.jpg" srcset="small.jpg 1x, large.jpg 2x" width="640" height="480"></article></body></html>`
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(source))

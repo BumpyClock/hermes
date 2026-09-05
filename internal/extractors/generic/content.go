@@ -4,6 +4,7 @@
 package generic
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -197,7 +198,11 @@ func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery
 	baseURL := opts.URL
 	if opts.Doc != nil {
 		if baseHref := opts.Doc.Find("base").First().AttrOr("href", ""); baseHref != "" {
-			baseURL = baseHref
+			if pageURL, err := url.Parse(opts.URL); err == nil {
+				if resolvedBase, err := pageURL.Parse(baseHref); err == nil {
+					baseURL = resolvedBase.String()
+				}
+			}
 		}
 	}
 	doc = dom.MakeLinksAbsolute(doc, baseURL)
@@ -223,7 +228,7 @@ func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery
 	// too many in-article lists being removed. Consider a better
 	// way to detect menus particularly and remove them.
 	// Also optionally running, since it can be overly aggressive.
-	if defaultCleaner {
+	if defaultCleaner && opts.CleanConditionally {
 		doc = dom.CleanTags(doc)
 	}
 
