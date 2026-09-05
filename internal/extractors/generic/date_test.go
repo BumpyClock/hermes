@@ -6,6 +6,7 @@ package generic
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
@@ -38,6 +39,7 @@ func TestGenericDateExtractor_Basic(t *testing.T) {
 }
 
 func TestGenericDateExtractor_MetaTags(t *testing.T) {
+	localMidnight := time.Date(2023, time.December, 1, 0, 0, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z")
 	tests := []struct {
 		name     string
 		metaTag  string
@@ -54,13 +56,13 @@ func TestGenericDateExtractor_MetaTags(t *testing.T) {
 			name:     "displaydate",
 			metaTag:  "displaydate",
 			content:  "2023-12-01",
-			expected: "2023-12-01T08:00:00.000Z", // Local timezone parsing like JavaScript
+			expected: localMidnight,
 		},
 		{
 			name:     "dc.date",
 			metaTag:  "dc.date",
 			content:  "December 1, 2023",
-			expected: "2023-12-01T08:00:00.000Z", // Local timezone parsing like JavaScript
+			expected: localMidnight,
 		},
 	}
 
@@ -88,6 +90,7 @@ func TestGenericDateExtractor_MetaTags(t *testing.T) {
 }
 
 func TestGenericDateExtractor_Selectors(t *testing.T) {
+	localMidnight := time.Date(2023, time.December, 1, 0, 0, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z")
 	tests := []struct {
 		name     string
 		html     string
@@ -96,12 +99,12 @@ func TestGenericDateExtractor_Selectors(t *testing.T) {
 		{
 			name:     "entry-date selector",
 			html:     `<html><body><div class="entry-date">2023-12-01</div></body></html>`,
-			expected: "2023-12-01T08:00:00.000Z", // Local timezone parsing
+			expected: localMidnight,
 		},
 		{
 			name:     "hentry published selector",
 			html:     `<html><body><div class="hentry"><span class="published">December 1, 2023</span></div></body></html>`,
-			expected: "2023-12-01T08:00:00.000Z", // Local timezone parsing
+			expected: localMidnight,
 		},
 		{
 			name:     "meta postDate selector",
@@ -127,6 +130,7 @@ func TestGenericDateExtractor_Selectors(t *testing.T) {
 }
 
 func TestGenericDateExtractor_URLExtraction(t *testing.T) {
+	localMidnight := time.Date(2023, time.December, 1, 0, 0, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z")
 	tests := []struct {
 		name     string
 		url      string
@@ -135,17 +139,17 @@ func TestGenericDateExtractor_URLExtraction(t *testing.T) {
 		{
 			name:     "URL with YYYY/MM/DD format",
 			url:      "https://example.com/2023/12/01/article-title",
-			expected: "2023-12-01T08:00:00.000Z", // Local timezone parsing
+			expected: localMidnight,
 		},
 		{
 			name:     "URL with YYYY-MM-DD format",
 			url:      "https://example.com/news/2023-12-01-breaking",
-			expected: "2023-12-01T08:00:00.000Z", // Local timezone parsing
+			expected: localMidnight,
 		},
 		{
 			name:     "URL with month abbreviation",
 			url:      "https://example.com/2023/dec/01/story",
-			expected: "2023-12-01T08:00:00.000Z", // Local timezone parsing
+			expected: localMidnight,
 		},
 	}
 
