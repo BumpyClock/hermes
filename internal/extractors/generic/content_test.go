@@ -51,6 +51,17 @@ func TestGenericContentExtractorRetriesWithoutHTML(t *testing.T) {
 	assert.Contains(t, result, `href="https://example.com/next"`)
 }
 
+func TestCleanContentPreservesDocumentBase(t *testing.T) {
+	source := `<html><head><base href="https://cdn.example/assets/"></head><body><article><p>Article text with <a href="next">a link</a>.</p><img src="photo.jpg" srcset="small.jpg 1x, large.jpg 2x" width="640" height="480"></article></body></html>`
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(source))
+	require.NoError(t, err)
+	cleaned := CleanContent(doc.Find("article"), CleanContentOptions{Doc: doc, URL: "https://example.com/page"})
+	assert.Equal(t, "https://cdn.example/assets/next", cleaned.Find("a").AttrOr("href", ""))
+	assert.Equal(t, "https://cdn.example/assets/photo.jpg", cleaned.Find("img").AttrOr("src", ""))
+	assert.Equal(t, "https://cdn.example/assets/small.jpg 1x, https://cdn.example/assets/large.jpg 2x", cleaned.Find("img").AttrOr("srcset", ""))
+	assert.Equal(t, "next", doc.Find("a").AttrOr("href", ""))
+}
+
 func TestGenericContentExtractor_Extract_BasicFunctionality(t *testing.T) {
 	tests := []struct {
 		name     string

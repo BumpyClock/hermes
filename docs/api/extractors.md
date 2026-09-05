@@ -17,6 +17,7 @@ Theme color extraction accepts standard `content` attributes and normalized `val
 
 Generic content cleanup operates on a copy of the selected article. It preserves the source document and excludes unrelated page elements from cleanup.
 The returned content includes absolute links and the existing image, header, tag, empty-element, and attribute cleanup rules.
+Relative article URLs retain the source document's first `<base href>` value, when present.
 If no source HTML is supplied, generic extraction captures the document before candidate extraction. Retries use that source to preserve short article content.
 This correction does not change public methods or JSON fields.
 

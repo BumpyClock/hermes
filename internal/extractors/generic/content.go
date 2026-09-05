@@ -193,8 +193,14 @@ func CleanContent(article *goquery.Selection, opts CleanContentOptions) *goquery
 		doc = dom.CleanImages(doc)
 	}
 
-	// Make links absolute
-	doc = dom.MakeLinksAbsolute(doc, opts.URL)
+	// The article clone does not include the source document's head.
+	baseURL := opts.URL
+	if opts.Doc != nil {
+		if baseHref := opts.Doc.Find("base").First().AttrOr("href", ""); baseHref != "" {
+			baseURL = baseHref
+		}
+	}
+	doc = dom.MakeLinksAbsolute(doc, baseURL)
 
 	// Mark elements to keep that would normally be removed.
 	// E.g., stripJunkTags will remove iframes, so we're going to mark
