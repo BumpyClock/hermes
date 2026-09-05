@@ -1,4 +1,4 @@
-.PHONY: build test test-race verify lint clean install deps benchmark docker-build
+.PHONY: build test test-race test-release verify lint clean install deps benchmark docker-build
 
 PACKAGES ?= ./...
 BENCH ?= .
@@ -13,7 +13,10 @@ test:
 test-race:
 	go test -race -coverprofile=coverage.out $(PACKAGES)
 
-verify: lint test-race build
+test-release:
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_*release*.py' -v
+
+verify: lint test-race build test-release
 
 lint:
 	golangci-lint run

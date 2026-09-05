@@ -112,7 +112,8 @@ Choose checks that cover the affected behavior:
 | `make test` | Run all tests with coverage. |
 | `go test ./internal/parser -run TestName -count=1` | Run a focused regression test. |
 | `make test-race` | Run the race and coverage checks from CI. |
-| `make verify` | Run lint, race tests with coverage, and the CLI build. |
+| `make test-release` | Run offline release-tool tests with Python 3.11 or later. |
+| `make verify` | Run lint, race tests with coverage, the CLI build, and release-tool tests. |
 | `make benchmark` | Run benchmarks with allocation metrics, without ordinary tests. |
 | `make build` | Build the CLI at `bin/hermes`. |
 
@@ -125,6 +126,14 @@ make benchmark PACKAGES=./internal/parser BENCH=BenchmarkParseHTML BENCHFLAGS='-
 
 Before a pull request, run `make verify`. Report failures and omitted checks.
 All required checks must pass before merge. Do not reduce test coverage without an explanation.
+
+CI, benchmark checks, and automatic PR reviews cancel older runs for the same workflow and branch or pull request.
+Separate workflows and branches do not cancel each other.
+Comment-triggered Claude requests remain independent because separate comments can contain distinct tasks.
+All workflow jobs have explicit time limits.
+The benchmark workflow retains its path filters.
+
+See [the release procedure](../RELEASING.md) for release gates and recovery after partial publication.
 
 ## Documentation
 

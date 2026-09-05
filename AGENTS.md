@@ -22,12 +22,13 @@ The linter build must support the selected Go toolchain.
 | Package coverage | `make test PACKAGES=./internal/parser` |
 | Full local acceptance | `make verify` |
 | Race checks with coverage | `make test-race` |
+| Offline release-tool checks | `make test-release` (Python 3.11+) |
 | CLI build | `make build` |
 | Lint | `make lint` |
 | Format changed Go files | `golangci-lint fmt path/to/file.go` |
 | Repeated parser benchmark | `make benchmark PACKAGES=./internal/parser BENCH=BenchmarkParseHTML BENCHFLAGS='-count=5'` |
 
-`make verify` runs lint, race tests with coverage, and the CLI build.
+`make verify` runs lint, race tests with coverage, the CLI build, and offline release-tool tests.
 `make benchmark` excludes ordinary tests.
 The suite has no separate `-short` or `integration` build-tag tier.
 CI covers pushes to `master` and `develop`, plus pull requests that target `master`.
@@ -53,4 +54,5 @@ The public `Result` does not expose the internal pagination URL.
 ## Releases
 
 Use [.agents/skills/create-release/SKILL.md](.agents/skills/create-release/SKILL.md) for an authorized release.
+The canonical procedure is [docs/RELEASING.md](docs/RELEASING.md).
 The release branch is `master`.
