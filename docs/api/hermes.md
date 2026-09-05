@@ -1,8 +1,8 @@
-# Hermes API Reference
+# Hermes API reference
 
-The `github.com/BumpyClock/hermes` package exposes a small, stable API for extracting clean, structured content from web pages.
+The `github.com/BumpyClock/hermes` package extracts article content and metadata from web pages.
 
-## Table of Contents
+## Contents
 
 - [Client](#client)
 - [Options](#options)
@@ -18,7 +18,7 @@ type Client struct { /* ... */ }
 func New(opts ...Option) *Client
 ```
 
-Creates a reusable, thread-safe client. Share a single client across goroutines.
+`New` creates a reusable, thread-safe client. Share one client across goroutines.
 
 Example:
 ```go
@@ -43,12 +43,7 @@ func WithAllowPrivateNetworks(allow bool) Option
 func WithContentType(contentType string) Option // "html" | "markdown" | "text"
 ```
 
-- WithHTTPClient: Provide a custom `*http.Client` (timeouts, proxies, pools).
-- WithTransport: Set a custom transport if not using a full client.
-- WithTimeout: Set request timeout.
-- WithUserAgent: Set the `User-Agent` header.
-- WithAllowPrivateNetworks: Allow parsing of private/localhost URLs (default: false).
-- WithContentType: Choose output format for `Result.Content` (default: `"html"`).
+See [Configuration](configuration.md) for option behavior, defaults, and security precautions.
 
 ## Parsing
 
@@ -57,8 +52,7 @@ func (c *Client) Parse(ctx context.Context, url string) (*Result, error)
 func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, error)
 ```
 
-- Parse: Fetches the URL and extracts content.
-- ParseHTML: Extracts from pre-fetched HTML with the given base URL.
+`Parse` fetches the URL and extracts content. `ParseHTML` extracts content from supplied HTML with the specified base URL.
 
 Examples:
 ```go
@@ -73,7 +67,7 @@ html := "<html>...</html>"
 res, err := client.ParseHTML(ctx, html, "https://example.com")
 ```
 
-Concurrency pattern (limit with a semaphore):
+Use a semaphore to limit concurrent requests:
 ```go
 sem := make(chan struct{}, 10)
 var wg sync.WaitGroup
@@ -94,11 +88,9 @@ wg.Wait()
 
 See [Results](results.md) for all fields and helper methods.
 
-Key fields include `Title`, `Content`, `Author`, `DatePublished`, `LeadImageURL`, `Domain`, `Excerpt`, `WordCount`, `Language`, `Favicon`, `VideoURL`, and more.
-
 ## Errors
 
-Hermes returns typed errors to simplify handling:
+`ParseError` identifies the operation, URL, error code, and underlying error:
 
 ```go
 type ErrorCode int
@@ -135,14 +127,3 @@ if err != nil {
     }
 }
 ```
-
-## Relationships
-
-```mermaid
-flowchart LR
-    A[Client] -->|WithTimeout/WithUserAgent/...| B[Configured Client]
-    B --> C{Parse or ParseHTML}
-    C --> D[Result]
-    C --> E[ParseError]
-```
-

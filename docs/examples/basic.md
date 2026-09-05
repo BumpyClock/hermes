@@ -1,6 +1,8 @@
-# Basic Examples
+# Basic examples
 
-Practical examples of using Hermes as a Go library.
+These examples show URL extraction, HTML extraction, and concurrent requests with the Go library.
+
+The first example is a complete program. Later snippets assume that a client and the necessary imports already exist.
 
 ## Extract from a URL
 
@@ -45,11 +47,16 @@ res, err := client.ParseHTML(context.Background(), html, "https://example.com/ar
 ```go
 // Markdown content
 client := hermes.New(hermes.WithContentType("markdown"))
-res, _ := client.Parse(context.Background(), "https://example.com/article")
+res, err := client.Parse(context.Background(), "https://example.com/article")
+if err != nil {
+    log.Fatal(err)
+}
 fmt.Println(res.Content) // markdown
 ```
 
 ## Concurrency with a semaphore
+
+Import `sync` and `time` for this example. The semaphore limits concurrent requests to five.
 
 ```go
 urls := []string{"https://example.com/1", "https://example.com/2"}

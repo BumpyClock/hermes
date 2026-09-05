@@ -1,18 +1,16 @@
-# Configuration API Reference
+# Configuration API reference
 
-This document covers available configuration for the public Hermes client.
+Pass functional options to `hermes.New(...)` to configure the client. The library has no public `ParserOptions` type, environment-variable loader, or YAML/JSON configuration reader.
 
-Hermes is configured via functional options passed to `hermes.New(...)`. There is no public `ParserOptions` type, no environment-variable loader, and no YAML/JSON config reader in the library.
+## Contents
 
-## Table of Contents
-
-- [Client Options](#client-options)
-- [Content Type](#content-type)
+- [Client options](#client-options)
+- [Content type](#content-type)
 - [HTTP/TLS](#httptls)
 - [Security](#security)
 - [Examples](#examples)
 
-## Client Options
+## Client options
 
 ```go
 func WithHTTPClient(httpClient *http.Client) Option
@@ -23,33 +21,40 @@ func WithAllowPrivateNetworks(allow bool) Option
 func WithContentType(contentType string) Option // "html" | "markdown" | "text"
 ```
 
-- WithHTTPClient: Provide a fully configured `*http.Client` (proxies, TLS, pools, timeouts).
-- WithTransport: Provide a custom `http.RoundTripper` if you are not supplying a full client.
-- WithTimeout: Set request timeout on Hermes-created clients, or on a custom client when explicitly composed with `WithHTTPClient`.
-- WithUserAgent: Override the default `User-Agent` string.
-- WithAllowPrivateNetworks: Permit private network/localhost URLs (defaults to false for SSRF protection).
-- WithContentType: Select output format for the `Result.Content` field.
+| Option | Behavior |
+| --- | --- |
+| `WithHTTPClient` | Uses a supplied `*http.Client` for proxies, TLS, connection pools, and timeouts. |
+| `WithTransport` | Sets the HTTP transport. |
+| `WithTimeout` | Sets the request timeout. Hermes defaults to 30 seconds and preserves a supplied client's timeout unless this option is explicit. |
+| `WithUserAgent` | Sets the `User-Agent` header. The default is `hermes.DefaultUserAgent`. |
+| `WithAllowPrivateNetworks` | Permits private network and localhost URLs. The default is `false`. |
+| `WithContentType` | Sets the format of `Result.Content`. The default is `"html"`. |
 
-## Content Type
+## Content type
 
 `WithContentType` controls the format of the extracted `Result.Content`:
 
-- `"html"` (default): Clean, sanitized HTML.
+- `"html"`: Clean, sanitized HTML. This is the default.
 - `"markdown"`: Markdown conversion of the content.
 - `"text"`: Plain text.
 
-This option affects only the content body. All metadata fields are structured the same regardless of content type.
+This option affects only the content body. Metadata fields keep the same structure for all content types.
 
 ## HTTP/TLS
 
-- Prefer `WithHTTPClient` to supply your own client if you need proxies, retry logic, or custom TLS settings.
-- Use `WithTransport` to swap only the transport on the internally created client.
-- `WithUserAgent` sets the `User-Agent` header; other headers are not currently configurable at the client level.
+- Use `WithHTTPClient` when you need proxies, retry logic, or custom TLS settings.
+- Use `WithTransport` to set the HTTP transport.
+
+`WithUserAgent` sets the `User-Agent` header. The public client has no option for other headers.
 
 ## Security
 
-- `WithAllowPrivateNetworks(false)` (default) blocks private IP ranges and localhost to mitigate SSRF.
-- Set `WithAllowPrivateNetworks(true)` only in trusted environments when you need to parse internal URLs.
+`WithAllowPrivateNetworks(false)` is the default. URL validation rejects localhost and private IP addresses before the initial request.
+
+The default client does not validate redirect destinations or restrict connections to the IP addresses from that validation.
+Do not treat this option as complete SSRF protection.
+
+If you need to parse internal URLs in a trusted environment, set `WithAllowPrivateNetworks(true)`.
 
 ## Examples
 
@@ -74,7 +79,7 @@ client := hermes.New(
 )
 ```
 
-Allow private networks (in a trusted, internal tool):
+Allow private networks for a trusted internal tool:
 
 ```go
 client := hermes.New(

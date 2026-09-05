@@ -1,15 +1,16 @@
-# Extractors (Internal Overview)
+# Internal extractors
 
-Hermes uses an internal extractor system to identify and retrieve article fields from HTML documents. This system is not a public API — it is an implementation detail of the library.
+Hermes uses internal extractors to retrieve article fields from HTML documents. Extractors are not a public API.
 
-If you are using Hermes as a library or via the CLI, you do not need to interact with extractors directly. Use the public client methods documented in [Hermes API](hermes.md), and see [Architecture Overview](../architecture/overview.md) for details on how extractors work internally.
+Use the public client methods in [Hermes API](hermes.md) to extract content. See [Architecture overview](../architecture/overview.md) for the internal design.
 
 ## Summary
 
-- Custom extractors: site-specific rules for well-known domains.
-- Generic extractors: algorithmic fallback for all other sites.
-- Field cleaners: normalize extracted values (title, author, date, etc.).
-- No public configuration for extractors; behavior is automatic.
+- Custom extractors apply site-specific rules.
+- Generic extractors provide fallback rules.
+- Field cleaners normalize extracted values such as titles, authors, and dates.
+
+Hermes selects extractors without public configuration.
 
 ```mermaid
 flowchart TD
@@ -20,4 +21,3 @@ flowchart TD
     D --> E[Cleaners]
     E --> F[Result]
 ```
-

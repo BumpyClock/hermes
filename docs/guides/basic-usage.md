@@ -1,13 +1,13 @@
-# Basic Usage Guide
+# Basic usage
 
-This guide covers fundamental usage patterns for Hermes with both the CLI and the Go API.
+Use Hermes through the CLI or the Go API to extract article content and metadata.
 
-## Table of Contents
+## Contents
 
 - [CLI](#cli)
 - [Library](#library)
-- [Content Formats](#content-formats)
-- [Error Handling](#error-handling)
+- [Content formats](#content-formats)
+- [Error handling](#error-handling)
 - [Concurrency](#concurrency)
 
 ## CLI
@@ -18,13 +18,13 @@ Install the CLI:
 go install github.com/BumpyClock/hermes/cmd/hermes@latest
 ```
 
-Parse a single URL (JSON by default):
+Parse one URL. The default output format is JSON.
 
 ```bash
 hermes parse https://example.com/article
 ```
 
-Select output format:
+Select the output format:
 
 ```bash
 hermes parse -f markdown https://example.com/article
@@ -32,23 +32,23 @@ hermes parse -f html https://example.com/article
 hermes parse -f text https://example.com/article
 ```
 
-Multiple URLs (JSON array):
+Parse multiple URLs to produce a JSON array:
 
 ```bash
 hermes parse https://example.com/1 https://example.com/2
 ```
 
-See [CLI Usage](cli-usage.md) for all flags and details.
+See [CLI usage](cli-usage.md) for flags and output rules.
 
 ## Library
 
-Add the module and import:
+Add the module:
 
 ```bash
 go get github.com/BumpyClock/hermes
 ```
 
-Basic usage:
+Create a client and parse a URL:
 
 ```go
 package main
@@ -78,31 +78,33 @@ func main() {
 }
 ```
 
-Parse pre-fetched HTML:
+Parse HTML that you already have:
 
 ```go
 html := "<html>...</html>"
 res, err := client.ParseHTML(context.Background(), html, "https://example.com")
 ```
 
-## Content Formats
+## Content formats
 
-Control the content format via `WithContentType`:
+Select the content format with `WithContentType`:
 
-- `"html"` (default): cleans and returns HTML
-- `"markdown"`: converts content to Markdown
-- `"text"`: returns plain text
+- `"html"` returns clean HTML. This is the default.
+- `"markdown"` converts content to Markdown.
+- `"text"` returns plain text.
 
-Export complete result as Markdown:
+Format the result as Markdown with a metadata header:
+
+`FormatMarkdown` preserves `res.Content` as supplied. Select `WithContentType("markdown")` before the parse call to obtain Markdown content.
 
 ```go
 md := res.FormatMarkdown()
 fmt.Println(md)
 ```
 
-## Error Handling
+## Error handling
 
-Typed errors make it easy to branch on failure kinds:
+Import `errors` to inspect a `ParseError` with `errors.As`:
 
 ```go
 res, err := client.Parse(ctx, url)
@@ -123,7 +125,9 @@ if err != nil {
 
 ## Concurrency
 
-Hermes parses one URL at a time per call. For concurrency, fan out requests with a semaphore to bound parallelism:
+Each `Parse` call handles one URL. A semaphore limits the number of concurrent calls.
+
+Import `sync` and `time` for this example:
 
 ```go
 sem := make(chan struct{}, 10)

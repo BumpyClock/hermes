@@ -1,68 +1,56 @@
-# Hermes Benchmark Tool
+# Parser benchmark
 
-A cross-platform Node.js script to compare the performance of the Hermes Go parser against the original JavaScript Postlight Parser.
-
-## Features
-
-- **🧹 Clean setup**: Automatically cleans output directories before each run
-- **📦 Self-contained**: Installs dependencies declared in `package.json` automatically
-- **⚡ Side-by-side comparison**: Tests both parsers on the same URLs
-- **📊 Detailed metrics**: Execution time, file sizes, success rates
-- **🔄 Multiple formats**: Tests both JSON and Markdown output formats
-- **💾 Output files**: Saves actual parser outputs for manual comparison
-
-## Usage
-
-```bash
-cd hermes/benchmark
-node test-comparison.js [urls-file]
-```
-
-**Example:**
-
-```bash
-node test-comparison.js ./testurls.txt
-```
-
-If no URL file is provided, it defaults to `./testurls.txt`.
-
-## Output
-
-The script creates the following structure:
-
-```
-../../test-output/
-├── js/
-│   ├── json/       # JavaScript parser JSON outputs
-│   └── markdown/   # JavaScript parser markdown outputs
-├── go/
-│   ├── json/       # Go parser JSON outputs  
-│   └── markdown/   # Go parser markdown outputs
-└── comparison-report.json  # Detailed performance metrics
-```
+`test-comparison.js` compares the Hermes CLI with the JavaScript Postlight Parser on the same URLs. It tests JSON and Markdown output.
 
 ## Requirements
 
-- Node.js (any recent version)
-- Go (for building the Hermes parser)
-- Internet connection (for `npm install`)
+- Node.js and npm.
+- The Go version in [`go.mod`](../go.mod).
+- Make, if the repository has a `Makefile`.
+- Network access for dependencies and test URLs.
 
-## Sample Results
+## Run the comparison
 
+The script deletes `benchmark/test-output/` before each run. Preserve any results that you need before you run it.
+
+Use only trusted URL files. The script inserts URLs into shell commands without shell-safe argument separation.
+
+From the repository root, run:
+
+```bash
+cd benchmark
+node test-comparison.js ./testurls.txt
 ```
-🎯 Comparison Complete!
-=========================
-Total time: 10.4s
-JSON - JS: 1/1, Go: 1/1
-Markdown - JS: 1/1, Go: 1/1
 
-📁 Results saved to: ../../test-output/
-📊 Comparison report: ../../test-output/comparison-report.json
+The URL file defaults to `./testurls.txt`. The script accepts one `https://` URL per line and ignores other lines.
+
+The script runs `npm install` in the current directory. It then builds `../bin/hermes` with `make build`.
+If the parent directory has no `Makefile`, it uses `go build -o bin/hermes ./cmd/hermes` instead.
+
+## Output
+
+The script writes results relative to the `benchmark` directory:
+
+```text
+test-output/
+├── js/
+│   ├── json/
+│   └── markdown/
+├── go/
+│   ├── json/
+│   └── markdown/
+└── comparison-report.json
 ```
 
-The comparison report contains detailed metrics for analysis:
+The report records execution time in milliseconds, success and failure counts, output file sizes in bytes, and errors.
+The output files contain parser results for manual comparison.
 
-- Execution times per parser per format
-- Success/failure rates
-- Output file sizes
-- Error details (if any)
+## Interpret the results
+
+These results measure live requests, not isolated extraction speed. Network conditions and remote page changes affect the comparison.
+
+Each Go measurement includes CLI process startup. The JavaScript parser runs in the benchmark process, and its first measurement includes module load time.
+
+`averageTime` divides total attempt time by the number of successful attempts. Failed attempts contribute to the total, so this is not a success-only average.
+
+For Go benchmarks with allocation metrics, run `make benchmark` from the repository root.

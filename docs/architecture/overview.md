@@ -1,18 +1,20 @@
-# Architecture Overview
+# Architecture overview
 
-This overview describes how Hermes is organized internally and how a parse request flows through the system.
+Hermes separates its public client, resource access, extraction, and result conversion into these components.
 
 ## Components
 
-- `hermes.Client`: Public entry point. Manages HTTP client configuration and orchestrates parsing.
-- `internal/resource`: Fetching, encoding detection, and DOM preparation.
-- `internal/extractors`: Extractor selection (custom vs generic) and field extraction.
-- `internal/cleaners`: Field-specific cleaning and normalization.
-- `internal/parser`: Orchestration of extraction and result assembly.
-- `internal/validation`: URL validation and SSRF protection.
-- CLI (`cmd/hermes`): Thin wrapper around the client with concurrency and formatting options.
+| Component | Role |
+| --- | --- |
+| `hermes.Client` | Provides the public API and HTTP client configuration. |
+| `internal/resource` | Fetches HTML, detects character encoding, and prepares the DOM. |
+| `internal/extractors` | Provides custom and generic field extractors. |
+| `internal/cleaners` | Cleans and normalizes extracted fields. |
+| `internal/parser` | Selects extractors, coordinates extraction, and assembles results. |
+| `internal/validation` | Validates URLs against scheme, host, and network rules. |
+| `cmd/hermes` | Provides the CLI with concurrency and output format options. |
 
-## System Diagram
+## Component relationships
 
 ```mermaid
 flowchart TD
@@ -29,11 +31,11 @@ flowchart TD
     F -->|Generic| H[internal/extractors/generic]
     G --> I[internal/cleaners]
     H --> I[internal/cleaners]
-    I --> J[internal/parser/result]
+    I --> J[internal/parser.Result]
     J --> K[hermes.Result]
 ```
 
-## Parse Flow
+## Parse request
 
 ```mermaid
 sequenceDiagram
@@ -47,7 +49,7 @@ sequenceDiagram
 
     App->>Client: Parse(ctx, url)
     Client->>Parser: ParseWithContext(ctx, url, opts)
-    Parser->>Valid: ValidateURL(ctx, url)
+    Parser->>Valid: ValidateParsedURL(ctx, parsedURL, url, opts)
     Valid-->>Parser: ok or error
     Parser->>Res: Fetch + Normalize HTML
     Res-->>Parser: Document
@@ -58,9 +60,14 @@ sequenceDiagram
     Client-->>App: Result or error
 ```
 
-## Notes on Behavior
+## Client behavior
 
-- Concurrency: The client is safe to share; use your own goroutines to parallelize parsing.
-- Formats: Content format (HTML/Markdown/Text) is selected via `WithContentType`.
-- Security: Private network access is blocked by default; enable only when necessary using `WithAllowPrivateNetworks`.
+The client supports concurrent requests. Reuse a client across goroutines to share its HTTP connection pool.
 
+`WithContentType` selects HTML, Markdown, or text for the extracted content.
+
+URL validation rejects private network addresses by default. Enable `WithAllowPrivateNetworks` only in trusted environments that require private network access.
+
+See [security limitations](../api/configuration.md#security) for redirect and DNS constraints.
+
+`ParseHTML` accepts HTML from the caller instead of a URL fetch. It still validates the supplied URL before extraction.
