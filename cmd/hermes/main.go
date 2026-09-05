@@ -108,12 +108,12 @@ func runParse(cmd *cobra.Command, args []string) error {
 	}
 
 	if timing && len(urls) > 1 {
-		avgTime := totalParseTime / time.Duration(len(successfulResults))
 		fmt.Fprintf(os.Stderr, "\nTiming Summary:\n")
 		fmt.Fprintf(os.Stderr, "Total URLs processed: %d\n", len(urls))
 		fmt.Fprintf(os.Stderr, "Successful parses: %d\n", len(successfulResults))
 		fmt.Fprintf(os.Stderr, "Total parse time: %v\n", totalParseTime)
 		if len(successfulResults) > 0 {
+			avgTime := totalParseTime / time.Duration(len(successfulResults))
 			fmt.Fprintf(os.Stderr, "Average parse time: %v\n", avgTime)
 		}
 	}

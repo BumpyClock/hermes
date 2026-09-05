@@ -1,6 +1,9 @@
 {
   "name": "hermes-benchmark",
   "version": "1.0.0",
+  "scripts": {
+    "test": "node --test test-comparison.test.js"
+  },
   "dependencies": {
     "@postlight/parser": "^2.2.3"
   }

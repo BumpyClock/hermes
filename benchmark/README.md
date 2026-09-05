@@ -1,68 +1,42 @@
-# Hermes Benchmark Tool
+# Parser comparison
 
-A cross-platform Node.js script to compare the performance of the Hermes Go parser against the original JavaScript Postlight Parser.
+This script compares live extraction output from Postlight Parser and the Hermes CLI.
+It does not isolate parser performance.
+JavaScript runs in-process, but each Hermes attempt starts a new process.
+Each parser also makes a separate network request.
 
-## Features
+The live comparison requires Node.js, Go, and network access.
+It saves JSON and Markdown output under `test-output/js` and `test-output/go`.
+The report is `test-output/comparison-report.json`.
 
-- **🧹 Clean setup**: Automatically cleans output directories before each run
-- **📦 Self-contained**: Installs dependencies declared in `package.json` automatically
-- **⚡ Side-by-side comparison**: Tests both parsers on the same URLs
-- **📊 Detailed metrics**: Execution time, file sizes, success rates
-- **🔄 Multiple formats**: Tests both JSON and Markdown output formats
-- **💾 Output files**: Saves actual parser outputs for manual comparison
+## Local checks
 
-## Usage
+Run the regression checks without network access or third-party packages:
 
-```bash
-cd hermes/benchmark
-node test-comparison.js [urls-file]
+```sh
+cd benchmark
+npm test
 ```
 
-**Example:**
+Run the live comparison from this directory:
 
-```bash
-node test-comparison.js ./testurls.txt
+```sh
+node test-comparison.js testurls.txt
 ```
 
-If no URL file is provided, it defaults to `./testurls.txt`.
+The live script installs dependencies, builds the CLI, and replaces the local `test-output` directory.
+The URL file accepts one HTTPS URL per line.
+The Go process receives each URL as a literal argument, not shell syntax.
 
-## Output
+## Report metrics
 
-The script creates the following structure:
+`totalTime` includes successful and failed attempts.
+`averageTime` equals `totalTime / totalUrls`, rounded to milliseconds.
+An empty input has an average of zero.
+Success and failure counts remain separate fields.
 
-```
-../../test-output/
-├── js/
-│   ├── json/       # JavaScript parser JSON outputs
-│   └── markdown/   # JavaScript parser markdown outputs
-├── go/
-│   ├── json/       # Go parser JSON outputs  
-│   └── markdown/   # Go parser markdown outputs
-└── comparison-report.json  # Detailed performance metrics
-```
+These metrics describe attempt latency, not successful-request latency or comparative parser throughput.
+Use identical local HTML fixtures and equivalent process boundaries for performance comparisons.
 
-## Requirements
-
-- Node.js (any recent version)
-- Go (for building the Hermes parser)
-- Internet connection (for `npm install`)
-
-## Sample Results
-
-```
-🎯 Comparison Complete!
-=========================
-Total time: 10.4s
-JSON - JS: 1/1, Go: 1/1
-Markdown - JS: 1/1, Go: 1/1
-
-📁 Results saved to: ../../test-output/
-📊 Comparison report: ../../test-output/comparison-report.json
-```
-
-The comparison report contains detailed metrics for analysis:
-
-- Execution times per parser per format
-- Success/failure rates
-- Output file sizes
-- Error details (if any)
+The CLI returns an error when every URL fails, including with `--timing`.
+It omits the successful-parse average when there are no successful results.
