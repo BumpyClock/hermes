@@ -63,8 +63,7 @@ type Result struct {
 | `WordCount` | Content word count. |
 | `Direction` | Text direction, `"ltr"` or `"rtl"`. |
 | `TotalPages`, `RenderedPages` | Pagination metadata. |
-| `SiteName`, `Description`, `Language`, `ThemeColor`, `Favicon` | Site metadata. |
-| `SiteTitle`, `SiteImage` | Fields present in `Result` but not populated by the public client's result conversion. |
+| `SiteName`, `SiteTitle`, `SiteImage`, `Description`, `Language`, `ThemeColor`, `Favicon` | Site metadata, when available. |
 | `VideoURL`, `VideoMetadata` | Video information, when available. |
 
 ## Methods

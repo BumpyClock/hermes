@@ -61,7 +61,8 @@ These results measure live requests, not isolated extraction speed. Network cond
 Each Go measurement includes CLI process startup. The JavaScript parser runs in the benchmark process, and its first measurement includes module load time.
 
 `totalTime` includes successful and failed attempts. `averageTime` equals `totalTime / totalUrls`, rounded to milliseconds.
-An empty input has an average of zero. Success and failure counts remain separate fields.
+An input file with no valid HTTPS URLs fails with `No valid URLs found in test file`. The script does not generate a report.
+Success and failure counts remain separate fields.
 
 These metrics describe attempt latency, not successful-request latency or comparative parser throughput.
 Use identical local HTML fixtures and equivalent process boundaries for performance comparisons.

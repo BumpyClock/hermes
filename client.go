@@ -214,6 +214,8 @@ func mapInternalResult(internal *parser.Result) *Result {
 		TotalPages:    internal.TotalPages,
 		RenderedPages: internal.RenderedPages,
 		SiteName:      internal.SiteName,
+		SiteTitle:     internal.SiteTitle,
+		SiteImage:     internal.SiteImage,
 		Description:   internal.Description,
 		Language:      internal.Language,
 		ThemeColor:    internal.ThemeColor,

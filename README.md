@@ -174,7 +174,7 @@ result, err := client.Parse(ctx, url)
 - Both parse methods require `context.Context` as the first argument.
 - Functional options replace configuration struct fields.
 - Parse errors use `*hermes.ParseError` and an error code.
-- Each client has an HTTP client, which options can replace or configure.
+- Each client has an HTTP client. Functional options can replace or configure the HTTP client.
 - `WithContentType()` selects the extracted content format.
 
 ### Option equivalents

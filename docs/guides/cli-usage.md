@@ -26,6 +26,9 @@ For one URL, `json` returns the full result with HTML content. Other formats ret
 For multiple URLs, the CLI always returns a JSON array. Each entry contains `url`, `parseTime`, and `result`.
 The format flag controls `result.content` in that array. The CLI omits failed URLs.
 
+Without `--timing`, the CLI does not report individual URL errors. A partial failure still returns exit code `0` if the output succeeds.
+Use `--timing` to report individual URL errors on stderr.
+
 ## Examples
 
 ### Single URL
