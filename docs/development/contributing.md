@@ -7,7 +7,7 @@ Use this guide to prepare code, tests, and documentation for a pull request.
 - The Go version in [`go.mod`](../../go.mod).
 - Git.
 - Make for the commands below.
-- `golangci-lint` v2.12.2, built with support for the selected Go toolchain.
+- `golangci-lint` v2.13.2, built with support for the selected Go toolchain.
 
 ## Prepare a local checkout
 

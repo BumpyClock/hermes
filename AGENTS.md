@@ -13,7 +13,7 @@ Hermes extracts structured article data from HTML and URLs. The public Go module
 
 ## Verification
 
-Use the Go version from `go.mod` and golangci-lint v2.12.2 with `.golangci.yml`.
+Use the Go version from `go.mod` and golangci-lint v2.13.2 with `.golangci.yml`.
 The linter build must support the selected Go toolchain.
 
 | Scope | Command |

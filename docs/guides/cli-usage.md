@@ -11,7 +11,7 @@ go install github.com/BumpyClock/hermes/cmd/hermes@latest
 ## Commands
 
 - `hermes parse [flags] <url...>`: Parse one or more URLs
-- `hermes version`: Print version information
+- `hermes version`: Print the Hermes version and the Go version used to build the binary.
 
 ## Flags
 

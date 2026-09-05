@@ -96,9 +96,6 @@ func tlsClient(testURL string) {
 				// Certificate verification (be careful with these in production)
 				InsecureSkipVerify: false,
 				ServerName:         "", // Leave empty to use hostname from URL
-
-				// Cipher suite preferences (optional)
-				PreferServerCipherSuites: true,
 			},
 
 			// TLS handshake timeout
