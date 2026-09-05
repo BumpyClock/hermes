@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-
-	"github.com/BumpyClock/hermes/internal/pools"
 )
 
 // LinkDensity calculates the density of links in an element
@@ -34,8 +32,7 @@ func WithinComment(element *goquery.Selection) bool {
 	// Check if element or any parent has comment-related classes/IDs
 	current := element
 	for current.Length() > 0 {
-		// Use pooled string builder for efficiency
-		classAndIdBuilder := pools.GlobalStringBuilderPool.Get()
+		var classAndIdBuilder strings.Builder
 		if class, exists := current.Attr("class"); exists {
 			classAndIdBuilder.WriteString(class)
 			classAndIdBuilder.WriteString(" ")
@@ -43,13 +40,12 @@ func WithinComment(element *goquery.Selection) bool {
 		if id, exists := current.Attr("id"); exists {
 			classAndIdBuilder.WriteString(id)
 		}
-		classAndId := classAndIdBuilder.String()
-		pools.GlobalStringBuilderPool.Put(classAndIdBuilder)
+		classAndId := strings.ToLower(classAndIdBuilder.String())
 
 		// Check for comment indicators
-		if strings.Contains(strings.ToLower(classAndId), "comment") ||
-			strings.Contains(strings.ToLower(classAndId), "disqus") ||
-			strings.Contains(strings.ToLower(classAndId), "respond") {
+		if strings.Contains(classAndId, "comment") ||
+			strings.Contains(classAndId, "disqus") ||
+			strings.Contains(classAndId, "respond") {
 			return true
 		}
 

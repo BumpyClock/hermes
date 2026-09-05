@@ -96,12 +96,11 @@ func (e GenericDateExtractorType) Extract(doc *goquery.Selection, url string, me
 
 	// First, check to see if we have a matching meta tag that we can make use of.
 	// Don't try cleaning tags from this string (false parameter matches JavaScript)
-	if document := documentFromSelection(doc); document != nil {
-		if meta := dom.ExtractFromMeta(document, DATE_PUBLISHED_META_TAGS, metaCache, false); meta != nil {
-			datePublished = *meta
-			if cleaned := cleanDatePublished(datePublished, nil); cleaned != nil {
-				return cleaned
-			}
+	document := &goquery.Document{Selection: doc}
+	if meta := dom.ExtractFromMeta(document, DATE_PUBLISHED_META_TAGS, metaCache, false); meta != nil {
+		datePublished = *meta
+		if cleaned := cleanDatePublished(datePublished, nil); cleaned != nil {
+			return cleaned
 		}
 	}
 
