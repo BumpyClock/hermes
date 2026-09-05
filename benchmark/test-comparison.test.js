@@ -45,7 +45,7 @@ test("Go parser receives URL metacharacters as one literal argument", () => {
 	assert.equal(comparison.parseWithGo(url, "json").success, true);
 	assert.equal(invocation.file, "../bin/hermes");
 	assert.deepEqual(invocation.args, ["parse", "--format", "json", "--", url]);
-	assert.notEqual(invocation.options.shell, true);
+	assert.ok(!invocation.options.shell, "must execute without a shell");
 });
 
 test("average latency includes failed attempts in both numerator and denominator", async () => {
