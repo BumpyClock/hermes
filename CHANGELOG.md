@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-09-05
+
+### Changed
+- Raised the minimum Go version to 1.27.1.
+- Removed redundant document conversions and pool overhead from extraction internals.
+- Added tested release gates, isolated consumer verification, and recovery procedures.
+
+### Fixed
+- Applied content cleanup to the returned article while preserving document base URLs and relaxed extraction options.
+- Preserved source HTML for fallback extraction attempts and corrected theme-color metadata extraction.
+- Preserved `SiteTitle` and `SiteImage` in public results.
+- Prevented a CLI panic when all URLs fail with timing output enabled.
+- Reported the actual Go runtime version in CLI version output.
+- Passed benchmark URLs as literal arguments and made repository checks deterministic.
+
+### Removed
+- Removed obsolete tracked Windows CLI and macOS concurrency-check executables. Install the CLI from source instead.
+
 ## [1.1.0] - 2026-07-12
 
 ### Added

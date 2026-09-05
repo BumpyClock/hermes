@@ -46,7 +46,7 @@ func main() {
 		Use:   "version",
 		Short: "Print version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Hermes v1.1.0")
+			fmt.Println("Hermes v1.1.1")
 			fmt.Printf("Go version: %s\n", runtime.Version())
 		},
 	}
