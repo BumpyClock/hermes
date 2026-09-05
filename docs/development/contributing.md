@@ -1,553 +1,192 @@
-# Contributing Guide
+# Contributor guide
 
-Thank you for your interest in contributing to Hermes! This guide covers everything you need to know to contribute effectively.
+Use this guide to prepare code, tests, and documentation for a pull request.
 
-## Table of Contents
+## Prerequisites
 
-- [Getting Started](#getting-started)
-- [Development Process](#development-process)
-- [Code Standards](#code-standards)
-- [Testing Guidelines](#testing-guidelines)
-- [Documentation](#documentation)
-- [Pull Request Process](#pull-request-process)
-- [Issue Guidelines](#issue-guidelines)
+- The Go version in [`go.mod`](../../go.mod).
+- Git.
+- Make for the commands below.
+- `golangci-lint` v2.13.2, built with support for the selected Go toolchain.
 
-## Getting Started
+## Prepare a local checkout
 
-### Prerequisites
-
-Before contributing, ensure you have:
-
-1. **Go version from `go.mod`** installed
-2. **Git** for version control
-3. **Make** (optional, for convenience commands)
-4. **golangci-lint** for code quality checks
-
-### Setting Up Your Development Environment
-
-1. **Fork the repository** on GitHub
-2. **Clone your fork** locally:
+1. Fork the repository on GitHub.
+2. Clone your fork:
 
    ```bash
    git clone https://github.com/YOUR_USERNAME/hermes.git
    cd hermes
    ```
 
-3. **Add upstream remote**:
+3. Add the upstream remote:
 
    ```bash
    git remote add upstream https://github.com/BumpyClock/hermes.git
    ```
 
-4. **Install dependencies**:
+4. Install dependencies:
 
    ```bash
    make deps
    ```
 
-5. **Verify setup**:
+5. Check the checkout:
 
    ```bash
    make test
    make lint
    ```
 
-## Development Process
+`make deps` runs `go mod download` and `go mod tidy`. It can change `go.mod` and `go.sum`.
 
-### Workflow Overview
+## Prepare a change
 
-1. **Create an issue** (for significant changes)
-2. **Create a feature branch**
-3. **Make your changes**
-4. **Write/update tests**
-5. **Update documentation**
-6. **Submit a pull request**
+1. For a substantial change, open an issue to discuss the problem and scope.
+2. Create a branch with a descriptive name, such as `feat/custom-extractor` or `fix/date-parser`.
+3. Change the code and add tests for the affected behavior.
+4. Update the affected documentation and examples.
+5. Submit a pull request with the validation results.
 
-### Branch Naming
+### Commit messages
 
-Use descriptive branch names following this pattern:
+Use `type(scope): subject` for commit subjects. Use an imperative subject without a final period.
 
-```bash
-# Features
-feature/add-custom-extractor-registry
-feature/batch-processing-improvements
+The types are `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, and `chore`.
 
-# Bug fixes
-fix/memory-leak-in-object-pools
-fix/unicode-handling-edge-case
-
-# Documentation
-docs/api-reference-updates
-docs/contributing-guide-improvements
-
-# Refactoring
-refactor/simplify-extractor-interface
-refactor/optimize-dom-processing
-```
-
-### Commit Message Format
-
-Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-
-```
-<type>[optional scope]: <description>
-
-[optional body]
-
-[optional footer(s)]
-```
-
-**Types:**
-
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation only changes
-- `style`: Code style changes (formatting, missing semicolons, etc.)
-- `refactor`: Code change that neither fixes a bug nor adds a feature
-- `perf`: Performance improvement
-- `test`: Adding missing tests or correcting existing tests
-- `chore`: Changes to the build process or auxiliary tools
-
-**Examples:**
-
-```bash
+```text
 feat(parser): add support for custom timeout configuration
-
 fix(extractors): handle malformed JSON in custom extractor definitions
-
-docs(api): update parser configuration examples with new options
-
-perf(pools): optimize object allocation in result pools
-
-test(integration): add tests for multi-page extraction scenarios
+docs(api): update parser configuration examples
 ```
 
-## Code Standards
+Use the commit body to explain reasons that the subject and diff do not show.
 
-### Go Style Guidelines
+## Code standards
 
-Follow the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments) and [Effective Go](https://golang.org/doc/effective_go.html).
+Keep non-public code in focused packages under `internal/`. Match the names, import groups, and structure of the affected package.
 
-#### Package Organization
+Document exported functions and types with complete comments. Explain constraints and reasons that the code does not express.
 
-Use standard import grouping and clear package structure. Prefer small, focused packages under `internal/` for non-public code.
+Include context in errors. Preserve the underlying error with `%w` when callers need to inspect it.
+Use the public `ParseError` fields `Code`, `URL`, `Op`, and `Err` for structured errors.
 
-#### Function Documentation
+Use descriptive names. Avoid abbreviations that hide the role of a value.
 
-All exported functions must have documentation comments:
+### Format and lint checks
 
-Document exported functions and types with clear, complete comments and usage examples where helpful.
-
-#### Error Handling
-
-Use descriptive error messages with context:
-
-```go
-// Good
-return nil, fmt.Errorf("failed to parse URL %s: %w", url, err)
-
-// Good - structured error with context
-return nil, &ParseError{
-    URL: url,
-    Operation: "content_extraction",
-    Err: err,
-}
-
-// Avoid - generic error without context
-return nil, err
-```
-
-#### Variable Naming
-
-Use clear, descriptive names:
-
-```go
-// Good
-extractorCatalog := custom.GetAllCustomExtractors()
-contentCleaner := cleaners.NewContentCleaner()
-
-// Avoid - unclear abbreviations
-exts := custom.GetAllCustomExtractors()
-cc := cleaners.NewContentCleaner()
-```
-
-### Code Formatting
-
-Use the formatters from `.golangci.yml`:
+Check code format with the formatters in [`.golangci.yml`](../../.golangci.yml):
 
 ```bash
-# Format all code
-golangci-lint fmt
-
-# Check formatting
 golangci-lint fmt --diff
 ```
 
-### Linting
-
-Run `golangci-lint` to catch common issues:
+Apply format changes only to files in the scope of your change:
 
 ```bash
-# Run linter
+golangci-lint fmt path/to/changed.go
+```
+
+Run the linter:
+
+```bash
 make lint
-
-# Or manually
-golangci-lint run
-
-# Fix auto-fixable issues
-golangci-lint run --fix
 ```
 
-## Testing Guidelines
+`make lint` runs `golangci-lint run`.
 
-### Test Structure
+## Tests
 
-Follow the standard Go testing conventions:
+Use table-driven tests for related cases. Test individual functions and component interactions with fixtures or local HTTP servers where possible.
 
-```go
-func TestClient_ParseHTML(t *testing.T) {
-    tests := []struct {
-        name    string
-        html    string
-        want    string
-        wantErr bool
-    }{
-        {
-            name: "article title",
-            html: `<html><head><title>Example Article</title></head><body><article><p>Body text.</p></article></body></html>`,
-            want: "Example Article",
-        },
-    }
+Add regression tests for bug fixes. Add benchmarks with allocation metrics for performance-sensitive changes.
 
-    client := hermes.New()
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            got, err := client.ParseHTML(context.Background(), tt.html, "https://example.com/article")
-            if tt.wantErr {
-                assert.Error(t, err)
-                return
-            }
-            assert.NoError(t, err)
-            assert.Equal(t, tt.want, got.Title)
-        })
-    }
-}
-```
+Use local fixtures, injected transports, or `httptest` servers instead of public network requests.
+The suite has no separate short-mode or integration build-tag tier.
+See [`context_test.go`](../../context_test.go) and [`integration_test.go`](../../integration_test.go) for executable examples.
 
-### Test Categories
+Choose checks that cover the affected behavior:
 
-#### Unit Tests
-
-- Test individual functions and methods
-- Use mocks for external dependencies
-- Fast execution (< 100ms per test)
-
-```go
-func TestExtractor_ExtractTitle(t *testing.T) {
-    html := `<html><head><title>Test Title</title></head></html>`
-    doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
-    
-    title := generic.GenericTitleExtractor.Extract(doc.Selection, "https://example.com", nil)
-
-    assert.Equal(t, "Test Title", title)
-}
-```
-
-#### Integration Tests
-
-Test component interactions with local HTML fixtures or an `httptest` server.
-Use an injected transport to test request context values and network denial.
-The current suite does not define an integration build tag or a short-mode test tier.
-See `context_test.go` and `integration_test.go` for executable examples.
-
-#### Benchmark Tests
-
-- Measure performance characteristics
-- Include memory allocation metrics
-
-```go
-func BenchmarkClient_ParseHTML(b *testing.B) {
-    client := hermes.New()
-    html := `<html><head><title>Bench</title></head><body><article><p>Body text for benchmark.</p></article></body></html>`
-
-    b.ReportAllocs()
-    for i := 0; i < b.N; i++ {
-        result, err := client.ParseHTML(context.Background(), html, "https://example.com/bench")
-        if err != nil {
-            b.Fatal(err)
-        }
-        if result.Title == "" {
-            b.Fatal("empty title")
-        }
-    }
-}
-```
-
-### Test Requirements
+| Command | Purpose |
+| --- | --- |
+| `make test` | Run all tests with coverage. |
+| `go test ./internal/parser -run TestName -count=1` | Run a focused regression test. |
+| `make test-race` | Run the race and coverage checks from CI. |
+| `make verify` | Run lint, race tests with coverage, and the CLI build. |
+| `make benchmark` | Run benchmarks with allocation metrics, without ordinary tests. |
+| `make build` | Build the CLI at `bin/hermes`. |
 
 Test observable behavior and regression risks, not each function or implementation detail.
-Use local fixtures, injected transports, or `httptest` servers instead of public network requests.
 For performance changes, compare benchmarks with the same inputs and commands.
-Before a pull request, run `make verify`. Report failures and omitted checks.
-
-Run tests:
 
 ```bash
-# All tests
-make test
-
-# Focused package or regression
-go test ./internal/parser -run TestName -count=1
-
-# Race detection and coverage
-make test-race
-
-# Benchmarks
 make benchmark PACKAGES=./internal/parser BENCH=BenchmarkParseHTML BENCHFLAGS='-count=5'
-
-# Full local acceptance
-make verify
 ```
 
+Before a pull request, run `make verify`. Report failures and omitted checks.
+All required checks must pass before merge. Do not reduce test coverage without an explanation.
+
 ## Documentation
 
-### Code Documentation
+Keep `doc.go` package comments and exported API comments consistent with the public API.
+Provide examples that compile when you add or change public behavior.
 
-1. **Package documentation** in `doc.go` files
-2. **Function documentation** for all exported functions
-3. **Type documentation** for all exported types
-4. **Example functions** for complex APIs
+Use the relevant section of `docs/`:
 
-Keep package-level docs aligned with the current public API. Avoid stale examples.
+- [API reference](../api/hermes.md) for types, methods, and options.
+- [User guides](../guides/basic-usage.md) for tasks and procedures.
+- [Examples](../examples/basic.md) for sample code.
+- [Architecture](../architecture/overview.md) for internal behavior and package roles.
 
-### API Documentation
+Check links, commands, and identifiers against the current source.
 
-Update relevant documentation files in `docs/`:
+## Pull requests
 
-- `docs/api/` - API reference documentation
-- `docs/guides/` - User guides and tutorials
-- `docs/examples/` - Code examples
-- `docs/architecture/` - Architecture documentation
+### Before submission
 
-### Example Code
+1. Update your branch from `upstream/master`.
+2. Review the diff for unrelated changes.
+3. Run the tests, lint checks, and build checks that apply to the change.
+4. For performance changes, record benchmark results.
+5. State compatibility changes and unresolved failures in the pull request.
 
-Provide working examples for new features:
+### Pull request description
 
-Provide examples that compile against the current `hermes` package when adding or changing user-facing behavior.
-
-## Pull Request Process
-
-### Before Submitting
-
-1. **Sync with upstream**:
-
-   ```bash
-   git fetch upstream
-   git rebase upstream/main
-   ```
-
-2. **Run quality checks**:
-
-   ```bash
-   make test
-   make lint
-   make benchmark  # For performance changes
-   ```
-
-3. **Update documentation** if needed
-
-4. **Squash commits** if multiple commits address the same logical change
-
-### PR Description Template
-
-Use this template for your pull request description:
+Use a short title with the same `type(scope): subject` format as commit subjects.
+Explain the problem before the implementation. Include these sections when relevant:
 
 ```markdown
-## Description
-Brief description of the changes made.
+## Why
+Describe the problem and why the change is necessary.
 
-## Type of Change
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to change)
-- [ ] Documentation update
+## Scope
+Name the affected behavior, packages, and compatibility changes.
 
-## Changes Made
-- List of specific changes
-- Use bullet points for clarity
+## Tradeoffs
+Explain material decisions and limitations.
 
-## Testing
-- [ ] Unit tests added/updated
-- [ ] Integration tests added/updated
-- [ ] All tests pass
-- [ ] Benchmarks run (for performance changes)
+## Verification
+List exact commands and results. State omitted checks and their reasons.
 
-## Documentation
-- [ ] Code comments updated
-- [ ] API documentation updated
-- [ ] User guide updated (if applicable)
-
-## Checklist
-- [ ] Code follows the project's style guidelines
-- [ ] Self-review of the code completed
-- [ ] Tests added for new functionality
-- [ ] All tests pass
-- [ ] Documentation updated
-- [ ] No breaking changes (or breaking changes documented)
-
-## Related Issues
+## Related issues
 Closes #<issue_number>
-Related to #<issue_number>
 ```
 
-### Review Process
+Maintainers review the code and documentation before approval. CI checks tests, lint, the CLI build, and benchmarks.
 
-1. **Automated checks** must pass (CI/CD)
-2. **Code review** by maintainers
-3. **Testing** on multiple platforms
-4. **Documentation review**
-5. **Approval** and merge
+## Issues and questions
 
-## Issue Guidelines
+Search the documentation and existing issues before you open an issue.
 
-### Reporting Bugs
+For a bug report, include:
 
-Use this template for bug reports:
+- The expected and actual behavior.
+- Exact reproduction steps or a minimal Go example.
+- The operating system, `go version` output, and Hermes version.
+- Relevant errors and a URL or HTML fixture, with secrets and personal data removed.
 
-```markdown
-## Bug Description
-A clear and concise description of what the bug is.
+For a feature request, describe the problem, proposed behavior, alternatives, and a concrete use case.
 
-## To Reproduce
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+Keep discussion respectful. Ask for clarification when a requirement is unclear, and provide evidence for technical claims.
 
-## Expected Behavior
-A clear description of what you expected to happen.
-
-## Actual Behavior
-What actually happened.
-
-## Environment
-- OS: [e.g. macOS 12.0]
-- Go version: [output of `go version`]
-- Hermes version: [e.g. v0.1.0]
-
-## Additional Context
-Add any other context about the problem here.
-
-## Minimal Reproduction
-```go
-// Minimal code example that reproduces the issue
-package main
-
-import (
-    "context"
-    "github.com/BumpyClock/hermes"
-)
-
-func main() {
-    client := hermes.New()
-    _, _ = client.Parse(context.Background(), "https://example.com")
-}
-```
-
-```
-
-### Feature Requests
-
-Use this template for feature requests:
-
-```markdown
-## Feature Description
-A clear and concise description of the feature you'd like to see.
-
-## Problem Statement
-What problem does this feature solve? What's the current limitation?
-
-## Proposed Solution
-Describe the solution you'd like to see implemented.
-
-## Alternatives Considered
-Describe any alternative solutions or features you've considered.
-
-## Use Case
-Provide a concrete example of how this feature would be used.
-
-## Implementation Notes
-Any thoughts on how this might be implemented (optional).
-
-## Additional Context
-Add any other context or screenshots about the feature request here.
-```
-
-### Getting Help
-
-For questions and support:
-
-1. **Check existing documentation** first
-2. **Search existing issues** for similar questions
-3. **Ask in discussions** for general questions
-4. **Create an issue** for specific bugs or feature requests
-
-## Contributing Areas
-
-We welcome contributions in these areas:
-
-### High Priority
-
-- **Custom extractors** for new websites
-- **Performance optimizations**
-- **Bug fixes**
-- **Test coverage improvements**
-
-### Medium Priority
-
-- **Documentation improvements**
-- **Example code**
-- **Build and CI improvements**
-- **Code refactoring**
-
-### Future Features
-
-- **Plugin system** for custom extractors
-- **Configuration management**
-- **Advanced caching**
-- **Monitoring and metrics**
-
-## Community Guidelines
-
-### Code of Conduct
-
-We follow the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
-
-### Communication
-
-- **Be respectful** and constructive in all interactions
-- **Ask questions** when you're unsure
-- **Provide context** when reporting issues
-- **Be patient** with review processes
-- **Help others** when you can
-
-### Recognition
-
-Contributors are recognized in:
-
-- **CONTRIBUTORS.md** file
-- **Release notes** for significant contributions
-- **GitHub contributors** page
-
-## Getting Help
-
-If you need help contributing:
-
-1. **Read this guide** thoroughly
-2. **Check the documentation** in `docs/`
-3. **Look at existing code** for patterns
-4. **Ask questions** in GitHub Discussions
-5. **Join community channels** (if available)
-
-Thank you for contributing to Hermes! Your contributions help make web content extraction better for everyone.
+The project follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).

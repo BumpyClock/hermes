@@ -1,23 +1,21 @@
 # Hermes
 
-A high-performance Go web content extraction library inspired by the [Postlight Parser](https://github.com/postlight/parser). Hermes transforms web pages into clean, structured text with high compatibility with the original JavaScript version while providing significant performance improvements.
+Hermes is a Go library and CLI that extracts article content and metadata from web pages. It uses site-specific extractors with a generic fallback, based on the [Postlight Parser](https://github.com/postlight/parser).
 
 ## Features
 
-- **Fast Content Extraction**: 2-3x faster than the JavaScript version
-- **Memory Efficient**: 50% less memory usage
-- **150+ Custom Extractors**: Site-specific parsers for major publications
-- **Multiple Output Formats**: HTML, Markdown, plain text, and JSON
-- **Pagination Aware**: Detects `next_page_url` for manual multi-page handling
-- **CLI Tool**: Command-line interface for single and batch parsing
+- Extract article text, titles, authors, dates, and images.
+- Use site-specific rules for supported sites and generic extraction for other pages.
+- Return content as HTML, Markdown, or plain text. The CLI also supports JSON output.
+- Parse one URL or a batch with the CLI.
 
 ## Installation
 
-See [Installation & Setup](docs/guides/installation.md) for module, CLI, and source-build steps.
+See [Installation](docs/guides/installation.md) for module, CLI, and source build instructions.
 
 ## Usage
 
-### Command Line
+### Command line
 
 ```bash
 # Parse a URL and output JSON
@@ -33,9 +31,9 @@ hermes parse -o article.md -f markdown https://example.com/article
 hermes parse --timing https://example.com/article1 https://example.com/article2
 ```
 
-### Go Library
+### Go library
 
-#### Basic Usage
+#### Basic usage
 
 ```go
 package main
@@ -71,7 +69,7 @@ func main() {
 }
 ```
 
-#### Advanced Usage with Custom HTTP Client
+#### Custom HTTP client
 
 ```go
 package main
@@ -80,6 +78,7 @@ import (
     "context"
     "crypto/tls"
     "fmt"
+    "log"
     "net/http"
     "time"
     
@@ -104,7 +103,7 @@ func main() {
     client := hermes.New(
         hermes.WithHTTPClient(customClient),
         hermes.WithContentType("markdown"),
-        hermes.WithAllowPrivateNetworks(false), // SSRF protection
+        hermes.WithAllowPrivateNetworks(false), // Validate the initial URL for private addresses.
     )
     
     // Parse with timeout context
@@ -126,7 +125,9 @@ func main() {
 }
 ```
 
-#### Parse Pre-fetched HTML
+See [security limitations](docs/api/configuration.md#security) before you accept untrusted URLs.
+
+#### Parse HTML from a string
 
 ```go
 package main
@@ -156,37 +157,37 @@ func main() {
 
 ## Migration from v0.x to v1.0
 
-If you're upgrading from older internal APIs, use the public root package.
+For code that uses the old internal APIs, replace the imports with the public root package.
 
-### New API (v1.0+)
+### Public API
 
 ```go
 import "github.com/BumpyClock/hermes"
 
-client := hermes.New(hermes.WithTimeout(...))
+client := hermes.New()
 result, err := client.Parse(ctx, url)
 ```
 
-### Key Changes
+### API changes
 
-1. **Package Import**: Use root package `github.com/BumpyClock/hermes`
-2. **Context Required**: All methods now require `context.Context` first parameter
-3. **Functional Options**: Use `hermes.WithXxx()` options instead of struct fields
-4. **Error Types**: New `*hermes.ParseError` type with error codes
-5. **HTTP Client**: Client manages its own HTTP client, configurable via options
-6. **Content Types**: Set via `WithContentType()` option, affects parser extraction
+- The public package is `github.com/BumpyClock/hermes`.
+- Both parse methods require `context.Context` as the first argument.
+- Functional options replace configuration struct fields.
+- Parse errors use `*hermes.ParseError` and an error code.
+- Each client has an HTTP client. Functional options can replace or configure the HTTP client.
+- `WithContentType()` selects the extracted content format.
 
-### Options Mapping
+### Option equivalents
 
 | Old API | New API |
 |---------|---------|
 | `parser.ParserOptions{ContentType: "markdown"}` | `hermes.WithContentType("markdown")` |
-| `parser.ParserOptions{FetchAllPages: true}` | Use `result.NextPageURL` for manual pagination |
+| `parser.ParserOptions{FetchAllPages: true}` | No public equivalent. `hermes.Result` does not expose `NextPageURL`. |
 | Custom headers in options | Use `hermes.WithHTTPClient()` with custom transport |
 
-## Error Handling
+## Parse errors
 
-The new API provides structured error handling:
+Use `ParseError.Code` to distinguish failure types:
 
 ```go
 result, err := client.Parse(ctx, url)
@@ -212,8 +213,8 @@ if err != nil {
 
 ### Prerequisites
 
-- Go version declared in `go.mod`
-- Make (optional)
+- The Go version in [go.mod](go.mod)
+- Make for the `make` commands below
 
 ### Setup
 
@@ -233,20 +234,20 @@ make lint
 make build
 ```
 
-## Key Dependencies
+## Dependencies
 
-Our carefully selected Go dependencies provide the best performance and maintainability:
+- `goquery` provides DOM queries and manipulation.
+- `html-to-markdown` converts HTML to Markdown.
+- `go-dateparser` parses dates.
+- `chardet` detects character encodings.
+- `cobra` defines CLI commands and flags.
+- `golang.org/x/text` converts text encodings.
 
-- **goquery**: jQuery-like DOM manipulation (industry standard)
-- **html-to-markdown**: HTML to Markdown conversion (v1.6.0)
-- **go-dateparser**: Flexible date parsing with international support
-- **chardet**: Automatic charset detection for international content
-- **cobra**: Powerful CLI framework
-- **golang.org/x/text**: Official Go text encoding support
+See [go.mod](go.mod) for dependency versions.
 
-### Testing
+### Tests
 
-The project includes comprehensive unit tests. Compatibility checks with the JavaScript version are tracked in the benchmark harness.
+The repository has unit tests and benchmarks. The [comparison scripts](benchmark/README.md) compare CLI output with the JavaScript parser.
 
 ```bash
 # Run all tests
@@ -261,57 +262,37 @@ make benchmark
 
 ## Architecture
 
-Hermes follows a modular architecture similar to the JavaScript version:
+The public client calls the internal parser. The parser fetches HTML, selects an extractor, cleans content, and assembles a result.
 
-- **Parser**: Main extraction orchestrator
-- **Extractors**: Site-specific and generic content extractors
-- **Cleaners**: Content cleaning and normalization
-- **Resource**: HTTP fetching and DOM preparation
-- **Utils**: DOM manipulation and text processing utilities
+See the [architecture overview](docs/architecture/overview.md) for package responsibilities.
 
-## Custom Extractors
+## Custom extractors
 
-The parser includes 150+ custom extractors for major publications including:
+The [custom extractor registry](internal/extractors/custom/index.go) includes rules for these sites and others:
 
 - News: NY Times, Washington Post, CNN, The Guardian
 - Tech: Ars Technica, The Verge, Wired
 - Business: Bloomberg, Reuters
-- And many more...
 
 ## Performance
 
-Performance varies by site and output format. See benchmark details in `benchmark/README.md`.
+Performance depends on the site, network, output format, and client reuse. The repository does not establish a general speed or memory advantage over JavaScript.
 
-Latest benchmark (5 URLs from `benchmark/testurls.txt`):
-
-- JSON output: JS avg 627ms, Go avg 629ms (parity)
-- Markdown output: JS avg 173ms, Go avg 652ms (JS faster on this set)
-
-Run the comparison yourself via `benchmark/test-comparison.js` (see docs in `benchmark/README.md`).
-
-Running the bench with 1 url at a time JS comes out slightly faster than go but with twice the memory usage. In API scenarios and processing multiple urls at once GO leaps ahead with approx 20ms per request with around 60mb memory as the efficiency gains of reusing the same HTTP client and goroutines start to show their edge.
+Use the [benchmark instructions](benchmark/README.md) to compare results for your workload.
 
 ## Compatibility
 
-Hermes aims for high compatibility with the JavaScript version:
+Hermes uses extractor rules based on the JavaScript parser, but output can differ. The comparison scripts help identify those differences.
 
-- Same output formats and extractor definitions
-- CLI commands and options are similar
-- Next page URL detection is implemented
-
-Note: Use the `next_page_url` field for manual pagination handling when needed.
+The internal parser detects next-page URLs. The public Go `Result` and CLI do not expose `next_page_url` or automatic page collection.
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+See the [contribution guide](docs/development/contributing.md) for source setup, tests, and pull request requirements.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+Hermes uses the [MIT License](LICENSE).
 
 ## Acknowledgments
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -46,7 +47,7 @@ func main() {
 		Short: "Print version information",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Hermes v1.1.0")
-			fmt.Println("Go version: 1.24.6")
+			fmt.Printf("Go version: %s\n", runtime.Version())
 		},
 	}
 

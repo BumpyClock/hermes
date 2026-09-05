@@ -1,30 +1,31 @@
-# Hermes Documentation
+# Hermes documentation
 
-Welcome to the Hermes documentation. Hermes is a high-performance Go library and CLI for extracting clean, structured content from web pages.
+Hermes extracts article content and metadata from web pages. Use these guides for the Go library, CLI, and internal extractor system.
 
-## Table of Contents
+## Guides and reference
 
-### Getting Started
+### Start here
 
-- [Installation & Setup](guides/installation.md) - Quick start guide and installation instructions
-- [Basic Usage](guides/basic-usage.md) - First steps with the Go API and CLI
-- [CLI Usage](guides/cli-usage.md) - Command line interface documentation
+- [Installation](guides/installation.md)
+- [Basic usage](guides/basic-usage.md)
+- [CLI commands and flags](guides/cli-usage.md)
 
-### API Reference
+### API reference
 
-- [Hermes API](api/hermes.md) - Public Go API (client, options, errors)
-- [Configuration](api/configuration.md) - Client options and behaviors
-- [Results](api/results.md) - Result fields and helpers
+- [Hermes API](api/hermes.md)
+- [Configuration](api/configuration.md)
+- [Result fields and helpers](api/results.md)
+- [Internal extractors](api/extractors.md)
 
-### Architecture & Design
+### Architecture
 
-- [Architecture Overview](architecture/overview.md) - System design and components
+- [Architecture overview](architecture/overview.md)
 
 ### Examples
 
-- [Basic Examples](examples/basic.md) - Practical usage examples with the Go client
+- [Go client examples](examples/basic.md)
 
-## Quick Start
+## Quick start
 
 ```bash
 # Install the CLI
@@ -65,28 +66,13 @@ func main() {
 }
 ```
 
-## Architecture at a Glance
+## Internal design
 
-Hermes uses a modular internal architecture with a small public surface (client, options, results). See [Architecture Overview](architecture/overview.md) for details on extractors, cleaners, and the resource layer.
+The public API exposes the client, options, and results. The [architecture overview](architecture/overview.md) explains the internal parser, extractors, cleaners, and resource package.
 
-## Documentation Standards
+## Documentation contributions
 
-All documentation follows these principles:
-
-- **Practical examples** for every feature
-- **Complete API coverage** with parameters and return values
-- **Architecture explanations** with diagrams where helpful
-- **Performance considerations** for production usage
-- **Migration guides** from other parsers
-
-## Contributing to Documentation
-
-We welcome contributions to improve our documentation:
-
-1. Fork the repository
-2. Create a feature branch for your documentation changes
-3. Follow the documentation style guide
-4. Test code examples
-5. Submit a pull request
-
-See [Contributing Guide](development/contributing.md) for detailed instructions.
+1. Describe the reader's task with concrete commands or examples.
+2. Check API names and behavior against the source.
+3. Test changed examples and local links.
+4. Submit changes through the [contribution process](development/contributing.md).

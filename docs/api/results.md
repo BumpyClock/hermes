@@ -1,11 +1,11 @@
-# Results API Reference
+# Results API reference
 
-This document covers the `Result` structure and related helpers for working with extracted content.
+`Result` contains article content, metadata, and methods that check field availability.
 
-## Table of Contents
+## Contents
 
 - [Structure](#structure)
-- [Field Details](#field-details)
+- [Field details](#field-details)
 - [Methods](#methods)
 - [JSON](#json)
 
@@ -34,6 +34,8 @@ type Result struct {
 
     // Site information
     SiteName    string `json:"site_name,omitempty"`
+    SiteTitle   string `json:"site_title,omitempty"`
+    SiteImage   string `json:"site_image,omitempty"`
     Description string `json:"description,omitempty"`
     Language    string `json:"language,omitempty"`
     ThemeColor  string `json:"theme_color,omitempty"`
@@ -45,21 +47,24 @@ type Result struct {
 }
 ```
 
-## Field Details
+## Field details
 
-- Title: Article headline.
-- Content: Extracted content body (format depends on client `WithContentType`).
-- Author: Author name(s).
-- DatePublished: Publication date (if available).
-- LeadImageURL: Primary article image URL.
-- Dek: Subtitle/deck.
-- Domain: Domain of the URL.
-- Excerpt: Short excerpt/summary.
-- WordCount: Word count of the content.
-- Direction: Text direction (`"ltr"` or `"rtl"`).
-- TotalPages/RenderedPages: Pagination metadata when detected.
-- SiteName/Description/Language/ThemeColor/Favicon: Site-level metadata derived from meta tags/structured data.
-- VideoURL/VideoMetadata: Video information when present.
+| Field | Meaning |
+| --- | --- |
+| `URL` | Article URL. |
+| `Title` | Article headline. |
+| `Content` | Extracted content body. `WithContentType` selects the format. |
+| `Author` | Author names. |
+| `DatePublished` | Publication date, or `nil` when unavailable. |
+| `LeadImageURL` | Primary article image URL. |
+| `Dek` | Article subtitle. |
+| `Domain` | Domain of the URL. |
+| `Excerpt` | Short excerpt or summary. |
+| `WordCount` | Content word count. |
+| `Direction` | Text direction, `"ltr"` or `"rtl"`. |
+| `TotalPages`, `RenderedPages` | Pagination metadata. |
+| `SiteName`, `SiteTitle`, `SiteImage`, `Description`, `Language`, `ThemeColor`, `Favicon` | Site metadata, when available. |
+| `VideoURL`, `VideoMetadata` | Video information, when available. |
 
 ## Methods
 
@@ -71,13 +76,15 @@ func (r *Result) HasDate() bool
 func (r *Result) HasImage() bool
 ```
 
-- FormatMarkdown: Convenience for a single-document Markdown export including metadata and content.
-- IsEmpty: True when no meaningful content was extracted.
-- HasAuthor/HasDate/HasImage: Quick availability checks.
+`FormatMarkdown` returns a document with the title, available metadata, description or excerpt, and content. It does not convert `Content` to Markdown.
+
+Use `WithContentType("markdown")` before you parse to obtain a Markdown content body.
+
+`IsEmpty` returns `true` when both `Title` and `Content` are empty. `HasAuthor`, `HasDate`, and `HasImage` check `Author`, `DatePublished`, and `LeadImageURL`, respectively.
 
 ## JSON
 
-Results are standard Go structs and can be serialized with `encoding/json`:
+Use `encoding/json` to serialize a result:
 
 ```go
 data, err := json.MarshalIndent(res, "", "  ")
@@ -85,13 +92,4 @@ if err != nil { /* handle */ }
 fmt.Println(string(data))
 ```
 
-Note: The `DatePublished` field serializes as RFC3339 when set by default JSON marshalling.
-
-```mermaid
-flowchart TD
-    A[Extraction] --> B[Result]
-    B --> C[FormatMarkdown]
-    B --> D[JSON Marshal]
-    B --> E[Availability Checks]
-```
-
+The default JSON encoder represents a non-nil `DatePublished` as an RFC 3339 string, with fractional seconds when necessary.

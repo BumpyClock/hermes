@@ -1,32 +1,32 @@
-# Installation & Setup Guide
+# Installation
 
-This guide covers installing the Hermes CLI and using Hermes as a Go library.
+Install the Hermes CLI or add Hermes to a Go project.
 
-## Table of Contents
+## Contents
 
-- System Requirements
-- Installation Methods
-- Quick Start
-- Environment Setup
-- Verification
-- Troubleshooting
+- [Requirements](#requirements)
+- [Installation methods](#installation-methods)
+- [First use](#first-use)
+- [Environment](#environment)
+- [Verification](#verification)
+- [Troubleshooting](#troubleshooting)
 
-## System Requirements
+## Requirements
 
-- Go version declared in `go.mod`
+- Go version declared in [go.mod](../../go.mod)
 - Linux, macOS, or Windows
 
-## Installation Methods
+## Installation methods
 
-### Go Install (Recommended)
+### Go install
 
 ```bash
 go install github.com/BumpyClock/hermes/cmd/hermes@latest
 ```
 
-Installs the `hermes` CLI into `$GOPATH/bin`.
+Go installs the `hermes` CLI in `GOBIN`, or in the `bin` directory under `GOPATH` when `GOBIN` is empty.
 
-### Build from Source
+### Build from source
 
 ```bash
 git clone https://github.com/BumpyClock/hermes.git
@@ -35,11 +35,9 @@ make build
 make install
 ```
 
-Note: Pre-built binaries and package managers are not currently published.
+## First use
 
-## Quick Start
-
-Verify CLI:
+Check the CLI version:
 
 ```bash
 hermes version
@@ -51,7 +49,13 @@ Parse a URL:
 hermes parse https://example.com/article
 ```
 
-Use as a library:
+Add Hermes to your Go module:
+
+```bash
+go get github.com/BumpyClock/hermes
+```
+
+Use Hermes as a library:
 
 ```go
 package main
@@ -59,28 +63,37 @@ package main
 import (
     "context"
     "fmt"
+    "log"
     "github.com/BumpyClock/hermes"
 )
 
 func main() {
     client := hermes.New()
-    res, _ := client.Parse(context.Background(), "https://example.com")
+    res, err := client.Parse(context.Background(), "https://example.com")
+    if err != nil {
+        log.Fatal(err)
+    }
     fmt.Println(res.Title)
 }
 ```
 
-## Environment Setup
+## Environment
 
-Ensure Go is set up correctly:
+Check the Go version and binary directory:
 
 ```bash
 go version
 go env GOPATH
+go env GOBIN
 ```
 
-Hermes does not use environment variables for configuration. Configure via code options (see [Configuration](../api/configuration.md)).
+Add the Go binary directory to `PATH` if your shell cannot find `hermes`.
+
+Configure the library with [client options](../api/configuration.md).
 
 ## Verification
+
+Replace the example URLs with article URLs that you can access:
 
 ```bash
 hermes parse -f markdown https://www.nytimes.com/section/technology
@@ -90,6 +103,6 @@ hermes parse --concurrency 5 https://example.com/1 https://example.com/2
 
 ## Troubleshooting
 
-- Increase timeout: use `hermes.WithTimeout(60 * time.Second)` in the Go API.
-- Reduce concurrency: use `--concurrency` for the CLI when parsing many URLs.
-- SSL issues: update system CA certificates; the library does not expose a flag to disable verification.
+- For timeout errors, increase the limit with `--timeout 60s` or `hermes.WithTimeout(60 * time.Second)`.
+- For large batches, reduce concurrent requests with `--concurrency`.
+- For TLS certificate errors, check the system CA certificates. The CLI has no flag to disable certificate verification.
