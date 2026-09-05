@@ -125,6 +125,19 @@ class ReleaseChecks(unittest.TestCase):
 
 
 class CommandFailures(unittest.TestCase):
+    def test_command_timeout_is_bounded_and_redacted(self):
+        timeout = subprocess.TimeoutExpired(["gh", "api"], 30, output="private output", stderr="private diagnostic")
+        with patch.object(subprocess, "run", side_effect=timeout) as command:
+            with self.assertRaisesRegex(check.CheckError, "gh api timed out after 30 seconds") as error:
+                check.run("gh", "api", "user")
+        self.assertEqual(command.call_args.kwargs["timeout"], 30)
+        self.assertNotIn("private", str(error.exception))
+
+    def test_success_preserves_trimmed_output(self):
+        result = subprocess.CompletedProcess([], 0, " output\n", "")
+        with patch.object(subprocess, "run", return_value=result):
+            self.assertEqual(check.run("git", "status"), "output")
+
     def test_command_failure_does_not_leak_remote_credentials(self):
         result = subprocess.CompletedProcess([], 128, "", "fatal: https://secret@example.com")
         with patch.object(subprocess, "run", return_value=result):

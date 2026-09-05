@@ -18,7 +18,10 @@ class CheckError(Exception):
 
 
 def run(*args):
-    result = subprocess.run(args, capture_output=True, text=True, check=False)
+    try:
+        result = subprocess.run(args, capture_output=True, text=True, check=False, timeout=30)
+    except subprocess.TimeoutExpired:
+        raise CheckError(f"{args[0]} {args[1]} timed out after 30 seconds") from None
     if result.returncode:
         # External diagnostics can contain credentials from remote configuration.
         raise CheckError(f"{args[0]} {args[1]} failed (exit {result.returncode})")

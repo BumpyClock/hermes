@@ -152,7 +152,22 @@ Never force-push, move, delete, or recreate a published tag.
 
 3. Create the source-only GitHub release.
 
-   Prepare `RELEASE_NOTES` as a file with notes from the released changelog section and actual changes.
+   Extract the approved version's changelog section into a temporary file:
+
+   ```bash
+   RELEASE_NOTES=$(mktemp "${TMPDIR:-/tmp}/hermes-release-notes.XXXXXX")
+   awk -v heading="## [$VERSION] - " '
+     index($0, heading) == 1 { found = 1; next }
+     found && /^## / { exit }
+     found { print; if (NF) content = 1 }
+     END { if (!content) exit 1 }
+   ' CHANGELOG.md > "$RELEASE_NOTES"
+   test -s "$RELEASE_NOTES"
+   cat "$RELEASE_NOTES"
+   ```
+
+   Stop if extraction fails or the file is empty.
+   Review the notes against the approved version and actual changes before publication.
    Check `gh release view "$TAG" --repo BumpyClock/hermes` before creation.
    Treat failure as absence only when the diagnostic explicitly states that the release was not found.
    Stop on any other error.
@@ -244,6 +259,7 @@ Use the identity checks above for an existing tag instead of those new-release c
 ## Automation boundaries
 
 `scripts/release_check.py` provides read-only release gates, not a publisher.
+Each external command in that script has a 30-second timeout.
 `scripts/verify-release.sh` makes public queries and writes only temporary consumer files and caches.
 Neither script grants authorization or replaces API compatibility review, explicit path review, or release notes review.
 Process-only changes require local tests and document checks, not an actual publication.
