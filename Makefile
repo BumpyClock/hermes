@@ -1,10 +1,19 @@
-.PHONY: build test lint clean install deps benchmark
+.PHONY: build test test-race verify lint clean install deps benchmark docker-build
+
+PACKAGES ?= ./...
+BENCH ?= .
+BENCHFLAGS ?=
 
 build:
-	go build -o bin/hermes cmd/hermes/main.go
+	go build -o bin/hermes ./cmd/hermes
 
 test:
-	go test -cover ./...
+	go test -cover $(PACKAGES)
+
+test-race:
+	go test -race -coverprofile=coverage.out $(PACKAGES)
+
+verify: lint test-race build
 
 lint:
 	golangci-lint run
@@ -21,10 +30,7 @@ deps:
 	go mod tidy
 
 benchmark:
-	go test -bench=. -benchmem ./...
+	go test -run '^$$' -bench '$(BENCH)' -benchmem $(BENCHFLAGS) $(PACKAGES)
 
 docker-build:
 	docker build -t hermes:latest .
-
-watch:
-	air -c .air.toml
