@@ -2,191 +2,148 @@ package hermes
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"io"
 	"net/http"
-	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
 
-// TestContextCancellationImmediate tests immediate context cancellation.
-func TestContextCancellationImmediate(t *testing.T) {
-	// Create a test server that would delay response
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// This should never be reached
-		t.Error("Request should have been cancelled before reaching server")
-		time.Sleep(5 * time.Second)
-		_, _ = w.Write([]byte(`<html><body>Should not see this</body></html>`))
-	}))
-	defer ts.Close()
+type testTransport func(*http.Request) (*http.Response, error)
 
-	client := New(WithAllowPrivateNetworks(true))
-
-	// Create an already-cancelled context
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // Cancel immediately
-
-	// Try to parse - should fail immediately
-	start := time.Now()
-	_, err := client.Parse(ctx, ts.URL)
-	elapsed := time.Since(start)
-
-	if err == nil {
-		t.Fatal("Expected error from cancelled context, got nil")
-	}
-
-	// Should fail very quickly (within 100ms)
-	if elapsed > 100*time.Millisecond {
-		t.Errorf("Cancellation took too long: %v", elapsed)
-	}
-
-	t.Logf("✓ Context cancellation worked immediately: %v", elapsed)
+func (f testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }
 
-// TestContextCancellationDuringFetch tests cancellation during HTTP fetch.
-func TestContextCancellationDuringFetch(t *testing.T) {
-	// Create a test server that delays before responding
-	serverStarted := make(chan bool)
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		serverStarted <- true
-		// Delay to allow cancellation
-		time.Sleep(2 * time.Second)
-		_, _ = w.Write([]byte(`<html><body>Too late</body></html>`))
-	}))
-	defer ts.Close()
-
-	client := New(WithAllowPrivateNetworks(true))
-
-	// Create a context that will be cancelled during fetch
+func TestContextCancellationImmediate(t *testing.T) {
+	client := New(WithTransport(testTransport(func(*http.Request) (*http.Response, error) {
+		t.Error("canceled request reached transport")
+		return nil, context.Canceled
+	})))
 	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := client.Parse(ctx, "https://8.8.8.8/article")
+	if !errors.Is(err, &ParseError{Code: ErrTimeout}) {
+		t.Fatalf("expected context cancellation, got %v", err)
+	}
+}
 
-	// Start parsing in a goroutine
-	done := make(chan error)
+func TestContextCancellationDuringFetch(t *testing.T) {
+	started := make(chan struct{})
+	client := New(WithTransport(testTransport(func(req *http.Request) (*http.Response, error) {
+		close(started)
+		<-req.Context().Done()
+		return nil, req.Context().Err()
+	})))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
 	go func() {
-		_, err := client.Parse(ctx, ts.URL)
+		_, err := client.Parse(ctx, "https://8.8.8.8/article")
 		done <- err
 	}()
-
-	// Wait for server to start processing
 	select {
-	case <-serverStarted:
-		// Now cancel the context
+	case <-started:
 		cancel()
-	case <-time.After(1 * time.Second):
-		t.Fatal("Server didn't start processing request")
+	case <-time.After(5 * time.Second):
+		t.Fatal("request did not reach transport")
 	}
-
-	// Wait for parse to complete
-	err := <-done
-	if err == nil {
-		t.Fatal("Expected error from cancelled context")
-	}
-
-	t.Logf("✓ Context cancellation during fetch: %v", err)
-}
-
-// TestContextTimeout tests context timeout handling.
-func TestContextTimeout(t *testing.T) {
-	// Create a test server that delays longer than our timeout
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(2 * time.Second) // Delay longer than our timeout
-		_, _ = w.Write([]byte(`<html><body>Too slow</body></html>`))
-	}))
-	defer ts.Close()
-
-	client := New(WithAllowPrivateNetworks(true))
-
-	// Create a context with a short timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
-	defer cancel()
-
-	start := time.Now()
-	_, err := client.Parse(ctx, ts.URL)
-	elapsed := time.Since(start)
-
-	if err == nil {
-		t.Fatal("Expected timeout error, got nil")
-	}
-
-	// Check that it's a timeout error
-	if perr, ok := err.(*ParseError); ok {
-		if perr.Code != ErrTimeout {
-			t.Errorf("Expected ErrTimeout, got %v", perr.Code)
+	select {
+	case err := <-done:
+		if !errors.Is(err, &ParseError{Code: ErrTimeout}) {
+			t.Fatalf("expected context cancellation, got %v", err)
 		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("request did not return after cancellation")
 	}
-
-	// Should timeout around 200ms (allow some margin)
-	if elapsed < 180*time.Millisecond || elapsed > 400*time.Millisecond {
-		t.Errorf("Timeout timing unexpected: %v", elapsed)
-	}
-
-	t.Logf("✓ Context timeout worked correctly: %v", elapsed)
 }
 
-// TestContextPropagation tests that context is properly propagated through layers.
+func TestContextTimeout(t *testing.T) {
+	client := New(WithTransport(testTransport(func(req *http.Request) (*http.Response, error) {
+		<-req.Context().Done()
+		return nil, req.Context().Err()
+	})))
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	_, err := client.Parse(ctx, "https://8.8.8.8/article")
+	var parseErr *ParseError
+	if !errors.As(err, &parseErr) || parseErr.Code != ErrTimeout {
+		t.Fatalf("expected deadline error with ErrTimeout, got %v", err)
+	}
+}
+
 func TestContextPropagation(t *testing.T) {
-	// Create a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// The fact that we get here means context was propagated
-		w.Header().Set("Content-Type", "text/html")
-		_, _ = w.Write([]byte(`<html><head><title>Test</title></head><body>Content</body></html>`))
-	}))
-	defer ts.Close()
-
-	client := New(WithAllowPrivateNetworks(true))
-
-	// Create a context with a value
-	type ctxKey string
-	ctx := context.WithValue(context.Background(), ctxKey("test"), "value")
-
-	result, err := client.Parse(ctx, ts.URL)
+	type contextKey struct{}
+	ctx, cancel := context.WithTimeout(context.WithValue(context.Background(), contextKey{}, "value"), 5*time.Second)
+	defer cancel()
+	deadline, _ := ctx.Deadline()
+	called := false
+	client := New(WithTransport(testTransport(func(req *http.Request) (*http.Response, error) {
+		called = true
+		if got := req.Context().Value(contextKey{}); got != "value" {
+			t.Errorf("context value = %v, want value", got)
+		}
+		if got, ok := req.Context().Deadline(); !ok || !got.Equal(deadline) {
+			t.Errorf("context deadline = %v (%v), want %v", got, ok, deadline)
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": {"text/html"}},
+			Body:       io.NopCloser(strings.NewReader("<html><head><title>Test</title></head><body><article>Context test content.</article></body></html>")),
+			Request:    req,
+		}, nil
+	})))
+	result, err := client.Parse(ctx, "https://8.8.8.8/article")
 	if err != nil {
-		t.Fatalf("Parse failed: %v", err)
+		t.Fatal(err)
 	}
-
-	if result.Title == "" {
-		t.Error("No title extracted")
+	if !called || result.Title != "Test" {
+		t.Fatalf("transport called = %v, title = %q", called, result.Title)
 	}
-
-	t.Logf("✓ Context propagated successfully through all layers")
 }
 
-// TestConcurrentContextCancellation tests concurrent requests with different contexts.
 func TestConcurrentContextCancellation(t *testing.T) {
-	// Create a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(100 * time.Millisecond) // Small delay
-		_, _ = w.Write([]byte(`<html><head><title>Test</title></head><body>Content</body></html>`))
-	}))
-	t.Cleanup(ts.Close)
-
-	client := New(WithAllowPrivateNetworks(true))
-
-	// Test multiple concurrent requests with different contexts
-	for i := 0; i < 3; i++ {
-		t.Run(fmt.Sprintf("concurrent_%d", i), func(t *testing.T) {
-			t.Parallel()
-
-			if i%2 == 0 {
-				// Even iterations: use timeout context
-				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-				defer cancel()
-
-				_, err := client.Parse(ctx, ts.URL)
-				if err == nil {
-					t.Error("Expected timeout error")
-				}
-			} else {
-				// Odd iterations: normal context
-				ctx := context.Background()
-				result, err := client.Parse(ctx, ts.URL)
-				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
-				}
-				if result != nil && result.Title == "" {
-					t.Error("No title extracted")
-				}
-			}
-		})
+	started := make(chan struct{})
+	client := New(WithTransport(testTransport(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Path == "/cancel" {
+			close(started)
+			<-req.Context().Done()
+			return nil, req.Context().Err()
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": {"text/html"}},
+			Body:       io.NopCloser(strings.NewReader("<html><head><title>Unaffected</title></head><body>Content</body></html>")),
+			Request:    req,
+		}, nil
+	})))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		_, err := client.Parse(ctx, "https://8.8.8.8/cancel")
+		done <- err
+	}()
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("request did not reach transport")
+	}
+	cancel()
+	result, err := client.Parse(context.Background(), "https://8.8.8.8/success")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Title != "Unaffected" {
+		t.Errorf("title = %q, want Unaffected", result.Title)
+	}
+	select {
+	case err := <-done:
+		if !errors.Is(err, &ParseError{Code: ErrTimeout}) {
+			t.Fatalf("expected cancellation, got %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("canceled request did not return")
 	}
 }

@@ -173,14 +173,14 @@ cc := cleaners.NewContentCleaner()
 
 ### Code Formatting
 
-Use `gofumpt` for consistent formatting:
+Use the formatters from `.golangci.yml`:
 
 ```bash
 # Format all code
-gofumpt -w .
+golangci-lint fmt
 
 # Check formatting
-gofumpt -d .
+golangci-lint fmt --diff
 ```
 
 ### Linting
@@ -255,27 +255,10 @@ func TestExtractor_ExtractTitle(t *testing.T) {
 
 #### Integration Tests
 
-- Test component interactions
-- Use real HTTP requests (with fixtures when possible)
-- Tagged with `// +build integration`
-
-```go
-//go:build integration
-// +build integration
-
-func TestParser_RealWorldExtraction(t *testing.T) {
-    if testing.Short() {
-        t.Skip("skipping integration test in short mode")
-    }
-    
-    client := hermes.New()
-    result, err := client.Parse(context.Background(), "https://www.theguardian.com/technology")
-
-    assert.NoError(t, err)
-    assert.NotEmpty(t, result.Title)
-    assert.Greater(t, result.WordCount, 100)
-}
-```
+Test component interactions with local HTML fixtures or an `httptest` server.
+Use an injected transport to test request context values and network denial.
+The current suite does not define an integration build tag or a short-mode test tier.
+See `context_test.go` and `integration_test.go` for executable examples.
 
 #### Benchmark Tests
 
@@ -302,13 +285,10 @@ func BenchmarkClient_ParseHTML(b *testing.B) {
 
 ### Test Requirements
 
-For all contributions:
-
-1. **Unit tests** for new functions and methods
-2. **Integration tests** for new features
-3. **Benchmark tests** for performance-critical code
-4. **Test coverage** should not decrease
-5. **All tests must pass** before merging
+Test observable behavior and regression risks, not each function or implementation detail.
+Use local fixtures, injected transports, or `httptest` servers instead of public network requests.
+For performance changes, compare benchmarks with the same inputs and commands.
+Before a pull request, run `make verify`. Report failures and omitted checks.
 
 Run tests:
 
@@ -316,17 +296,17 @@ Run tests:
 # All tests
 make test
 
-# Unit tests only
-go test ./... -short
+# Focused package or regression
+go test ./internal/parser -run TestName -count=1
 
-# Integration tests
-go test ./... -tags=integration
+# Race detection and coverage
+make test-race
 
 # Benchmarks
-go test -bench=. ./...
+make benchmark PACKAGES=./internal/parser BENCH=BenchmarkParseHTML BENCHFLAGS='-count=5'
 
-# Coverage
-go test -cover ./...
+# Full local acceptance
+make verify
 ```
 
 ## Documentation

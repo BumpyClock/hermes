@@ -64,7 +64,7 @@ Use explicit checks:
 
 ```sh
 git fetch --prune --tags origin
-[ "$(git rev-list --left-right --count master...origin/master)" = "0 0" ]
+test "$(git rev-list --count master...origin/master)" = 0
 ```
 
 Treat `gh release view` exit status 1 as "release absent" only after confirming its diagnostic says the release was not found. Any authentication, network, or other error is a stop condition.
@@ -147,10 +147,7 @@ go mod download
 make lint
 make build
 test "$(./bin/hermes version | sed -n '1p')" = "Hermes $TAG"
-make test
-go test -cover ./...
-go vet ./...
-go test -race -coverprofile=coverage.out ./...
+make test-race
 git diff --check
 ```
 
@@ -160,7 +157,7 @@ For changes that plausibly affect performance, also run:
 make benchmark
 ```
 
-The current CI workflow targets `main` and `develop`, not `master`. Therefore a release on `master` does not receive this CI workflow. Report CI as unavailable for `master` and rely on the documented local gates; never claim CI passed.
+The CI workflow covers pushes to `master` and pull requests that target `master`. Report the CI result for the release commit separately from local gates.
 
 If a required gate fails, stop before staging or publishing. Investigate and fix only failures attributable to the release scope, then rerun the failed gate and affected prior gates. Do not mask failures, skip required checks, or call a partial run successful.
 
@@ -275,7 +272,7 @@ Finish by reporting concise, factual evidence:
 - GitHub release URL and whether it is source-only or lists requested assets;
 - each local gate, command, and result, including goimports, the exact CLI-version assertion, and `go test -race -coverprofile=coverage.out ./...` with its `coverage.out` result;
 - tracked binary artifact inventory, embedded-version consistency result, and any separately approved regeneration or removal;
-- CI status: unavailable for `master` under the current workflow configuration;
+- CI status for the release commit, including the run URL or the reason no result is available;
 - Go proxy command/result and verified `.info`, `.mod`, and `.zip` artifacts;
 - cache-free consumer download result and all retained temporary verification paths;
 - checksum result (`Sum` and `GoModSum`, or sum.golang.org lookup result);

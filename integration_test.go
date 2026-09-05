@@ -2,6 +2,8 @@ package hermes
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -96,40 +98,8 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	return c.base.RoundTrip(req)
 }
 
-// TestContextCancellation verifies that context cancellation works.
-func TestContextCancellation(t *testing.T) {
-	// Create a test server that delays response
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(200 * time.Millisecond) // Delay longer than our context timeout
-		_, _ = w.Write([]byte(`<html><body>Too late</body></html>`))
-	}))
-	defer ts.Close()
-
-	client := New(WithAllowPrivateNetworks(true)) // Allow localhost for testing
-
-	// Create a context with a short timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	// Try to parse - should fail with timeout
-	_, err := client.Parse(ctx, ts.URL)
-	if err == nil {
-		t.Fatal("Expected timeout error, got nil")
-	}
-
-	// Check that it's a timeout or fetch error (context cancelled)
-	if perr, ok := err.(*ParseError); ok {
-		if perr.Code != ErrTimeout && perr.Code != ErrFetch {
-			t.Errorf("Expected ErrTimeout or ErrFetch, got %v", perr.Code)
-		}
-	} else {
-		t.Errorf("Expected ParseError, got %T", err)
-	}
-}
-
 // TestSSRFProtection verifies that SSRF protection works.
 func TestSSRFProtection(t *testing.T) {
-	client := New()
 
 	tests := []struct {
 		name    string
@@ -144,21 +114,31 @@ func TestSSRFProtection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			_, err := client.Parse(ctx, tt.url)
-
+			called := false
+			client := New(WithTransport(testTransport(func(req *http.Request) (*http.Response, error) {
+				called = true
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header:     http.Header{"Content-Type": {"text/html"}},
+					Body:       io.NopCloser(strings.NewReader("<html><head><title>Allowed</title></head><body>Public content</body></html>")),
+					Request:    req,
+				}, nil
+			})))
+			result, err := client.Parse(context.Background(), tt.url)
 			if tt.allowed {
-				// Should work (though might fail for other reasons)
-				// We're just checking it doesn't fail with SSRF error
 				if err != nil {
-					if perr, ok := err.(*ParseError); ok && perr.Code == ErrSSRF {
-						t.Errorf("URL %s should be allowed but got SSRF error", tt.url)
-					}
+					t.Fatal(err)
+				}
+				if !called || result.Title != "Allowed" {
+					t.Fatalf("transport called = %v, title = %q", called, result.Title)
 				}
 			} else {
-				// Should fail with SSRF or related error
-				if err == nil {
-					t.Errorf("URL %s should be blocked but parsing succeeded", tt.url)
+				var parseErr *ParseError
+				if !errors.As(err, &parseErr) || parseErr.Code != ErrSSRF {
+					t.Fatalf("expected ErrSSRF, got %v", err)
+				}
+				if called {
+					t.Fatal("blocked URL reached transport")
 				}
 			}
 		})
