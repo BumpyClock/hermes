@@ -2,7 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
+const { execSync, execFileSync } = require("child_process");
 const { performance } = require("perf_hooks");
 
 // Configuration
@@ -136,8 +136,9 @@ function parseWithGo(url, format) {
 	const startTime = performance.now();
 
 	try {
-		const output = execSync(
-			`"${CONFIG.goBinary}" parse --format ${format} "${url}"`,
+		const output = execFileSync(
+			CONFIG.goBinary,
+			["parse", "--format", format, "--", url],
 			{
 				encoding: "utf8",
 				timeout: 30000, // 30 second timeout
@@ -281,15 +282,15 @@ async function testFormat(format, urls) {
 		});
 	}
 
-	// Calculate averages
-	const jsAvg = jsSuccess > 0 ? Math.round(jsTotal / jsSuccess) : 0;
-	const goAvg = goSuccess > 0 ? Math.round(goTotal / goSuccess) : 0;
+	// Totals include failed attempts, so averages use the same population.
+	const jsAvg = urls.length > 0 ? Math.round(jsTotal / urls.length) : 0;
+	const goAvg = urls.length > 0 ? Math.round(goTotal / urls.length) : 0;
 
 	console.log(`\n📊 ${format.toUpperCase()} Format Summary:`);
 	console.log(
-		`  JavaScript: ${jsSuccess}/${urls.length} success, ${jsAvg}ms average`,
+		`  JavaScript: ${jsSuccess}/${urls.length} success, ${jsAvg}ms average per attempt`,
 	);
-	console.log(`  Go: ${goSuccess}/${urls.length} success, ${goAvg}ms average`);
+	console.log(`  Go: ${goSuccess}/${urls.length} success, ${goAvg}ms average per attempt`);
 
 	return {
 		format,
