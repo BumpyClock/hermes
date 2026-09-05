@@ -94,14 +94,12 @@ func (e *GenericAuthorExtractor) Extract(doc *goquery.Selection, metaCache []str
 	var author string
 
 	// First, check to see if we have a matching meta tag that we can make use of.
-	if document := documentFromSelection(doc); document != nil {
-		authorPtr := dom.ExtractFromMeta(document, AUTHOR_META_TAGS, metaCache, true)
-		if authorPtr != nil {
-			author = *authorPtr
-			if len(author) < AUTHOR_MAX_LENGTH {
-				cleaned := cleanAuthor(author)
-				return &cleaned
-			}
+	document := &goquery.Document{Selection: doc}
+	if authorPtr := dom.ExtractFromMeta(document, AUTHOR_META_TAGS, metaCache, true); authorPtr != nil {
+		author = *authorPtr
+		if len(author) < AUTHOR_MAX_LENGTH {
+			cleaned := cleanAuthor(author)
+			return &cleaned
 		}
 	}
 

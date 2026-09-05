@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCleanDatePublished_MillisecondTimestamps(t *testing.T) {
@@ -147,6 +148,7 @@ func TestCleanDatePublished_RelativeDates(t *testing.T) {
 }
 
 func TestCleanDatePublished_ISO8601Dates(t *testing.T) {
+	localMidnight := time.Date(2023, time.December, 1, 0, 0, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z")
 	tests := []struct {
 		name     string
 		input    string
@@ -170,7 +172,7 @@ func TestCleanDatePublished_ISO8601Dates(t *testing.T) {
 		{
 			name:     "ISO 8601 date only",
 			input:    "2023-12-01",
-			expected: "2023-12-01T08:00:00.000Z", // Parsed in local timezone (PST) then converted to UTC
+			expected: localMidnight,
 		},
 	}
 
@@ -185,6 +187,7 @@ func TestCleanDatePublished_ISO8601Dates(t *testing.T) {
 }
 
 func TestCleanDatePublished_HumanReadableDates(t *testing.T) {
+	localMidnight := time.Date(2023, time.December, 1, 0, 0, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z")
 	tests := []struct {
 		name     string
 		input    string
@@ -193,27 +196,27 @@ func TestCleanDatePublished_HumanReadableDates(t *testing.T) {
 		{
 			name:     "Month day, year format",
 			input:    "December 1, 2023",
-			expected: "2023-12-01T00:00:00.000Z",
+			expected: localMidnight,
 		},
 		{
 			name:     "Short month format",
 			input:    "Dec 1, 2023",
-			expected: "2023-12-01T00:00:00.000Z",
+			expected: localMidnight,
 		},
 		{
 			name:     "Day month year format",
 			input:    "1 December 2023",
-			expected: "2023-12-01T00:00:00.000Z",
+			expected: localMidnight,
 		},
 		{
 			name:     "Slash separated date",
 			input:    "12/01/2023",
-			expected: "2023-12-01T00:00:00.000Z",
+			expected: localMidnight,
 		},
 		{
 			name:     "Dash separated date",
 			input:    "12-01-2023",
-			expected: "2023-12-01T00:00:00.000Z",
+			expected: localMidnight,
 		},
 	}
 
@@ -221,18 +224,14 @@ func TestCleanDatePublished_HumanReadableDates(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
 
-			if result != nil {
-				// Some date formats may parse differently, so we check year and month at least
-				assert.Contains(t, *result, "2023", "Should contain the correct year")
-				assert.Contains(t, *result, "12", "Should contain the correct month")
-			} else {
-				t.Logf("Date parsing failed for: %s (this may be acceptable)", tt.input)
-			}
+			require.NotNil(t, result)
+			assert.Equal(t, tt.expected, *result)
 		})
 	}
 }
 
 func TestCleanDatePublished_DateStringCleaning(t *testing.T) {
+	localMidnight := time.Date(2023, time.December, 1, 0, 0, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z")
 	tests := []struct {
 		name     string
 		input    string
@@ -246,17 +245,17 @@ func TestCleanDatePublished_DateStringCleaning(t *testing.T) {
 		{
 			name:     "Published prefix with colon",
 			input:    "Published : December 1, 2023",
-			expected: "2023-12-01T08:00:00.000Z", // Local timezone conversion like JavaScript
+			expected: localMidnight,
 		},
 		{
-			name:  "Meridian dot format (.m. -> m)",
-			input: "12:30 p.m. December 1, 2023",
-			// This should be cleaned by the meridian dots regex
+			name:     "Meridian dot format (.m. -> m)",
+			input:    "12:30 p.m. December 1, 2023",
+			expected: time.Date(2023, time.December, 1, 12, 30, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z"),
 		},
 		{
-			name:  "Meridian spacing (3pm -> 3 pm)",
-			input: "3pm December 1, 2023",
-			// This should be cleaned by the meridian space regex
+			name:     "Meridian spacing (3pm -> 3 pm)",
+			input:    "3pm December 1, 2023",
+			expected: time.Date(2023, time.December, 1, 15, 0, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z"),
 		},
 	}
 
@@ -264,12 +263,8 @@ func TestCleanDatePublished_DateStringCleaning(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cleanDatePublished(tt.input, nil)
 
-			if result != nil && tt.expected != "" {
-				assert.Equal(t, tt.expected, *result)
-			} else if result != nil {
-				// Just verify it parsed successfully
-				assert.Contains(t, *result, "2023", "Should contain the correct year")
-			}
+			require.NotNil(t, result)
+			assert.Equal(t, tt.expected, *result)
 		})
 	}
 }

@@ -6,12 +6,14 @@ package generic
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGenericDateExtractor_RealWorldIntegration(t *testing.T) {
+	localMidnight := time.Date(2023, time.December, 1, 0, 0, 0, 0, time.Local).UTC().Format("2006-01-02T15:04:05.000Z")
 	tests := []struct {
 		name        string
 		html        string
@@ -72,8 +74,8 @@ func TestGenericDateExtractor_RealWorldIntegration(t *testing.T) {
 				</body>
 			</html>`,
 			url:         "https://example.com/articles/2023/12/01/important-news",
-			metaCache:   []string{},                 // No meta tags
-			expected:    "2023-12-01T08:00:00.000Z", // Parsed from URL in local timezone
+			metaCache:   []string{}, // No meta tags
+			expected:    localMidnight,
 			description: "Should extract date from URL when no metadata available",
 		},
 		{

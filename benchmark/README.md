@@ -9,11 +9,20 @@
 - Make, if the repository has a `Makefile`.
 - Network access for dependencies and test URLs.
 
+## Local checks
+
+Run the regression checks without network access or third-party packages:
+
+```bash
+cd benchmark
+npm test
+```
+
 ## Run the comparison
 
 The script deletes `benchmark/test-output/` before each run. Preserve any results that you need before you run it.
 
-Use only trusted URL files. The script inserts URLs into shell commands without shell-safe argument separation.
+The Go process receives each URL as a literal argument, not shell syntax.
 
 From the repository root, run:
 
@@ -51,6 +60,13 @@ These results measure live requests, not isolated extraction speed. Network cond
 
 Each Go measurement includes CLI process startup. The JavaScript parser runs in the benchmark process, and its first measurement includes module load time.
 
-`averageTime` divides total attempt time by the number of successful attempts. Failed attempts contribute to the total, so this is not a success-only average.
+`totalTime` includes successful and failed attempts. `averageTime` equals `totalTime / totalUrls`, rounded to milliseconds.
+An empty input has an average of zero. Success and failure counts remain separate fields.
+
+These metrics describe attempt latency, not successful-request latency or comparative parser throughput.
+Use identical local HTML fixtures and equivalent process boundaries for performance comparisons.
+
+The CLI returns an error when every URL fails, including with `--timing`.
+It omits the successful-parse average when there are no successful results.
 
 For Go benchmarks with allocation metrics, run `make benchmark` from the repository root.

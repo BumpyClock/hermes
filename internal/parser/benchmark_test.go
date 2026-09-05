@@ -34,31 +34,6 @@ func BenchmarkParseHTML(b *testing.B) {
 	}
 }
 
-// BenchmarkParseHTMLMemory measures memory allocations.
-func BenchmarkParseHTMLMemory(b *testing.B) {
-	fixtureFile := "../../internal/fixtures/www.nytimes.com.html"
-	html, err := os.ReadFile(fixtureFile) //nolint:gosec // Benchmark reads fixed local fixture path.
-	if err != nil {
-		b.Skip("Fixture file not available:", err)
-	}
-
-	p := parser.New()
-	htmlStr := string(html)
-	url := "https://www.nytimes.com/test-article"
-
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		result, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
-		if err != nil {
-			b.Fatal(err)
-		}
-		if result.IsError() {
-			b.Fatal(result.Message)
-		}
-	}
-}
-
 // BenchmarkParseMultipleFixtures tests with various site fixtures.
 func BenchmarkParseMultipleFixtures(b *testing.B) {
 	fixtures := []string{

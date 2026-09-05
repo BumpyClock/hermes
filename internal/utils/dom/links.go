@@ -8,6 +8,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+var srcsetCandidateRE = regexp.MustCompile(`(?:\s*)(\S+(?:\s*[\d.]+[wx])?)(?:\s*,\s*)?`)
+
 // MakeLinksAbsolute converts all relative URLs in the document to absolute URLs
 // This exactly matches the JavaScript makeLinksAbsolute implementation
 // JavaScript: export default function makeLinksAbsolute($content, $, url).
@@ -70,8 +72,7 @@ func absolutizeSet(doc *goquery.Document, baseURL *url.URL) {
 		// JavaScript regex: /(?:\s*)(\S+(?:\s*[\d.]+[wx])?)(?:\s*,\s*)?/g
 		// a comma should be considered part of the candidate URL unless preceded by a descriptor
 		// descriptors can only contain positive numbers followed immediately by either 'w' or 'x'
-		candidateRegex := regexp.MustCompile(`(?:\s*)(\S+(?:\s*[\d.]+[wx])?)(?:\s*,\s*)?`)
-		candidates := candidateRegex.FindAllString(urlSet, -1)
+		candidates := srcsetCandidateRE.FindAllString(urlSet, -1)
 
 		if len(candidates) == 0 {
 			return

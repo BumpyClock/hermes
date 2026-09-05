@@ -7,8 +7,7 @@ Use this guide to prepare code, tests, and documentation for a pull request.
 - The Go version in [`go.mod`](../../go.mod).
 - Git.
 - Make for the commands below.
-- `golangci-lint` for lint checks.
-- `gofumpt` for code format checks.
+- `golangci-lint` v2.12.2, built with support for the selected Go toolchain.
 
 ## Prepare a local checkout
 
@@ -76,16 +75,16 @@ Use descriptive names. Avoid abbreviations that hide the role of a value.
 
 ### Format and lint checks
 
-Check code format:
+Check code format with the formatters in [`.golangci.yml`](../../.golangci.yml):
 
 ```bash
-gofumpt -d .
+golangci-lint fmt --diff
 ```
 
 Apply format changes only to files in the scope of your change:
 
 ```bash
-gofumpt -w path/to/changed.go
+golangci-lint fmt path/to/changed.go
 ```
 
 Run the linter:
@@ -102,18 +101,29 @@ Use table-driven tests for related cases. Test individual functions and componen
 
 Add regression tests for bug fixes. Add benchmarks with allocation metrics for performance-sensitive changes.
 
-Keep live-site tests separate from deterministic tests. A remote site can change content or reject requests without a code change.
+Use local fixtures, injected transports, or `httptest` servers instead of public network requests.
+The suite has no separate short-mode or integration build-tag tier.
+See [`context_test.go`](../../context_test.go) and [`integration_test.go`](../../integration_test.go) for executable examples.
 
 Choose checks that cover the affected behavior:
 
 | Command | Purpose |
 | --- | --- |
 | `make test` | Run all tests with coverage. |
-| `go test ./... -short` | Enable short mode. Tests must check `testing.Short()` to skip work. |
-| `go test -race -coverprofile=coverage.out ./...` | Run the test command from CI. |
-| `make benchmark` | Run tests and benchmarks with allocation metrics. |
+| `go test ./internal/parser -run TestName -count=1` | Run a focused regression test. |
+| `make test-race` | Run the race and coverage checks from CI. |
+| `make verify` | Run lint, race tests with coverage, and the CLI build. |
+| `make benchmark` | Run benchmarks with allocation metrics, without ordinary tests. |
 | `make build` | Build the CLI at `bin/hermes`. |
 
+Test observable behavior and regression risks, not each function or implementation detail.
+For performance changes, compare benchmarks with the same inputs and commands.
+
+```bash
+make benchmark PACKAGES=./internal/parser BENCH=BenchmarkParseHTML BENCHFLAGS='-count=5'
+```
+
+Before a pull request, run `make verify`. Report failures and omitted checks.
 All required checks must pass before merge. Do not reduce test coverage without an explanation.
 
 ## Documentation
@@ -134,7 +144,7 @@ Check links, commands, and identifiers against the current source.
 
 ### Before submission
 
-1. Update your branch from `upstream/main`.
+1. Update your branch from `upstream/master`.
 2. Review the diff for unrelated changes.
 3. Run the tests, lint checks, and build checks that apply to the change.
 4. For performance changes, record benchmark results.

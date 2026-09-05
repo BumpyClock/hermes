@@ -78,28 +78,10 @@ var GenericTitleExtractor = struct {
 	Extract func(doc *goquery.Selection, url string, metaCache []string) string
 }{
 	Extract: func(doc *goquery.Selection, url string, metaCache []string) string {
-		// Convert selection to document for meta tag extraction
-		// Get the full HTML from the selection to create a proper document
-		html := "<html></html>" // Default fallback
-		if doc.Length() > 0 {
-			if fullHtml, err := doc.Html(); err == nil && fullHtml != "" {
-				html = "<html>" + fullHtml + "</html>"
-			} else {
-				// Try to get the parent document HTML
-				if doc.Parent().Length() > 0 {
-					if parentHtml, err := doc.Parent().Html(); err == nil {
-						html = "<html>" + parentHtml + "</html>"
-					}
-				}
-			}
-		} else {
+		if doc.Length() == 0 {
 			return ""
 		}
-
-		document, err := goquery.NewDocumentFromReader(strings.NewReader(html))
-		if err != nil {
-			return ""
-		}
+		document := &goquery.Document{Selection: doc}
 
 		// First, check to see if we have a matching meta tag that we can make
 		// use of that is strongly associated with the headline.
