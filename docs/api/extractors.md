@@ -11,6 +11,18 @@ If you are using Hermes as a library or via the CLI, you do not need to interact
 - Field cleaners: normalize extracted values (title, author, date, etc.).
 - No public configuration for extractors; behavior is automatic.
 
+## Extraction contracts
+
+Theme color extraction accepts standard `content` attributes and normalized `value` attributes. The `theme-color` tag has priority over `msapplication-TileColor`.
+
+Generic content cleanup operates on a copy of the selected article. It preserves the source document and excludes unrelated page elements from cleanup.
+The returned content includes absolute links and the existing image, header, tag, empty-element, and attribute cleanup rules.
+If no source HTML is supplied, generic extraction captures the document before candidate extraction. Retries use that source to preserve short article content.
+This correction does not change public methods or JSON fields.
+
+Internal parser calls with empty options retain default fallback extraction. An explicit content type preserves `Fallback: false`.
+The parser does not treat that choice as empty options.
+
 ```mermaid
 flowchart TD
     A[HTML Document] --> B{Extractor Selection}
@@ -20,4 +32,3 @@ flowchart TD
     D --> E[Cleaners]
     E --> F[Result]
 ```
-

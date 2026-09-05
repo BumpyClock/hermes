@@ -13,13 +13,15 @@ type GenericThemeColorExtractor struct{}
 // Extract extracts the theme color from the page.
 func (extractor *GenericThemeColorExtractor) Extract(selection *goquery.Selection, pageURL string, metaCache []string) string {
 	// Look for meta name="theme-color" tag
-	themeColor := selection.Find("meta[name=\"theme-color\"]").AttrOr("content", "")
+	themeMeta := selection.Find("meta[name=\"theme-color\"]")
+	themeColor := themeMeta.AttrOr("value", themeMeta.AttrOr("content", ""))
 	if themeColor != "" {
 		return extractor.validateAndNormalizeColor(themeColor)
 	}
 
 	// Fallback: Look for meta name="msapplication-TileColor" (Microsoft specific)
-	tileColor := selection.Find("meta[name=\"msapplication-TileColor\"]").AttrOr("content", "")
+	tileMeta := selection.Find("meta[name=\"msapplication-TileColor\"]")
+	tileColor := tileMeta.AttrOr("value", tileMeta.AttrOr("content", ""))
 	if tileColor != "" {
 		return extractor.validateAndNormalizeColor(tileColor)
 	}

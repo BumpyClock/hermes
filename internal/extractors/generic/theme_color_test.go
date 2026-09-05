@@ -16,6 +16,21 @@ func TestGenericThemeColorExtractor(t *testing.T) {
 		expected string
 	}{
 		{
+			name:     "Normalized theme color",
+			html:     `<meta name="theme-color" value="#007acc">`,
+			expected: "#007acc",
+		},
+		{
+			name:     "Normalized tile color fallback",
+			html:     `<meta name="msapplication-TileColor" value="#da532c">`,
+			expected: "#da532c",
+		},
+		{
+			name:     "Normalized value has priority",
+			html:     `<meta name="theme-color" value="#007acc" content="#ff0000"><meta name="msapplication-TileColor" value="#da532c">`,
+			expected: "#007acc",
+		},
+		{
 			name:     "Valid hex color",
 			html:     `<meta name="theme-color" content="#007acc">`,
 			expected: "#007acc",

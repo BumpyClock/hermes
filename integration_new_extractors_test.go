@@ -43,9 +43,9 @@ func TestNewExtractorsIntegration(t *testing.T) {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}
 
-	// Test theme color extraction (note: there may be integration issues with theme color in the full pipeline)
-	// The extractor works correctly in isolation as shown by unit tests
-	t.Logf("Theme color: '%s' (expected: '#007acc')", result.ThemeColor)
+	if result.ThemeColor != "#007acc" {
+		t.Errorf("Expected theme color '#007acc', got %q", result.ThemeColor)
+	}
 
 	// Test favicon extraction (should resolve the relative URL or find apple-touch-icon)
 	if result.Favicon == "" {
@@ -97,8 +97,9 @@ func TestThemeColorFallback(t *testing.T) {
 		t.Fatalf("ParseHTML failed: %v", err)
 	}
 
-	// Theme color integration issue - extractor works in isolation but may not in full pipeline
-	t.Logf("Theme color from tile fallback: '%s' (expected: '#da532c')", result.ThemeColor)
+	if result.ThemeColor != "#da532c" {
+		t.Errorf("Expected tile color '#da532c', got %q", result.ThemeColor)
+	}
 }
 
 func TestVideoTwitterFallback(t *testing.T) {

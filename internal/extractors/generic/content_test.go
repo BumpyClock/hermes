@@ -14,6 +14,43 @@ import (
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
 
+func TestCleanContentReturnsCleanArticle(t *testing.T) {
+	for _, selector := range []string{"article", "body"} {
+		t.Run(selector, func(t *testing.T) {
+			html := `<html><head><title>Page title</title></head><body><article><h1>Article title</h1><p class="source" style="color:red">Article text with <a href="/next">a link</a>.</p><p> </p><script>unwanted()</script><style>.source { color: red }</style><img src="/spacer.gif" width="1" height="1"></article></body></html>`
+			doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+			require.NoError(t, err)
+			before, err := doc.Html()
+			require.NoError(t, err)
+
+			cleaned := CleanContent(doc.Find(selector), CleanContentOptions{Doc: doc, Title: "Article title", URL: "https://example.com/page"})
+			require.NotNil(t, cleaned)
+			assert.Equal(t, 0, cleaned.Find("script, style, h1, img").Length())
+			assert.Equal(t, 1, cleaned.Find("p").Length())
+			assert.Equal(t, "https://example.com/next", cleaned.Find("a").AttrOr("href", ""))
+			assert.Equal(t, "source", cleaned.Find("p").AttrOr("class", ""))
+			assert.Equal(t, "", cleaned.Find("p").AttrOr("style", ""))
+			assert.Contains(t, cleaned.Text(), "Article text")
+			if selector == "body" {
+				assert.Equal(t, "div", goquery.NodeName(cleaned))
+			}
+			after, err := doc.Html()
+			require.NoError(t, err)
+			assert.Equal(t, before, after, "content cleanup must not change the source document")
+		})
+	}
+}
+
+func TestGenericContentExtractorRetriesWithoutHTML(t *testing.T) {
+	source := `<html><body><div class="content"><p>Short <strong>article</strong> text with <a href="/next">a link</a>.</p></div></body></html>`
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(source))
+	require.NoError(t, err)
+	extractor := NewGenericContentExtractor()
+	result := extractor.Extract(ExtractorParams{Doc: doc, URL: "https://example.com/page"}, extractor.DefaultOpts)
+	assert.Contains(t, result, "Short <strong>article</strong> text")
+	assert.Contains(t, result, `href="https://example.com/next"`)
+}
+
 func TestGenericContentExtractor_Extract_BasicFunctionality(t *testing.T) {
 	tests := []struct {
 		name     string
