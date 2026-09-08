@@ -9,36 +9,34 @@ var GithubComExtractor = &CustomExtractor{
 	Domain: "github.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"relative-time[datetime]", "datetime"},
-			[]string{"span[itemprop=\"dateModified\"] relative-time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "relative-time[datetime]", Attribute: "datetime"},
+			{Selector: "span[itemprop=\"dateModified\"] relative-time", Attribute: "datetime"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"description\"]", "value"},
-			"span[itemprop=\"about\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"description\"]", Attribute: "value"},
+			{Selector: "span[itemprop=\"about\"]"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				[]interface{}{"#readme article"},
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#readme article"},
 		},
 	},
 }

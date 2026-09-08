@@ -60,6 +60,20 @@ sequenceDiagram
     Client-->>App: Result or error
 ```
 
+## Internal extraction stages
+
+The resource package uses functions, not a resource object. `Fetch` returns a response and an ordinary error.
+`PrepareDocument` accepts bytes, content type, and the decoded-input flag. Supplied HTML skips character decoding.
+
+The parser extracts metadata sequentially within each request. Separate requests can still execute concurrently through the public client.
+Custom and generic paths share content conversion, content metrics, author/date fallback, and video result assembly.
+Their distinct selector priority, fallback policy, and cleanup order remain explicit.
+
+The cleaner package owns title separator and domain-similarity algorithms. Generic title extraction retains its distinct tag-removal and whitespace order.
+The parser retains repeated title cleanup where that sequence affects results.
+
+See [refactor comparison](../development/refactor-comparison.md) for output and public-contract checks.
+
 ## Client behavior
 
 The client supports concurrent requests. Reuse a client across goroutines to share its HTTP connection pool.

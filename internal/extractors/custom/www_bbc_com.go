@@ -7,21 +7,21 @@ func GetBBCExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain:           "www.bbc.com",
 		SupportedDomains: []string{"bbc.com"},
-		Title: &FieldExtractor{Selectors: []interface{}{
-			"article h1",
-			`[data-component="headline-block"] h1`,
+		Title: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: "article h1"},
+			{Selector: `[data-component="headline-block"] h1`},
 		}},
-		Author: &FieldExtractor{Selectors: []interface{}{
-			`[data-testid="byline-contributors"]`,
+		Author: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: `[data-testid="byline-contributors"]`},
 		}},
-		DatePublished: &FieldExtractor{Selectors: []interface{}{
-			[]string{"article time", "datetime"},
+		DatePublished: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: "article time", Attribute: "datetime"},
 		}},
-		LeadImageURL: &FieldExtractor{Selectors: []interface{}{
-			[]string{`meta[name="og:image"]`, "value"},
+		LeadImageURL: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: `meta[name="og:image"]`, Attribute: "value"},
 		}},
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{Selectors: []interface{}{"article"}},
+			Selectors: []ContentSelectorGroup{{"article"}},
 			Clean: []string{
 				"h1",
 				`[data-testid="byline"]`,

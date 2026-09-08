@@ -9,38 +9,36 @@ func GetWwwOpposingviewsComExtractor() *CustomExtractor {
 		Domain: "www.opposingviews.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.m-detail-header--title",
-				"h1.title",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.m-detail-header--title"},
+				{Selector: "h1.title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"author\"]", "value"},
-				"div.date span span a",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"author\"]", Attribute: "value"},
+				{Selector: "div.date span span a"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"published\"]", "value"},
-				[]string{"meta[name=\"publish_date\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"published\"]", Attribute: "value"},
+				{Selector: "meta[name=\"publish_date\"]", Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".m-detail--body",
-					".article-content",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".m-detail--body"},
+				{".article-content"},
 			},
 
 			Transforms: map[string]TransformFunction{

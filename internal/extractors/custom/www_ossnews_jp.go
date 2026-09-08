@@ -9,14 +9,14 @@ var WwwOssnewsJpExtractor = &CustomExtractor{
 	Domain: "www.ossnews.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"#alpha-block h1.hxnewstitle",
+		Selectors: []SelectorEntry{
+			{Selector: "#alpha-block h1.hxnewstitle"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"p.fs12",
+		Selectors: []SelectorEntry{
+			{Selector: "p.fs12"},
 		},
 
 		// format: 'YYYY年MM月DD日 HH:mm' in JavaScript - note: Go implementation handles format in date cleaner
@@ -27,16 +27,14 @@ var WwwOssnewsJpExtractor = &CustomExtractor{
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#alpha-block .section:has(h1.hxnewstitle)",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#alpha-block .section:has(h1.hxnewstitle)"},
 		},
 
 		// defaultCleaner: false in JavaScript

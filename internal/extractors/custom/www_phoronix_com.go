@@ -9,21 +9,21 @@ var WwwPhoronixComExtractor = &CustomExtractor{
 	Domain: "www.phoronix.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"article h1",
-			"article header",
+		Selectors: []SelectorEntry{
+			{Selector: "article h1"},
+			{Selector: "article header"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".author a:first-child",
+		Selectors: []SelectorEntry{
+			{Selector: ".author a:first-child"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".author",
+		Selectors: []SelectorEntry{
+			{Selector: ".author"},
 		},
 		// Note: format and timezone would be handled at extraction time
 		// format: 'D MMMM YYYY at hh:mm' (from JavaScript)
@@ -31,10 +31,8 @@ var WwwPhoronixComExtractor = &CustomExtractor{
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".content"},
 		},
 	},
 }

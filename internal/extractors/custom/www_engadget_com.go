@@ -10,42 +10,40 @@ var WwwEngadgetComExtractor = &CustomExtractor{
 
 	// Note: Hermes normalizes meta tags: property->name, content->value
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"a[data-ylk*=\"elm:author\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "a[data-ylk*=\"elm:author\"]"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:description\"]", "value"},
-			[]string{"meta[name=\"description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:description\"]", Attribute: "value"},
+			{Selector: "meta[name=\"description\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div[data-article-body=\"true\"]",
-				"article",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div[data-article-body=\"true\"]"},
+			{"article"},
 		},
 
 		// Clean out ads, commerce modules, and non-content elements

@@ -13,38 +13,36 @@ func GetWashingtonPostExtractor() *CustomExtractor {
 		Domain: "www.washingtonpost.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"#topper-text-elems h1",
-				"article header h1",
-				"h1",
-				"#topper-headline-wrapper",
+			Selectors: []SelectorEntry{
+				{Selector: "#topper-text-elems h1"},
+				{Selector: "article header h1"},
+				{Selector: "h1"},
+				{Selector: "#topper-headline-wrapper"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="author"]`, "value"},
-				".pb-author-name",
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="author"]`, Attribute: "value"},
+				{Selector: ".pb-author-name"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`.author-timestamp[itemprop="datePublished"]`, "content"},
+			Selectors: []SelectorEntry{
+				{Selector: `.author-timestamp[itemprop="datePublished"]`, Attribute: "content"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".article-body",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".article-body"},
 			},
 
 			Transforms: map[string]TransformFunction{

@@ -15,43 +15,41 @@ func GetWwwFoolComExtractor() *CustomExtractor {
 		Domain: "www.fool.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1",
+			Selectors: []SelectorEntry{
+				{Selector: "h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"author\"]", "value"},
-				".author-inline .author-name",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"author\"]", Attribute: "value"},
+				{Selector: ".author-inline .author-name"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"date\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"date\"]", Attribute: "value"},
 			},
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:description\"]", "value"},
-				"header h2",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:description\"]", Attribute: "value"},
+				{Selector: "header h2"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".tailwind-article-body",
-					".article-content",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".tailwind-article-body"},
+				{".article-content"},
 			},
 
 			Transforms: map[string]TransformFunction{

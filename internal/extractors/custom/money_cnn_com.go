@@ -9,43 +9,41 @@ func GetMoneyCNNExtractor() *CustomExtractor {
 		Domain: "money.cnn.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				".article-title",
+			Selectors: []SelectorEntry{
+				{Selector: ".article-title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="date"]`, "value"},
-				".byline a",
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="date"]`, Attribute: "value"},
+				{Selector: ".byline a"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="date"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="date"]`, Attribute: "value"},
 			},
 			// JavaScript equivalent: timezone: 'GMT'
 			// Note: Timezone handling would be implemented in date parsing logic
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				"#storytext h2",
+			Selectors: []SelectorEntry{
+				{Selector: "#storytext h2"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"#storytext",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"#storytext"},
 			},
 
 			Transforms: map[string]TransformFunction{

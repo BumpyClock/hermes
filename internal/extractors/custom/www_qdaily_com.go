@@ -9,23 +9,21 @@ var QdailyCustomExtractor = &CustomExtractor{
 	Domain: "www.qdaily.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h2",
-			"h2.title",
+		Selectors: []SelectorEntry{
+			{Selector: "h2"},
+			{Selector: "h2.title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".name",
+		Selectors: []SelectorEntry{
+			{Selector: ".name"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".detail",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".detail"},
 		},
 
 		// Clean lazy-load elements
@@ -37,20 +35,20 @@ var QdailyCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{".date.smart-date", "data-origindate"},
+		Selectors: []SelectorEntry{
+			{Selector: ".date.smart-date", Attribute: "data-origindate"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{".article-detail-hd img", "src"},
+		Selectors: []SelectorEntry{
+			{Selector: ".article-detail-hd img", Attribute: "src"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".excerpt",
+		Selectors: []SelectorEntry{
+			{Selector: ".excerpt"},
 		},
 	},
 }

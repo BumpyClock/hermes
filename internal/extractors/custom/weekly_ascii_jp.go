@@ -9,22 +9,22 @@ var WeeklyAsciiJpExtractor = &CustomExtractor{
 	Domain: "weekly.ascii.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"article h1",
-			"h1[itemprop=\"headline\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "article h1"},
+			{Selector: "h1[itemprop=\"headline\"]"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"p.author",
+		Selectors: []SelectorEntry{
+			{Selector: "p.author"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"p.date",
-			[]string{"meta[name=\"odate\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "p.date"},
+			{Selector: "meta[name=\"odate\"]", Attribute: "value"},
 		},
 
 		// format: 'YYYY年MM月DD日 HH:mm' in JavaScript - note: Go implementation handles format in date cleaner
@@ -35,17 +35,15 @@ var WeeklyAsciiJpExtractor = &CustomExtractor{
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div#contents_detail",
-				"div.article",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div#contents_detail"},
+			{"div.article"},
 		},
 	},
 }

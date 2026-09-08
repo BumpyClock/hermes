@@ -7,21 +7,21 @@ func GetTechCrunchExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain:           "techcrunch.com",
 		SupportedDomains: []string{"www.techcrunch.com"},
-		Title:            &FieldExtractor{Selectors: []interface{}{"article h1", "h1"}},
-		Author: &FieldExtractor{Selectors: []interface{}{
-			[]string{`meta[name="author"]`, "value"},
+		Title:            &FieldExtractor{Selectors: []SelectorEntry{{Selector: "article h1"}, {Selector: "h1"}}},
+		Author: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: `meta[name="author"]`, Attribute: "value"},
 		}},
-		DatePublished: &FieldExtractor{Selectors: []interface{}{
-			[]string{`meta[name="article:published_time"]`, "value"},
+		DatePublished: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: `meta[name="article:published_time"]`, Attribute: "value"},
 		}},
-		LeadImageURL: &FieldExtractor{Selectors: []interface{}{
-			[]string{`meta[name="og:image"]`, "value"},
+		LeadImageURL: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: `meta[name="og:image"]`, Attribute: "value"},
 		}},
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{Selectors: []interface{}{
-				".entry-content.wp-block-post-content",
-				".entry-content",
-			}},
+			Selectors: []ContentSelectorGroup{
+				{".entry-content.wp-block-post-content"},
+				{".entry-content"},
+			},
 			Clean: []string{
 				`.wp-block-techcrunch-newsletter`,
 				`[class*="newsletter"]`,

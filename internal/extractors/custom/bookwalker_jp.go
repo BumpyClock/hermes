@@ -9,40 +9,38 @@ var BookwalkerJpExtractor = &CustomExtractor{
 	Domain: "bookwalker.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.p-main__title",
-			"h1.main-heading",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.p-main__title"},
+			{Selector: "h1.main-heading"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.p-author__list",
-			"div.authors",
+		Selectors: []SelectorEntry{
+			{Selector: "div.p-author__list"},
+			{Selector: "div.authors"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"dl.p-information__data dd:nth-of-type(7)",
-			".work-info .work-detail:first-of-type .work-detail-contents:last-of-type",
+		Selectors: []SelectorEntry{
+			{Selector: "dl.p-information__data dd:nth-of-type(7)"},
+			{Selector: ".work-info .work-detail:first-of-type .work-detail-contents:last-of-type"},
 		},
 		// timezone: 'Asia/Tokyo' in JavaScript - note: Go implementation handles timezone in date cleaner
 		Timezone: "Asia/Tokyo",
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.p-main__information",
-				[]interface{}{"div.main-info", "div.main-cover-inner"},
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.p-main__information"},
+			{"div.main-info", "div.main-cover-inner"},
 		},
 
 		// defaultCleaner: false in JavaScript

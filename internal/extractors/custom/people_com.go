@@ -9,44 +9,42 @@ var PeopleCustomExtractor = &CustomExtractor{
 	Domain: "people.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			".article-header h1",
-			[]string{"meta[name=\"og:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: ".article-header h1"},
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"sailthru.author\"]", "value"},
-			"a.author.url.fn",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"sailthru.author\"]", Attribute: "value"},
+			{Selector: "a.author.url.fn"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".mntl-attribution__item-date",
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: ".mntl-attribution__item-date"},
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".article-header h2",
+		Selectors: []SelectorEntry{
+			{Selector: ".article-header h2"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div[class^=\"loc article-content\"]",
-				"div.article-body__inner",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div[class^=\"loc article-content\"]"},
+			{"div.article-body__inner"},
 		},
 	},
 }

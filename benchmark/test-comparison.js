@@ -94,76 +94,79 @@ function buildGoParser() {
 	}
 }
 
-// Parse URL with JavaScript parser
 async function parseWithJS(url, format) {
-	const startTime = performance.now();
-
-	try {
-		const Parser = require("@postlight/parser");
-
-		let result;
-		if (format === "json") {
-			result = await Parser.parse(url, { contentType: "html" });
-			result = JSON.stringify(result, null, 2);
-		} else {
-			result = await Parser.parse(url, { contentType: "markdown" });
-			result = result.content || "";
-		}
-
-		const endTime = performance.now();
-		const executionTime = Math.round(endTime - startTime);
-
-		return {
-			success: true,
-			executionTime,
-			output: result,
-		};
-	} catch (error) {
-		const endTime = performance.now();
-		const executionTime = Math.round(endTime - startTime);
-
-		return {
-			success: false,
-			executionTime,
-			error: error.message,
-			output: "",
-		};
-	}
+	const Parser = require("@postlight/parser");
+	const result = await Parser.parse(url, {
+		contentType: format === "json" ? "html" : "markdown",
+	});
+	return format === "json" ? JSON.stringify(result, null, 2) : result.content || "";
 }
 
-// Parse URL with Go parser
 function parseWithGo(url, format) {
-	const startTime = performance.now();
+	return execFileSync(
+		CONFIG.goBinary,
+		["parse", "--format", format, "--", url],
+		{ encoding: "utf8", timeout: 30000 },
+	).trim();
+}
 
-	try {
-		const output = execFileSync(
-			CONFIG.goBinary,
-			["parse", "--format", format, "--", url],
-			{
-				encoding: "utf8",
-				timeout: 30000, // 30 second timeout
-			},
-		);
-
-		const endTime = performance.now();
-		const executionTime = Math.round(endTime - startTime);
-
-		return {
-			success: true,
-			executionTime,
-			output: output.trim(),
-		};
-	} catch (error) {
-		const endTime = performance.now();
-		const executionTime = Math.round(endTime - startTime);
-
-		return {
-			success: false,
-			executionTime,
-			error: error.message,
-			output: "",
-		};
+async function runParser(parse, format, urls) {
+	const results = [];
+	let totalTime = 0;
+	let successful = 0;
+	for (let i = 0; i < urls.length; i++) {
+		process.stdout.write(`  URL ${i + 1}/${urls.length}... `);
+		const startTime = performance.now();
+		let result;
+		try {
+			const output = await parse(urls[i], format);
+			result = {
+				success: true,
+				executionTime: Math.round(performance.now() - startTime),
+				output,
+			};
+		} catch (error) {
+			result = {
+				success: false,
+				executionTime: Math.round(performance.now() - startTime),
+				error: error.message,
+				output: "",
+			};
+		}
+		results.push(result);
+		totalTime += result.executionTime;
+		if (result.success) {
+			successful++;
+			console.log(`✓ ${result.executionTime}ms`);
+		} else {
+			console.log(`✗ ${result.executionTime}ms (${result.error})`);
+		}
 	}
+	return {
+		results,
+		stats: {
+			successful,
+			failed: urls.length - successful,
+			totalTime,
+			// Include failed attempts in both the total and the average.
+			averageTime: urls.length > 0 ? Math.round(totalTime / urls.length) : 0,
+		},
+	};
+}
+
+function saveResult(result, parser, format, filename) {
+	let fileSize = 0;
+	if (result.success) {
+		const file = path.join(CONFIG.outputDir, parser, format, filename);
+		fs.writeFileSync(file, result.output);
+		fileSize = fs.statSync(file).size;
+	}
+	return {
+		status: result.success ? "success" : "failed",
+		executionTime: result.executionTime,
+		fileSize,
+		error: result.error || null,
+	};
 }
 
 // Sanitize filename for cross-platform compatibility
@@ -184,129 +187,34 @@ async function testFormat(format, urls) {
 	const results = [];
 	const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
-	// Phase 1: Run JavaScript parser for all URLs
 	console.log("\n📦 JavaScript Parser - Processing all URLs...");
-	const jsResults = [];
-	let jsTotal = 0,
-		jsSuccess = 0;
-
-	for (let i = 0; i < urls.length; i++) {
-		const url = urls[i];
-		process.stdout.write(`  URL ${i + 1}/${urls.length}... `);
-
-		const jsResult = await parseWithJS(url, format);
-		jsResults.push(jsResult);
-		jsTotal += jsResult.executionTime;
-
-		if (jsResult.success) {
-			jsSuccess++;
-			console.log(`✓ ${jsResult.executionTime}ms`);
-		} else {
-			console.log(`✗ ${jsResult.executionTime}ms (${jsResult.error})`);
-		}
-	}
-
-	// Phase 2: Run Go parser for all URLs
+	const javascript = await runParser(parseWithJS, format, urls);
 	console.log("\n🔧 Go Parser - Processing all URLs...");
-	const goResults = [];
-	let goTotal = 0,
-		goSuccess = 0;
+	const go = await runParser(parseWithGo, format, urls);
 
-	for (let i = 0; i < urls.length; i++) {
-		const url = urls[i];
-		process.stdout.write(`  URL ${i + 1}/${urls.length}... `);
-
-		const goResult = parseWithGo(url, format);
-		goResults.push(goResult);
-		goTotal += goResult.executionTime;
-
-		if (goResult.success) {
-			goSuccess++;
-			console.log(`✓ ${goResult.executionTime}ms`);
-		} else {
-			console.log(`✗ ${goResult.executionTime}ms (${goResult.error})`);
-		}
-	}
-
-	// Phase 3: Save files and compile results
 	console.log("\n💾 Saving results and compiling report...");
-
 	for (let i = 0; i < urls.length; i++) {
 		const url = urls[i];
-		const filename = sanitizeFilename(url);
-		const jsRes = jsResults[i];
-		const goRes = goResults[i];
-
-		// Save JavaScript result
-		let jsSizeBytes = 0;
-		if (jsRes.success) {
-			const jsFile = path.join(
-				CONFIG.outputDir,
-				"js",
-				format,
-				`${filename}-${timestamp}-${i}.${format}`,
-			);
-			fs.writeFileSync(jsFile, jsRes.output);
-			jsSizeBytes = fs.statSync(jsFile).size;
-		}
-
-		// Save Go result
-		let goSizeBytes = 0;
-		if (goRes.success) {
-			const goFile = path.join(
-				CONFIG.outputDir,
-				"go",
-				format,
-				`${filename}-${timestamp}-${i}.${format}`,
-			);
-			fs.writeFileSync(goFile, goRes.output);
-			goSizeBytes = fs.statSync(goFile).size;
-		}
-
-		// Store result for report
+		const filename = `${sanitizeFilename(url)}-${timestamp}-${i}.${format}`;
 		results.push({
 			url,
 			format,
-			javascript: {
-				status: jsRes.success ? "success" : "failed",
-				executionTime: jsRes.executionTime,
-				fileSize: jsSizeBytes,
-				error: jsRes.error || null,
-			},
-			go: {
-				status: goRes.success ? "success" : "failed",
-				executionTime: goRes.executionTime,
-				fileSize: goSizeBytes,
-				error: goRes.error || null,
-			},
+			javascript: saveResult(javascript.results[i], "js", format, filename),
+			go: saveResult(go.results[i], "go", format, filename),
 		});
 	}
 
-	// Totals include failed attempts, so averages use the same population.
-	const jsAvg = urls.length > 0 ? Math.round(jsTotal / urls.length) : 0;
-	const goAvg = urls.length > 0 ? Math.round(goTotal / urls.length) : 0;
-
 	console.log(`\n📊 ${format.toUpperCase()} Format Summary:`);
 	console.log(
-		`  JavaScript: ${jsSuccess}/${urls.length} success, ${jsAvg}ms average per attempt`,
+		`  JavaScript: ${javascript.stats.successful}/${urls.length} success, ${javascript.stats.averageTime}ms average per attempt`,
 	);
-	console.log(`  Go: ${goSuccess}/${urls.length} success, ${goAvg}ms average per attempt`);
+	console.log(`  Go: ${go.stats.successful}/${urls.length} success, ${go.stats.averageTime}ms average per attempt`);
 
 	return {
 		format,
 		totalUrls: urls.length,
-		javascript: {
-			successful: jsSuccess,
-			failed: urls.length - jsSuccess,
-			totalTime: jsTotal,
-			averageTime: jsAvg,
-		},
-		go: {
-			successful: goSuccess,
-			failed: urls.length - goSuccess,
-			totalTime: goTotal,
-			averageTime: goAvg,
-		},
+		javascript: javascript.stats,
+		go: go.stats,
 		results,
 	};
 }

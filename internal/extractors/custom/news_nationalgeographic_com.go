@@ -15,44 +15,42 @@ var NewsNationalgeographicComExtractor = &CustomExtractor{
 	Domain: "news.nationalgeographic.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			"h1.main-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: "h1.main-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".byline-component__contributors b span",
+		Selectors: []SelectorEntry{
+			{Selector: ".byline-component__contributors b span"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 		// JavaScript: format: 'ddd MMM DD HH:mm:ss zz YYYY', timezone: 'EST'
 		// Note: Go handles timezone conversion automatically during parsing
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".article__deck",
+		Selectors: []SelectorEntry{
+			{Selector: ".article__deck"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{".parsys.content", ".__image-lead__"},
-				".content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".parsys.content", ".__image-lead__"},
+			{".content"},
 		},
 
 		// Transform functions for News National Geographic-specific content

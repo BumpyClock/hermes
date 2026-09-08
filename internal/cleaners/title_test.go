@@ -244,7 +244,7 @@ func TestExtractBreadcrumbTitle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ExtractBreadcrumbTitle(tt.splitTitle, tt.text)
+			result := ExtractBreadcrumbTitle(tt.splitTitle, tt.text, true)
 			if result != tt.expected {
 				t.Errorf("ExtractBreadcrumbTitle() = %q, expected %q", result, tt.expected)
 			}
@@ -288,7 +288,7 @@ func TestCleanDomainFromTitle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := CleanDomainFromTitle(tt.splitTitle, tt.url)
+			result := CleanDomainFromTitle(tt.splitTitle, tt.url, 1)
 			if result != tt.expected {
 				t.Errorf("CleanDomainFromTitle() = %q, expected %q", result, tt.expected)
 			}
@@ -450,4 +450,23 @@ func abs(x float64) float64 {
 		return -x
 	}
 	return x
+}
+
+func TestResolveTitle_StageDifferences(t *testing.T) {
+	title := "e x a m p l e n e w s - Actual Article"
+	if got := ResolveSplitTitle(title, "https://example.com"); got != title {
+		t.Fatalf("cleaner title = %q, want %q", got, title)
+	}
+	if got := ResolveExtractedTitle(title, "https://example.com"); got != "Actual Article" {
+		t.Fatalf("extractor title = %q, want Actual Article", got)
+	}
+
+	breadcrumb := "  Long Article Title  : Blog : Section : Site"
+	segments := SplitTitleWithSeparators(breadcrumb)
+	if got := ExtractBreadcrumbTitle(segments, breadcrumb, true); got != "Long Article Title" {
+		t.Fatalf("cleaner breadcrumb = %q", got)
+	}
+	if got := ExtractBreadcrumbTitle(segments, breadcrumb, false); got != "  Long Article Title  " {
+		t.Fatalf("extractor breadcrumb = %q", got)
+	}
 }

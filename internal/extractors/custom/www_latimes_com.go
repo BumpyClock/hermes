@@ -13,38 +13,36 @@ func GetLATimesExtractor() *CustomExtractor {
 		Domain: "www.latimes.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.headline",
-				".trb_ar_hl",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.headline"},
+				{Selector: ".trb_ar_hl"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				`a[data-click="standardBylineAuthorName"]`,
-				[]string{`meta[name="author"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `a[data-click="standardBylineAuthorName"]`},
+				{Selector: `meta[name="author"]`, Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="article:published_time"]`, "value"},
-				[]string{`meta[itemprop="datePublished"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="article:published_time"]`, Attribute: "value"},
+				{Selector: `meta[itemprop="datePublished"]`, Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".page-article-body",
-					".trb_ar_main",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".page-article-body"},
+				{".trb_ar_main"},
 			},
 
 			Transforms: map[string]TransformFunction{

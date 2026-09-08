@@ -13,16 +13,14 @@ var WikipediaCustomExtractor = &CustomExtractor{
 	Domain: "wikipedia.org",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h2.title",
+		Selectors: []SelectorEntry{
+			{Selector: "h2.title"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#mw-content-text",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#mw-content-text"},
 		},
 		DisableDefaultCleaner: true,
 
@@ -54,8 +52,8 @@ var WikipediaCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"#footer-info-lastmod",
+		Selectors: []SelectorEntry{
+			{Selector: "#footer-info-lastmod"},
 		},
 	},
 }
@@ -79,7 +77,7 @@ func transformWikipediaInfoboxImg(selection *goquery.Selection) error {
 func GetWikipediaExtractor() *CustomExtractor {
 	// Set hardcoded author as per JavaScript
 	WikipediaCustomExtractor.Author = &FieldExtractor{
-		Selectors: []interface{}{
+		Selectors: []SelectorEntry{
 			// Wikipedia Contributors is hardcoded in the JavaScript
 		},
 	}

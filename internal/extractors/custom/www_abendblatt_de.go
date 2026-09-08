@@ -56,22 +56,20 @@ var WwwAbendblattDeExtractor = &CustomExtractor{
 	Domain: "www.abendblatt.de",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h2.article__header__headline",
+		Selectors: []SelectorEntry{
+			{Selector: "h2.article__header__headline"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"span.author-info__name-text",
+		Selectors: []SelectorEntry{
+			{Selector: "span.author-info__name-text"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.article__body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.article__body"},
 		},
 
 		// Complex transform functions for obfuscated content
@@ -92,21 +90,21 @@ var WwwAbendblattDeExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time.teaser-stream-time", "datetime"},
-			[]string{"time.article__header__date", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "time.teaser-stream-time", Attribute: "datetime"},
+			{Selector: "time.article__header__date", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"description\"]", Attribute: "value"},
 		},
 	},
 }

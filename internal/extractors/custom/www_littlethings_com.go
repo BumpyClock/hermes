@@ -9,32 +9,30 @@ var LittleThingsCustomExtractor = &CustomExtractor{
 	Domain: "www.littlethings.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1[class*=\"PostHeader\"]",
-			"h1.post-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1[class*=\"PostHeader\"]"},
+			{Selector: "h1.post-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"div[class^=\"PostHeader__ScAuthorNameSection\"]",
-			[]string{"meta[name=\"author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "div[class^=\"PostHeader__ScAuthorNameSection\"]"},
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"section[class*=\"PostMainArticle\"]",
-				".mainContentIntro",
-				".content-wrapper",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"section[class*=\"PostMainArticle\"]"},
+			{".mainContentIntro"},
+			{".content-wrapper"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

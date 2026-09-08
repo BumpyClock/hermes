@@ -9,22 +9,20 @@ var EpaperZeitDeExtractor = &CustomExtractor{
 	Domain: "epaper.zeit.de",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"p.title",
+		Selectors: []SelectorEntry{
+			{Selector: "p.title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".article__author",
+		Selectors: []SelectorEntry{
+			{Selector: ".article__author"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article"},
 		},
 
 		// String-based transform functions for layout elements
@@ -45,8 +43,8 @@ var EpaperZeitDeExtractor = &CustomExtractor{
 	// JavaScript: date_published: null
 
 	Excerpt: &FieldExtractor{
-		Selectors: []interface{}{
-			"subtitle",
+		Selectors: []SelectorEntry{
+			{Selector: "subtitle"},
 		},
 	},
 }

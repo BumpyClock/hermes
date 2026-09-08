@@ -12,79 +12,77 @@ var PolygonExtractor = &CustomExtractor{
 	Domain: "www.polygon.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.article-header-title",
-			"h1[class*='article']",
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.article-header-title"},
+			{Selector: "h1[class*='article']"},
+			{Selector: "h1"},
 			// Meta tag fallback
-			[]string{"meta[property=\"og:title\"]", "content"},
-			[]string{"meta[name=\"twitter:title\"]", "content"},
+			{Selector: "meta[property=\"og:title\"]", Attribute: "content"},
+			{Selector: "meta[name=\"twitter:title\"]", Attribute: "content"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".article-author",
-			".meta_txt.article-author",
-			".w-author-name .article-author",
+		Selectors: []SelectorEntry{
+			{Selector: ".article-author"},
+			{Selector: ".meta_txt.article-author"},
+			{Selector: ".w-author-name .article-author"},
 			// Meta tag fallbacks
-			[]string{"meta[name=\"author\"]", "content"},
-			[]string{"meta[property=\"article:author\"]", "content"},
+			{Selector: "meta[name=\"author\"]", Attribute: "content"},
+			{Selector: "meta[property=\"article:author\"]", Attribute: "content"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[property=\"article:published_time\"]", "content"},
-			[]string{"meta[property=\"og:published_time\"]", "content"},
-			".article-date",
-			".meta_txt.article-date",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[property=\"article:published_time\"]", Attribute: "content"},
+			{Selector: "meta[property=\"og:published_time\"]", Attribute: "content"},
+			{Selector: ".article-date"},
+			{Selector: ".meta_txt.article-date"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"header p", // Polygon's subtitle in header
-			".article-excerpt",
-			[]string{"meta[name=\"description\"]", "content"},
+		Selectors: []SelectorEntry{
+			{Selector: "header p"}, // Polygon's subtitle in header
+			{Selector: ".article-excerpt"},
+			{Selector: "meta[name=\"description\"]", Attribute: "content"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[property=\"og:image\"]", "content"},
-			[]string{"meta[name=\"twitter:image\"]", "content"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[property=\"og:image\"]", Attribute: "content"},
+			{Selector: "meta[name=\"twitter:image\"]", Attribute: "content"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				// Multi-selector approach: get content elements + container as fallback
-				[]interface{}{
-					"#article-body .content-block-regular",
-					"#article-body > p",
-					"#article-body > h1",
-					"#article-body > h2",
-					"#article-body > h3",
-					"#article-body > h4",
-					"#article-body > figure",
-					"#article-body > blockquote",
-					"#article-body > img",
-				},
-
-				// Fallback to full container
-				"#article-body",
-				".article-body",
-
-				// Article element fallbacks
-				"article.w-article .article-body",
-				"main .w-article",
-
-				// WordPress content selectors
-				".entry-content",
-				".post-content",
+		Selectors: []ContentSelectorGroup{
+			// Multi-selector approach: get content elements + container as fallback
+			{
+				"#article-body .content-block-regular",
+				"#article-body > p",
+				"#article-body > h1",
+				"#article-body > h2",
+				"#article-body > h3",
+				"#article-body > h4",
+				"#article-body > figure",
+				"#article-body > blockquote",
+				"#article-body > img",
 			},
+
+			// Fallback to full container
+			{"#article-body"},
+			{".article-body"},
+
+			// Article element fallbacks
+			{"article.w-article .article-body"},
+			{"main .w-article"},
+
+			// WordPress content selectors
+			{".entry-content"},
+			{".post-content"},
 		},
 
 		// Transform functions for Polygon-specific content

@@ -15,27 +15,25 @@ var YouTubeCustomExtractor = &CustomExtractor{
 	Domain: "www.youtube.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"title\"]", "value"},
-			".watch-title",
-			"h1.watch-title-container",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"title\"]", Attribute: "value"},
+			{Selector: ".watch-title"},
+			{Selector: "h1.watch-title-container"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{`link[itemprop="name"]`, "content"},
-			".yt-user-info",
+		Selectors: []SelectorEntry{
+			{Selector: `link[itemprop="name"]`, Attribute: "content"},
+			{Selector: ".yt-user-info"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#player-container-outer",
-				"ytd-expandable-video-description-body-renderer #description",
-				[]string{"#player-api", "#description"},
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#player-container-outer"},
+			{"ytd-expandable-video-description-body-renderer #description"},
+			{"#player-api", "#description"},
 		},
 		DisableDefaultCleaner: true,
 
@@ -54,15 +52,15 @@ var YouTubeCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{`meta[itemProp="datePublished"]`, "value"},
+		Selectors: []SelectorEntry{
+			{Selector: `meta[itemProp="datePublished"]`, Attribute: "value"},
 		},
 		// Timezone from JavaScript: 'GMT'
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

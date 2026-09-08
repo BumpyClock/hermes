@@ -9,24 +9,22 @@ var WwwWiredComExtractor = &CustomExtractor{
 	Domain: "www.wired.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1[data-testId=\"ContentHeaderHed\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "h1[data-testId=\"ContentHeaderHed\"]"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:author\"]", "value"},
-			"a[rel=\"author\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
+			{Selector: "a[rel=\"author\"]"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"article.article.main-content",
-				"article.content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"article.article.main-content"},
+			{"article.content"},
 		},
 
 		// Clean selectors - remove unwanted elements
@@ -38,14 +36,14 @@ var WwwWiredComExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

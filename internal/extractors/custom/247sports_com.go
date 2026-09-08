@@ -9,37 +9,35 @@ var TwofortysevensportsComExtractor = &CustomExtractor{
 	Domain: "247sports.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"title",
-			"article header h1",
+		Selectors: []SelectorEntry{
+			{Selector: "title"},
+			{Selector: "article header h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".article-cnt__author",
-			".author",
+		Selectors: []SelectorEntry{
+			{Selector: ".article-cnt__author"},
+			{Selector: ".author"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time[data-published]", "data-published"},
+		Selectors: []SelectorEntry{
+			{Selector: "time[data-published]", Attribute: "data-published"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article-body",
-				"section.body.article",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article-body"},
+			{"section.body.article"},
 		},
 	},
 }

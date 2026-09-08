@@ -9,35 +9,33 @@ func GetWwwInquisitrComExtractor() *CustomExtractor {
 		Domain: "www.inquisitr.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.entry-title.story--header--title",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.entry-title.story--header--title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.story--header--author",
+			Selectors: []SelectorEntry{
+				{Selector: "div.story--header--author"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"datePublished\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"datePublished\"]", Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"article.story",
-					".entry-content",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"article.story"},
+				{".entry-content"},
 			},
 
 			Transforms: map[string]TransformFunction{

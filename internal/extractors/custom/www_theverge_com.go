@@ -15,51 +15,49 @@ var WwwThevergeComExtractor = &CustomExtractor{
 	// Removed polygon.com support - dedicated extractor exists
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{"h1"},
+		Selectors: []SelectorEntry{{Selector: "h1"}},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
-			[]string{"meta[name=\"parsely-author\"]", "value"},
-			[]string{"meta[name=\"cse-authors\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
+			{Selector: "meta[name=\"parsely-author\"]", Attribute: "value"},
+			{Selector: "meta[name=\"cse-authors\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".p-dek",
+		Selectors: []SelectorEntry{
+			{Selector: ".p-dek"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				// Modern Verge layout - just article body components (no follow section)
-				".duet--article--article-body-component",
-				// Backup selectors for content divs
-				"div[id*='zephr-anchor']",
-				// Generic content fallbacks
-				"article",
-				".article-content",
-				// Legacy selectors as final fallback
-				[]interface{}{".c-entry-hero .e-image", ".c-entry-intro", ".c-entry-content"},
-				[]interface{}{".e-image--hero", ".c-entry-content"},
-				".l-wrapper .l-feature",
-				"div.c-entry-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			// Modern Verge layout - just article body components (no follow section)
+			{".duet--article--article-body-component"},
+			// Backup selectors for content divs
+			{"div[id*='zephr-anchor']"},
+			// Generic content fallbacks
+			{"article"},
+			{".article-content"},
+			// Legacy selectors as final fallback
+			{".c-entry-hero .e-image", ".c-entry-intro", ".c-entry-content"},
+			{".e-image--hero", ".c-entry-content"},
+			{".l-wrapper .l-feature"},
+			{"div.c-entry-content"},
 		},
 
 		// Transform functions for The Verge-specific content

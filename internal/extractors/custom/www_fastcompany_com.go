@@ -9,40 +9,38 @@ func GetWwwFastcompanyComExtractor() *CustomExtractor {
 		Domain: "www.fastcompany.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1",
+			Selectors: []SelectorEntry{
+				{Selector: "h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"author\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"author\"]", Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"article:published_time\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 			},
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				".post__deck",
+			Selectors: []SelectorEntry{
+				{Selector: ".post__deck"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".post__article",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".post__article"},
 			},
 
 			Transforms: map[string]TransformFunction{

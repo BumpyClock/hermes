@@ -9,22 +9,20 @@ var HuffingtonPostCustomExtractor = &CustomExtractor{
 	Domain: "www.huffingtonpost.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.headline__title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.headline__title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"span.author-card__details__name",
+		Selectors: []SelectorEntry{
+			{Selector: "span.author-card__details__name"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.entry__body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.entry__body"},
 		},
 		DisableDefaultCleaner: true,
 
@@ -40,21 +38,21 @@ var HuffingtonPostCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:modified_time\"]", "value"},
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:modified_time\"]", Attribute: "value"},
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"h2.headline__subtitle",
+		Selectors: []SelectorEntry{
+			{Selector: "h2.headline__subtitle"},
 		},
 	},
 }

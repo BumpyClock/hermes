@@ -9,41 +9,39 @@ var WwwAndroidcentralComExtractor = &CustomExtractor{
 	Domain: "www.androidcentral.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			"h1.main-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: "h1.main-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"parsely-author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"parsely-author\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"description\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#article-body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#article-body"},
 		},
 
 		// Clean selectors

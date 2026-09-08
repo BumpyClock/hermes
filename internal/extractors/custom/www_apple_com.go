@@ -7,18 +7,18 @@ func GetAppleNewsroomExtractor() *CustomExtractor {
 	return &CustomExtractor{
 		Domain:           "www.apple.com",
 		SupportedDomains: []string{"apple.com"},
-		Title: &FieldExtractor{Selectors: []interface{}{
-			"h1.hero-headline",
-			"article h1",
+		Title: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: "h1.hero-headline"},
+			{Selector: "article h1"},
 		}},
-		LeadImageURL: &FieldExtractor{Selectors: []interface{}{
-			[]string{`meta[name="og:image"]`, "value"},
+		LeadImageURL: &FieldExtractor{Selectors: []SelectorEntry{
+			{Selector: `meta[name="og:image"]`, Attribute: "value"},
 		}},
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{Selectors: []interface{}{
-				"article .pagebody",
-				".pagebody",
-			}},
+			Selectors: []ContentSelectorGroup{
+				{"article .pagebody"},
+				{".pagebody"},
+			},
 			Clean: []string{
 				".docsanddownloads",
 				".presscontacts",

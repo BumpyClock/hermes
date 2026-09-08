@@ -9,29 +9,27 @@ var ClinicaltrialsGovExtractor = &CustomExtractor{
 	Domain: "clinicaltrials.gov",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.tr-solo_record",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.tr-solo_record"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"div#sponsor.tr-info-text",
+		Selectors: []SelectorEntry{
+			{Selector: "div#sponsor.tr-info-text"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
+		Selectors: []SelectorEntry{
 			// JavaScript: selectors: ['div:has(> span.term[data-term="Last Update Posted"])']
-			`div:has(> span.term[data-term="Last Update Posted"])`,
+			{Selector: `div:has(> span.term[data-term="Last Update Posted"])`},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div#tab-body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div#tab-body"},
 		},
 
 		// Clean selectors

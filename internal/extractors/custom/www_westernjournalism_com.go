@@ -9,41 +9,39 @@ func GetWwwWesternjournalismComExtractor() *CustomExtractor {
 		Domain: "www.westernjournalism.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"title",
-				"h1.entry-title",
+			Selectors: []SelectorEntry{
+				{Selector: "title"},
+				{Selector: "h1.entry-title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"author\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"author\"]", Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"DC.date.issued\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"DC.date.issued\"]", Attribute: "value"},
 			},
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				".subtitle",
+			Selectors: []SelectorEntry{
+				{Selector: ".subtitle"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div.article-sharing.top + div",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div.article-sharing.top + div"},
 			},
 
 			Transforms: map[string]TransformFunction{

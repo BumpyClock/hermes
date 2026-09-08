@@ -11,7 +11,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
@@ -29,16 +28,6 @@ import (
 // parserDebugEnabled controls whether debug logging is enabled
 // Set via HERMES_PARSER_DEBUG=1 environment variable.
 var parserDebugEnabled = os.Getenv("HERMES_PARSER_DEBUG") == "1"
-
-// extractAllFields orchestrates the complete extraction pipeline.
-//
-// Deprecated: This method uses context.Background() which prevents proper cancellation.
-// Use extractAllFieldsWithContext instead.
-func (h *Hermes) extractAllFields(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) (*Result, error) {
-	// Use background context for backward compatibility - DEPRECATED
-	// Callers should use extractAllFieldsWithContext for proper context handling
-	return h.extractAllFieldsWithContext(context.Background(), doc, targetURL, parsedURL, opts)
-}
 
 // extractAllFieldsWithContext orchestrates the complete extraction pipeline with context support.
 func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions) (*Result, error) {
@@ -65,92 +54,13 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	// Build meta cache first for use by both custom and generic extractors
 	metaCache := buildMetaCache(doc)
 
-	// Extract site metadata first (independent of custom/generic extractor choice)
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
-	// Start parallel site metadata extractions
-	wg.Add(7) // Added theme color extractor
-
-	// Extract site name
-	go func() {
-		defer wg.Done()
-		siteNameExtractor := &generic.GenericSiteNameExtractor{}
-		if siteName := siteNameExtractor.Extract(doc.Selection, targetURL, metaCache); siteName != "" {
-			mu.Lock()
-			result.SiteName = siteName
-			mu.Unlock()
-		}
-	}()
-
-	// Extract site title
-	go func() {
-		defer wg.Done()
-		siteTitleExtractor := &generic.GenericSiteTitleExtractor{}
-		if siteTitle := siteTitleExtractor.Extract(doc.Selection, targetURL, metaCache); siteTitle != "" {
-			mu.Lock()
-			result.SiteTitle = siteTitle
-			mu.Unlock()
-		}
-	}()
-
-	// Extract site image
-	go func() {
-		defer wg.Done()
-		siteImageExtractor := &generic.GenericSiteImageExtractor{}
-		if siteImage := siteImageExtractor.Extract(doc.Selection, targetURL, metaCache); siteImage != "" {
-			mu.Lock()
-			result.SiteImage = siteImage
-			mu.Unlock()
-		}
-	}()
-
-	// Extract favicon
-	go func() {
-		defer wg.Done()
-		faviconExtractor := &generic.GenericFaviconExtractor{}
-		if favicon := faviconExtractor.Extract(doc.Selection, targetURL, metaCache); favicon != "" {
-			mu.Lock()
-			result.Favicon = favicon
-			mu.Unlock()
-		}
-	}()
-
-	// Extract description
-	go func() {
-		defer wg.Done()
-		descriptionExtractor := &generic.GenericDescriptionExtractor{}
-		if description := descriptionExtractor.Extract(doc.Selection, targetURL, metaCache); description != "" {
-			mu.Lock()
-			result.Description = description
-			mu.Unlock()
-		}
-	}()
-
-	// Extract language
-	go func() {
-		defer wg.Done()
-		languageExtractor := &generic.GenericLanguageExtractor{}
-		if language := languageExtractor.Extract(doc.Selection, targetURL, metaCache); language != "" {
-			mu.Lock()
-			result.Language = language
-			mu.Unlock()
-		}
-	}()
-
-	// Extract theme color
-	go func() {
-		defer wg.Done()
-		themeColorExtractor := &generic.GenericThemeColorExtractor{}
-		if themeColor := themeColorExtractor.Extract(doc.Selection, targetURL, metaCache); themeColor != "" {
-			mu.Lock()
-			result.ThemeColor = themeColor
-			mu.Unlock()
-		}
-	}()
-
-	// Wait for site metadata extraction to complete
-	wg.Wait()
+	result.SiteName = (&generic.GenericSiteNameExtractor{}).Extract(doc.Selection, targetURL, metaCache)
+	result.SiteTitle = (&generic.GenericSiteTitleExtractor{}).Extract(doc.Selection, targetURL, metaCache)
+	result.SiteImage = (&generic.GenericSiteImageExtractor{}).Extract(doc.Selection, targetURL, metaCache)
+	result.Favicon = (&generic.GenericFaviconExtractor{}).Extract(doc.Selection, targetURL, metaCache)
+	result.Description = (&generic.GenericDescriptionExtractor{}).Extract(doc.Selection, targetURL, metaCache)
+	result.Language = (&generic.GenericLanguageExtractor{}).Extract(doc.Selection, targetURL, metaCache)
+	result.ThemeColor = (&generic.GenericThemeColorExtractor{}).Extract(doc.Selection, targetURL, metaCache)
 
 	// Check context after metadata extraction
 	select {
@@ -164,72 +74,20 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 		return customResult, nil
 	}
 
-	// Parallel extraction for independent fields (meta cache already built)
-	wg.Add(4) // Reset for generic extraction
+	if title := generic.GenericTitleExtractor.Extract(doc.Selection, targetURL, metaCache); title != "" {
+		result.Title = cleaners.ResolveSplitTitle(cleaners.CleanTitle(title, targetURL, doc), targetURL)
+	}
+	extractGenericAuthorAndDate(doc, targetURL, metaCache, result)
+	result.Dek = (&generic.GenericDekExtractor{}).Extract(doc, map[string]interface{}{"$": doc.Selection})
 
-	// Extract title in parallel
-	go func() {
-		defer wg.Done()
-		if title := generic.GenericTitleExtractor.Extract(doc.Selection, targetURL, metaCache); title != "" {
-			// First apply basic title cleaning
-			cleanedTitle := cleaners.CleanTitle(title, targetURL, doc)
-			// Then apply split title resolution to remove breadcrumbs and site names
-			cleanedTitle = cleaners.ResolveSplitTitle(cleanedTitle, targetURL)
-			mu.Lock()
-			result.Title = cleanedTitle
-			mu.Unlock()
-		}
-	}()
-
-	// Extract author in parallel
-	go func() {
-		defer wg.Done()
-		authorExtractor := &generic.GenericAuthorExtractor{}
-		if author := authorExtractor.Extract(doc.Selection, metaCache); author != nil && *author != "" {
-			cleanedAuthor := cleaners.CleanAuthor(*author)
-			mu.Lock()
-			result.Author = cleanedAuthor
-			mu.Unlock()
-		}
-	}()
-
-	// Extract date published in parallel
-	go func() {
-		defer wg.Done()
-		if dateStr := generic.GenericDateExtractor.Extract(doc.Selection, targetURL, metaCache); dateStr != nil && *dateStr != "" {
-			if date, err := parseDate(*dateStr); err == nil {
-				mu.Lock()
-				result.DatePublished = &date
-				mu.Unlock()
-			}
-		}
-	}()
-
-	// Extract initial dek (description/subtitle) in parallel
-	go func() {
-		defer wg.Done()
-		dekExtractor := &generic.GenericDekExtractor{}
-		dekOpts := map[string]interface{}{
-			"$": doc.Selection,
-		}
-		if dek := dekExtractor.Extract(doc, dekOpts); dek != "" {
-			mu.Lock()
-			result.Dek = dek
-			mu.Unlock()
-		}
-	}()
-
-	// Wait for all parallel extractions to complete
-	wg.Wait()
-
-	// Check context after parallel extraction
+	// Preserve the cancellation checkpoint before content extraction.
 	select {
 	case <-ctx.Done():
 		return nil, fmt.Errorf("extraction cancelled after parallel extraction: %w", ctx.Err())
 	default:
 	}
 
-	// Extract lead image URL (needs to be done after parallel extraction for content dependency)
+	// Extract the lead image before content extraction.
 	imageExtractor := generic.NewGenericLeadImageExtractor()
 	imageParams := generic.ExtractorImageParams{
 		Doc:       doc,
@@ -244,30 +102,8 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 		}
 	}
 
-	// Extract main content
-	contentExtractor := generic.NewGenericContentExtractor()
-	contentParams := generic.ExtractorParams{
-		Doc:   doc,
-		HTML:  "", // Could enhance with original HTML
-		Title: result.Title,
-		URL:   targetURL,
-	}
-	contentOpts := generic.ExtractorOptions{
-		StripUnlikelyCandidates: true,
-		WeightNodes:             true,
-		CleanConditionally:      true,
-	}
-	if content := contentExtractor.Extract(contentParams, contentOpts); content != "" {
-		// Apply content type conversion with security sanitization
-		result.Content = formatContent(content, opts.ContentType)
-
-		// Extract excerpt if content exists
-		if result.Content != "" {
-			result.Excerpt = text.ExcerptContent(result.Content, 160)
-		}
-
-		// Calculate word count
-		result.WordCount = calculateWordCount(result.Content)
+	if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
+		setFormattedContent(result, content, opts.ContentType)
 
 		// Update image extraction with content context
 		imageParams.Content = result.Content
@@ -286,19 +122,7 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 		}
 	}
 
-	// Extract video metadata independently of content extraction.
-	videoExtractor := &generic.GenericVideoExtractor{}
-	if videoData := videoExtractor.Extract(doc.Selection, targetURL, metaCache); videoData != nil {
-		if videoData.SecureURL != "" {
-			result.VideoURL = videoData.SecureURL
-		} else if videoData.URL != "" {
-			result.VideoURL = videoData.URL
-		}
-
-		if metadata := buildVideoMetadata(videoData); metadata != nil {
-			result.VideoMetadata = metadata
-		}
-	}
+	extractVideoMetadata(doc, targetURL, metaCache, result)
 
 	// Set default values for fields not extracted
 	if result.Title == "" && opts.Fallback {
@@ -337,23 +161,16 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions, baseResult *Result, metaCache []string) *Result {
 	// Look for custom extractor for this domain using the proper lookup function
 	customExtractor, found := custom.GetCustomExtractorByDomain(parsedURL.Host)
-	var usedDomain = parsedURL.Host
 
 	if !found {
 		// Try fallback - remove 'www.' prefix if present
 		if strings.HasPrefix(parsedURL.Host, "www.") {
 			baseDomain := strings.TrimPrefix(parsedURL.Host, "www.")
 			customExtractor, found = custom.GetCustomExtractorByDomain(baseDomain)
-			if found {
-				usedDomain = baseDomain
-			}
 		} else {
 			// Try adding 'www.' prefix
 			wwwDomain := "www." + parsedURL.Host
 			customExtractor, found = custom.GetCustomExtractorByDomain(wwwDomain)
-			if found {
-				usedDomain = wwwDomain
-			}
 		}
 	}
 
@@ -361,9 +178,6 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		// No custom extractor found
 		return nil // No custom extractor found
 	}
-
-	// Log successful custom extractor selection (optional debug)
-	_ = usedDomain // Suppress unused variable warning
 
 	// Create result with custom extractor info, preserving site metadata from base result
 	result := &Result{
@@ -380,48 +194,11 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		ThemeColor:  baseResult.ThemeColor,
 	}
 
-	// Extract title using custom selectors
-	if customExtractor.Title != nil && len(customExtractor.Title.Selectors) > 0 {
-		for _, selector := range customExtractor.Title.Selectors {
-			if selectorStr, ok := selector.(string); ok {
-				if titleEl := doc.Find(selectorStr).First(); titleEl.Length() > 0 {
-					if title := strings.TrimSpace(titleEl.Text()); title != "" {
-						result.Title = cleaners.CleanTitle(title, targetURL, doc)
-						break
-					}
-				}
-			} else if selectorArray, ok := selector.([]string); ok && len(selectorArray) >= 2 {
-				// Handle array selectors like ["meta[property='og:title']", "content"]
-				if titleEl := doc.Find(selectorArray[0]).First(); titleEl.Length() > 0 {
-					if title := strings.TrimSpace(titleEl.AttrOr(selectorArray[1], "")); title != "" {
-						result.Title = cleaners.CleanTitle(title, targetURL, doc)
-						break
-					}
-				}
-			}
-		}
+	if title := firstCustomField(doc, customExtractor.Title); title != "" {
+		result.Title = cleaners.CleanTitle(title, targetURL, doc)
 	}
-
-	// Extract author using custom selectors
-	if customExtractor.Author != nil && len(customExtractor.Author.Selectors) > 0 {
-		for _, selector := range customExtractor.Author.Selectors {
-			if selectorStr, ok := selector.(string); ok {
-				if authorEl := doc.Find(selectorStr).First(); authorEl.Length() > 0 {
-					if author := strings.TrimSpace(authorEl.Text()); author != "" {
-						result.Author = cleaners.CleanAuthor(author)
-						break
-					}
-				}
-			} else if selectorArray, ok := selector.([]string); ok && len(selectorArray) >= 2 {
-				// Handle array selectors like ["meta[name='author']", "content"]
-				if authorEl := doc.Find(selectorArray[0]).First(); authorEl.Length() > 0 {
-					if author := strings.TrimSpace(authorEl.AttrOr(selectorArray[1], "")); author != "" {
-						result.Author = cleaners.CleanAuthor(author)
-						break
-					}
-				}
-			}
-		}
+	if author := firstCustomField(doc, customExtractor.Author); author != "" {
+		result.Author = cleaners.CleanAuthor(author)
 	}
 
 	// Extract content using custom selectors
@@ -436,67 +213,22 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 
 			contentHTML, err := processCustomContent(contentElements, doc, customExtractor.Content, result.Title, targetURL)
 			if err == nil && strings.TrimSpace(contentHTML) != "" {
-				// Apply content type conversion with security sanitization
-				result.Content = formatContent(contentHTML, opts.ContentType)
-
-				// Extract excerpt if content exists
-				if result.Content != "" {
-					result.Excerpt = text.ExcerptContent(result.Content, 160)
-				}
-
-				// Calculate word count
-				result.WordCount = calculateWordCount(result.Content)
+				setFormattedContent(result, contentHTML, opts.ContentType)
 			}
 			break
 		}
 	}
 
-	// Extract date using custom selectors
-	if customExtractor.DatePublished != nil && len(customExtractor.DatePublished.Selectors) > 0 {
+	if customExtractor.DatePublished != nil {
 		for _, selector := range customExtractor.DatePublished.Selectors {
-			// Handle array selectors like [".dateblock time[datetime]", "datetime"]
-			if selectorArray, ok := selector.([]string); ok && len(selectorArray) >= 2 {
-				if dateEl := doc.Find(selectorArray[0]).First(); dateEl.Length() > 0 {
-					if dateStr := strings.TrimSpace(dateEl.AttrOr(selectorArray[1], "")); dateStr != "" {
-						if date, err := parseDate(dateStr); err == nil {
-							result.DatePublished = &date
-							break
-						}
-					}
-				}
-			} else if selectorStr, ok := selector.(string); ok {
-				if dateEl := doc.Find(selectorStr).First(); dateEl.Length() > 0 {
-					if dateStr := strings.TrimSpace(dateEl.Text()); dateStr != "" {
-						if date, err := parseDate(dateStr); err == nil {
-							result.DatePublished = &date
-							break
-						}
-					}
-				}
+			if date, err := parseDate(customFieldValue(doc, selector)); err == nil {
+				result.DatePublished = &date
+				break
 			}
 		}
 	}
-
-	// Extract lead image URL using custom selectors
-	if customExtractor.LeadImageURL != nil && len(customExtractor.LeadImageURL.Selectors) > 0 {
-		for _, selector := range customExtractor.LeadImageURL.Selectors {
-			if selectorStr, ok := selector.(string); ok {
-				if imageEl := doc.Find(selectorStr).First(); imageEl.Length() > 0 {
-					if imageURL := strings.TrimSpace(imageEl.Text()); imageURL != "" {
-						result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, targetURL)
-						break
-					}
-				}
-			} else if selectorArray, ok := selector.([]string); ok && len(selectorArray) >= 2 {
-				// Handle array selectors like ["meta[property='og:image']", "content"]
-				if imageEl := doc.Find(selectorArray[0]).First(); imageEl.Length() > 0 {
-					if imageURL := strings.TrimSpace(imageEl.AttrOr(selectorArray[1], "")); imageURL != "" {
-						result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, targetURL)
-						break
-					}
-				}
-			}
-		}
+	if imageURL := firstCustomField(doc, customExtractor.LeadImageURL); imageURL != "" {
+		result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, targetURL)
 	}
 
 	// Fall back to generic extractors for missing fields if fallback is enabled
@@ -510,48 +242,40 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 			}
 		}
 
-		// Fallback author extraction
-		if result.Author == "" {
-			authorExtractor := &generic.GenericAuthorExtractor{}
-			if author := authorExtractor.Extract(doc.Selection, fallbackMetaCache); author != nil && *author != "" {
-				result.Author = cleaners.CleanAuthor(*author)
-			}
-		}
-
-		// Fallback date extraction
-		if result.DatePublished == nil {
-			if dateStr := generic.GenericDateExtractor.Extract(doc.Selection, targetURL, fallbackMetaCache); dateStr != nil && *dateStr != "" {
-				if date, err := parseDate(*dateStr); err == nil {
-					result.DatePublished = &date
-				}
-			}
-		}
+		extractGenericAuthorAndDate(doc, targetURL, fallbackMetaCache, result)
 
 		// Fallback content extraction if no content was found
 		if result.Content == "" {
-			contentExtractor := generic.NewGenericContentExtractor()
-			contentParams := generic.ExtractorParams{
-				Doc:   doc,
-				HTML:  "",
-				Title: result.Title,
-				URL:   targetURL,
-			}
-			contentOpts := generic.ExtractorOptions{
-				StripUnlikelyCandidates: true,
-				WeightNodes:             true,
-				CleanConditionally:      true,
-			}
-			if content := contentExtractor.Extract(contentParams, contentOpts); content != "" {
-				result.Content = formatContent(content, opts.ContentType)
-
-				if result.Content != "" {
-					result.Excerpt = text.ExcerptContent(result.Content, 160)
-					result.WordCount = calculateWordCount(result.Content)
-				}
+			if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
+				setFormattedContent(result, content, opts.ContentType)
 			}
 		}
 	}
 
+	extractVideoMetadata(doc, targetURL, metaCache, result)
+
+	return result
+}
+
+func extractGenericContent(doc *goquery.Document, title, targetURL string) string {
+	return generic.NewGenericContentExtractor().Extract(generic.ExtractorParams{
+		Doc: doc, Title: title, URL: targetURL,
+	}, generic.ExtractorOptions{
+		StripUnlikelyCandidates: true,
+		WeightNodes:             true,
+		CleanConditionally:      true,
+	})
+}
+
+func setFormattedContent(result *Result, content, contentType string) {
+	result.Content = formatContent(content, contentType)
+	if result.Content != "" {
+		result.Excerpt = text.ExcerptContent(result.Content, 160)
+	}
+	result.WordCount = calculateWordCount(result.Content)
+}
+
+func extractVideoMetadata(doc *goquery.Document, targetURL string, metaCache []string, result *Result) {
 	// Video metadata extraction
 	videoExtractor := &generic.GenericVideoExtractor{}
 	if videoData := videoExtractor.Extract(doc.Selection, targetURL, metaCache); videoData != nil {
@@ -568,24 +292,43 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		}
 	}
 
-	return result
 }
 
-func contentElementsForSelector(doc *goquery.Document, selector interface{}) *goquery.Selection {
-	var selectors []string
-	switch selector := selector.(type) {
-	case string:
-		selectors = []string{selector}
-	case []string:
-		selectors = selector
-	case []interface{}:
-		selectors = make([]string, 0, len(selector))
-		for _, selectorItem := range selector {
-			if selectorString, ok := selectorItem.(string); ok {
-				selectors = append(selectors, selectorString)
+func customFieldValue(doc *goquery.Document, selector custom.SelectorEntry) string {
+	element := doc.Find(selector.Selector).First()
+	if selector.Attribute != "" {
+		return strings.TrimSpace(element.AttrOr(selector.Attribute, ""))
+	}
+	return strings.TrimSpace(element.Text())
+}
+
+func firstCustomField(doc *goquery.Document, extractor *custom.FieldExtractor) string {
+	if extractor != nil {
+		for _, selector := range extractor.Selectors {
+			if value := customFieldValue(doc, selector); value != "" {
+				return value
 			}
 		}
 	}
+	return ""
+}
+
+func extractGenericAuthorAndDate(doc *goquery.Document, targetURL string, metaCache []string, result *Result) {
+	if result.Author == "" {
+		if author := (&generic.GenericAuthorExtractor{}).Extract(doc.Selection, metaCache); author != nil && *author != "" {
+			result.Author = cleaners.CleanAuthor(*author)
+		}
+	}
+	if result.DatePublished == nil {
+		if dateStr := generic.GenericDateExtractor.Extract(doc.Selection, targetURL, metaCache); dateStr != nil && *dateStr != "" {
+			if date, err := parseDate(*dateStr); err == nil {
+				result.DatePublished = &date
+			}
+		}
+	}
+}
+
+func contentElementsForSelector(doc *goquery.Document, selectors custom.ContentSelectorGroup) *goquery.Selection {
 	if len(selectors) == 0 {
 		return nil
 	}

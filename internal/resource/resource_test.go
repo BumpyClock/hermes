@@ -2,6 +2,7 @@ package resource_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,7 +15,6 @@ import (
 )
 
 func TestResource_Create_WithPreparedHTML(t *testing.T) {
-	r := resource.NewResource()
 
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -28,7 +28,7 @@ func TestResource_Create_WithPreparedHTML(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
 
@@ -41,7 +41,6 @@ func TestResource_Create_WithPreparedHTML(t *testing.T) {
 }
 
 func TestResource_Create_WithMetaNormalization(t *testing.T) {
-	r := resource.NewResource()
 
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -54,7 +53,7 @@ func TestResource_Create_WithMetaNormalization(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 
 	// Check that property was converted to name
@@ -69,7 +68,6 @@ func TestResource_Create_WithMetaNormalization(t *testing.T) {
 }
 
 func TestResource_Create_WithLazyImages(t *testing.T) {
-	r := resource.NewResource()
 
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -79,7 +77,7 @@ func TestResource_Create_WithLazyImages(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 
 	// Check that lazy images were converted
@@ -88,7 +86,6 @@ func TestResource_Create_WithLazyImages(t *testing.T) {
 }
 
 func TestResource_Create_CleansTags(t *testing.T) {
-	r := resource.NewResource()
 
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -103,7 +100,7 @@ func TestResource_Create_CleansTags(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 
 	// Check that unwanted tags were removed
@@ -122,11 +119,11 @@ func TestFetchResource_ValidatesResponse(t *testing.T) {
 	defer server.Close()
 
 	parsedURL, _ := url.Parse(server.URL)
-	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, nil)
+	result, err := resource.Fetch(context.Background(), server.URL, parsedURL, nil, resource.CreateDefaultHTTPClient())
 
-	require.NoError(t, err)
-	assert.True(t, result.IsError())
-	assert.Contains(t, result.Message, "not allowed")
+	require.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "not allowed")
 }
 
 func TestFetchResource_HandlesSuccess(t *testing.T) {
@@ -140,12 +137,12 @@ func TestFetchResource_HandlesSuccess(t *testing.T) {
 	defer server.Close()
 
 	parsedURL, _ := url.Parse(server.URL)
-	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, nil)
+	result, err := resource.Fetch(context.Background(), server.URL, parsedURL, nil, resource.CreateDefaultHTTPClient())
 
 	require.NoError(t, err)
-	assert.False(t, result.IsError())
-	assert.Equal(t, htmlContent, string(result.Response.Body))
-	assert.Equal(t, 200, result.Response.StatusCode)
+	assert.NotNil(t, result)
+	assert.Equal(t, htmlContent, string(result.Body))
+	assert.Equal(t, 200, result.StatusCode)
 }
 
 func TestFetchResource_WithCustomHeaders(t *testing.T) {
@@ -165,10 +162,10 @@ func TestFetchResource_WithCustomHeaders(t *testing.T) {
 	}
 
 	parsedURL, _ := url.Parse(server.URL)
-	result, err := resource.FetchResource(context.Background(), server.URL, parsedURL, headers)
+	result, err := resource.Fetch(context.Background(), server.URL, parsedURL, headers, resource.CreateDefaultHTTPClient())
 
 	require.NoError(t, err)
-	assert.False(t, result.IsError())
+	assert.NotNil(t, result)
 
 	// Check that custom headers were sent
 	assert.Equal(t, "test-value", receivedHeaders.Get("X-Custom-Header"))
@@ -230,42 +227,36 @@ func TestBaseDomain(t *testing.T) {
 }
 
 func TestResource_GenerateDoc_InvalidContent(t *testing.T) {
-	r := resource.NewResource()
 
-	result := &resource.FetchResult{
-		Response: &resource.Response{
-			StatusCode: 200,
-			Headers: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: []byte("not html content"),
+	result := &resource.Response{
+		StatusCode: 200,
+		Headers: http.Header{
+			"Content-Type": []string{"application/json"},
 		},
+		Body: []byte("not html content"),
 	}
 
-	_, err := r.GenerateDoc(result)
+	_, err := resource.PrepareDocument(context.Background(), result.Body, result.GetContentType(), false)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "does not appear to be text")
 }
 
 func TestResource_GenerateDoc_EmptyDocument(t *testing.T) {
-	r := resource.NewResource()
 
 	// Use malformed HTML that won't parse correctly
-	result := &resource.FetchResult{
-		Response: &resource.Response{
-			StatusCode: 200,
-			Headers: http.Header{
-				"Content-Type": []string{"text/html"},
-			},
-			Body: []byte("<html><head></head><body></body></html>"),
+	result := &resource.Response{
+		StatusCode: 200,
+		Headers: http.Header{
+			"Content-Type": []string{"text/html"},
 		},
+		Body: []byte("<html><head></head><body></body></html>"),
 	}
 
 	// This should actually succeed since goquery is more lenient
 	// Let's test with truly invalid HTML instead
-	result.Response.Body = []byte("not html at all")
+	result.Body = []byte("not html at all")
 
-	doc, err := r.GenerateDoc(result)
+	doc, err := resource.PrepareDocument(context.Background(), result.Body, result.GetContentType(), false)
 	// Even this might parse, so let's check if we get a document
 	if err == nil {
 		// If it parsed, check that we have some content
@@ -286,8 +277,7 @@ func TestEncodingDetection(t *testing.T) {
 </body>
 </html>`
 
-	r := resource.NewResource()
-	doc, err := r.Create(context.Background(), "http://example.com", utf8Content, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", utf8Content, nil, nil, nil)
 	require.NoError(t, err)
 
 	title := doc.Find("title").Text()
@@ -310,21 +300,16 @@ func TestResource_Create_EncodingMismatch(t *testing.T) {
 </body>
 </html>`
 
-	r := resource.NewResource()
-
 	// Simulate server response with different encoding
-	result := &resource.FetchResult{
-		Response: &resource.Response{
-			StatusCode: 200,
-			Headers: http.Header{
-				"Content-Type": []string{"text/html; charset=utf-8"},
-			},
-			Body: []byte(htmlWithMetaCharset),
+	result := &resource.Response{
+		StatusCode: 200,
+		Headers: http.Header{
+			"Content-Type": []string{"text/html; charset=utf-8"},
 		},
-		AlreadyDecoded: false,
+		Body: []byte(htmlWithMetaCharset),
 	}
 
-	doc, err := r.GenerateDoc(result)
+	doc, err := resource.PrepareDocument(context.Background(), result.Body, result.GetContentType(), false)
 	require.NoError(t, err)
 
 	// Should have normalized the meta tag
@@ -335,7 +320,6 @@ func TestResource_Create_EncodingMismatch(t *testing.T) {
 
 // Benchmark test to ensure performance.
 func BenchmarkResource_Create(b *testing.B) {
-	r := resource.NewResource()
 
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -355,9 +339,42 @@ func BenchmarkResource_Create(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+		_, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 		if err != nil {
 			b.Fatal(err)
 		}
 	}
+}
+
+func TestCreateDocument_FetchErrors(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		url  string
+		want string
+	}{
+		{name: "missing client", url: "https://example.com", want: "resource fetch failed: HTTP client is required"},
+		{name: "invalid URL", url: ":", want: `resource fetch failed: Invalid URL: parse ":": missing protocol scheme`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			doc, err := resource.CreateDocument(context.Background(), tc.url, "", nil, nil, nil)
+			require.EqualError(t, err, tc.want)
+			assert.Nil(t, doc)
+			assert.Nil(t, errors.Unwrap(err))
+		})
+	}
+}
+
+func TestCreateDocument_PredecodedHTML(t *testing.T) {
+	doc, err := resource.CreateDocument(context.Background(), "https://example.com", `<html><head><meta charset="windows-1252"></head><body><p>café 日本語</p></body></html>`, nil, nil, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "café 日本語", doc.Find("p").Text())
+}
+
+func TestPrepareDocument_Canceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	doc, err := resource.PrepareDocument(ctx, []byte("<p>content</p>"), "text/html", true)
+	require.EqualError(t, err, "document processing timed out")
+	assert.Nil(t, doc)
+	assert.Nil(t, errors.Unwrap(err))
 }

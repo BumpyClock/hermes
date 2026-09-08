@@ -9,16 +9,16 @@ var JvndbJvnJpExtractor = &CustomExtractor{
 	Domain: "jvndb.jvn.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"title",
+		Selectors: []SelectorEntry{
+			{Selector: "title"},
 		},
 	},
 
 	// Author is null in JavaScript
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.modifytxt:nth-child(2)",
+		Selectors: []SelectorEntry{
+			{Selector: "div.modifytxt:nth-child(2)"},
 		},
 		// JavaScript: format: 'YYYY/MM/DD', timezone: 'Asia/Tokyo'
 		// Go handles date formats and timezone automatically
@@ -27,10 +27,8 @@ var JvndbJvnJpExtractor = &CustomExtractor{
 	// Dek is null in JavaScript
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#news-list",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#news-list"},
 		},
 		DisableDefaultCleaner: true,
 	},

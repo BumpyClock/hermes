@@ -23,11 +23,7 @@ var BloggerCustomExtractor = &CustomExtractor{
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			// Blogger is insane and does not load its content
-			// initially in the page, but it's all there in noscript
-			Selectors: []interface{}{".post-content noscript"},
-		},
+		Selectors: []ContentSelectorGroup{{".post-content noscript"}},
 
 		// Convert the noscript tag to a div
 		Transforms: map[string]TransformFunction{
@@ -36,15 +32,15 @@ var BloggerCustomExtractor = &CustomExtractor{
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{".post-author-name"},
+		Selectors: []SelectorEntry{{Selector: ".post-author-name"}},
 	},
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{".post h2.title"},
+		Selectors: []SelectorEntry{{Selector: ".post h2.title"}},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{"span.publishdate"},
+		Selectors: []SelectorEntry{{Selector: "span.publishdate"}},
 	},
 }
 

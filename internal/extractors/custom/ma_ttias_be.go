@@ -13,22 +13,20 @@ var MaTtiasBeExtractor = &CustomExtractor{
 	Domain: "ma.ttias.be",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"twitter:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"twitter:title\"]", Attribute: "value"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".content"},
 		},
 
 		// Complex transform functions for ma.ttias.be-specific content structure
@@ -64,8 +62,8 @@ var MaTtiasBeExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 }

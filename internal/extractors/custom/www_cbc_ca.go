@@ -9,41 +9,39 @@ var WwwCbcCaExtractor = &CustomExtractor{
 	Domain: "www.cbc.ca",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".authorText",
-			".bylineDetails",
+		Selectors: []SelectorEntry{
+			{Selector: ".authorText"},
+			{Selector: ".bylineDetails"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".story",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".story"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{".timeStamp[datetime]", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: ".timeStamp[datetime]", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".deck",
+		Selectors: []SelectorEntry{
+			{Selector: ".deck"},
 		},
 	},
 }

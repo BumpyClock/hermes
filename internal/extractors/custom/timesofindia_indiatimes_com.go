@@ -9,19 +9,17 @@ var TimesofindiaIndiatimesComExtractor = &CustomExtractor{
 	Domain: "timesofindia.indiatimes.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	// No author field in JavaScript - has extend.reporter instead
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div[data-articlebody]",
-				"div.contentwrapper:has(section)",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div[data-articlebody]"},
+			{"div.contentwrapper:has(section)"},
 		},
 
 		// Clean selectors
@@ -39,16 +37,16 @@ var TimesofindiaIndiatimesComExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".byline",
+		Selectors: []SelectorEntry{
+			{Selector: ".byline"},
 		},
 		// Note: JavaScript version has format: 'MMM D, YYYY, HH:mm z' and timezone: 'Asia/Kolkata'
 		// This is handled by dateparse library in Go
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
@@ -56,8 +54,8 @@ var TimesofindiaIndiatimesComExtractor = &CustomExtractor{
 
 	Extend: map[string]*FieldExtractor{
 		"reporter": {
-			Selectors: []interface{}{
-				"div.byline",
+			Selectors: []SelectorEntry{
+				{Selector: "div.byline"},
 			},
 		},
 	},

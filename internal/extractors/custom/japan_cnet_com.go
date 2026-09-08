@@ -9,20 +9,20 @@ var JapanCnetComExtractor = &CustomExtractor{
 	Domain: "japan.cnet.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			".leaf-headline-ttl",
+		Selectors: []SelectorEntry{
+			{Selector: ".leaf-headline-ttl"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".writer",
+		Selectors: []SelectorEntry{
+			{Selector: ".writer"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".date",
+		Selectors: []SelectorEntry{
+			{Selector: ".date"},
 		},
 		// Note: format and timezone would be handled at extraction time
 		// format: 'YYYY年MM月DD日 HH時mm分' (from JavaScript)
@@ -30,16 +30,14 @@ var JapanCnetComExtractor = &CustomExtractor{
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.article_body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.article_body"},
 		},
 	},
 }

@@ -9,20 +9,18 @@ var WwwGrueneDeExtractor = &CustomExtractor{
 	Domain: "www.gruene.de",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"header h1",
+		Selectors: []SelectorEntry{
+			{Selector: "header h1"},
 		},
 	},
 
 	// JavaScript: author: null
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				// JavaScript comment: selectors: ['section'],
-				// JavaScript uses: selectors: [['section header', 'section h2', 'section p', 'section ol']],
-				[]string{"section header", "section h2", "section p", "section ol"},
-			},
+		Selectors: []ContentSelectorGroup{
+			// JavaScript comment: selectors: ['section'],
+			// JavaScript uses: selectors: [['section header', 'section h2', 'section p', 'section ol']],
+			{"section header", "section h2", "section p", "section ol"},
 		},
 
 		// Clean selectors - remove unwanted elements
@@ -35,8 +33,8 @@ var WwwGrueneDeExtractor = &CustomExtractor{
 	// JavaScript: date_published: null
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[property=\"og:image\"]", "content"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[property=\"og:image\"]", Attribute: "content"},
 		},
 	},
 

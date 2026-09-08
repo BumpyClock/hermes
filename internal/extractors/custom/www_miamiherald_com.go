@@ -9,29 +9,27 @@ func GetMiamiHeraldExtractor() *CustomExtractor {
 		Domain: "www.miamiherald.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.title",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.title"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				"p.published-date",
+			Selectors: []SelectorEntry{
+				{Selector: "p.published-date"},
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div.dateline-storybody",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div.dateline-storybody"},
 			},
 
 			Transforms: map[string]TransformFunction{

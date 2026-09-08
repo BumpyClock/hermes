@@ -13,41 +13,39 @@ func GetWwwNdtvComExtractor() *CustomExtractor {
 		Domain: "www.ndtv.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:title\"]", "value"},
-				"h1.entry-title",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
+				{Selector: "h1.entry-title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"span[itemprop=\"author\"] span[itemprop=\"name\"]",
+			Selectors: []SelectorEntry{
+				{Selector: "span[itemprop=\"author\"] span[itemprop=\"name\"]"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"span[itemprop=\"dateModified\"]", "content"},
+			Selectors: []SelectorEntry{
+				{Selector: "span[itemprop=\"dateModified\"]", Attribute: "content"},
 			},
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				"h2",
+			Selectors: []SelectorEntry{
+				{Selector: "h2"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div[itemprop=\"articleBody\"]",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div[itemprop=\"articleBody\"]"},
 			},
 
 			Transforms: map[string]TransformFunction{

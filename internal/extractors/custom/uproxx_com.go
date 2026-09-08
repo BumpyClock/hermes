@@ -9,34 +9,32 @@ var UproxxCustomExtractor = &CustomExtractor{
 	Domain: "uproxx.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.entry-header h1",
+		Selectors: []SelectorEntry{
+			{Selector: "div.entry-header h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"qc:author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"qc:author\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".entry-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".entry-content"},
 		},
 
 		// Transform functions for Uproxx-specific content

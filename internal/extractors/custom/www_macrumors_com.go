@@ -9,45 +9,43 @@ var WwwMacrumorsComExtractor = &CustomExtractor{
 	Domain: "www.macrumors.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			"h1.title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: "h1.title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"article a[rel=\"author\"]",
-			".author-url",
+		Selectors: []SelectorEntry{
+			{Selector: "article a[rel=\"author\"]"},
+			{Selector: ".author-url"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "time", Attribute: "datetime"},
 		},
 		// Note: timezone support would be handled at extraction time
 		// timezone: 'America/Los_Angeles' (from JavaScript)
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"description\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"article",
-				".article",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"article"},
+			{".article"},
 		},
 	},
 }

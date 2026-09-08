@@ -9,37 +9,35 @@ func GetWwwAmericanowComExtractor() *CustomExtractor {
 		Domain: "www.americanow.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				".title",
-				[]string{"meta[name=\"title\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: ".title"},
+				{Selector: "meta[name=\"title\"]", Attribute: "value"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				".byline",
+			Selectors: []SelectorEntry{
+				{Selector: ".byline"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"publish_date\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"publish_date\"]", Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					// Multi-match selector: first try complex selector, then fallback
-					[]string{".article-content", ".image", ".body"},
-					".body",
-				},
+			Selectors: []ContentSelectorGroup{
+				// Multi-match selector: first try complex selector, then fallback
+				{".article-content", ".image", ".body"},
+				{".body"},
 			},
 
 			Transforms: map[string]TransformFunction{

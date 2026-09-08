@@ -9,38 +9,36 @@ var TMZCustomExtractor = &CustomExtractor{
 	Domain: "www.tmz.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			".post-title-breadcrumb",
-			"h1",
-			".headline",
+		Selectors: []SelectorEntry{
+			{Selector: ".post-title-breadcrumb"},
+			{Selector: "h1"},
+			{Selector: ".headline"},
 		},
 	},
 
 	// Author is a static string in original JavaScript
 	Author: &FieldExtractor{
-		Selectors: []interface{}{"TMZ STAFF"},
+		Selectors: []SelectorEntry{{Selector: "TMZ STAFF"}},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".article__published-at",
-			".article-posted-date",
+		Selectors: []SelectorEntry{
+			{Selector: ".article__published-at"},
+			{Selector: ".article-posted-date"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article__blocks",
-				".article-content",
-				".all-post-body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article__blocks"},
+			{".article-content"},
+			{".all-post-body"},
 		},
 
 		// Clean selectors - remove unwanted elements

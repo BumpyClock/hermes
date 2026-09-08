@@ -15,44 +15,42 @@ var WwwNationalgeographicComExtractor = &CustomExtractor{
 	Domain: "www.nationalgeographic.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			"h1.main-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: "h1.main-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".byline-component__contributors b span",
+		Selectors: []SelectorEntry{
+			{Selector: ".byline-component__contributors b span"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".Article__Headline__Desc",
-			".article__deck",
+		Selectors: []SelectorEntry{
+			{Selector: ".Article__Headline__Desc"},
+			{Selector: ".article__deck"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"section.Article__Content",
-				[]string{".parsys.content", ".__image-lead__"},
-				".content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"section.Article__Content"},
+			{".parsys.content", ".__image-lead__"},
+			{".content"},
 		},
 
 		// Transform functions for National Geographic-specific content

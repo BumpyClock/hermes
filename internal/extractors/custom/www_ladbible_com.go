@@ -9,35 +9,33 @@ func GetWwwLadbibleComExtractor() *CustomExtractor {
 		Domain: "www.ladbible.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1",
+			Selectors: []SelectorEntry{
+				{Selector: "h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"[class*=Byline]",
+			Selectors: []SelectorEntry{
+				{Selector: "[class*=Byline]"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				"time",
+			Selectors: []SelectorEntry{
+				{Selector: "time"},
 			},
 			// Note: timezone: 'Europe/London' is handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"[class*=ArticleContainer]",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"[class*=ArticleContainer]"},
 			},
 
 			Transforms: map[string]TransformFunction{

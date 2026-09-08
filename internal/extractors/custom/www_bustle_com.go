@@ -9,37 +9,35 @@ var BustleCustomExtractor = &CustomExtractor{
 	Domain: "www.bustle.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			"h1.post-page__title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: "h1.post-page__title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"a[href*=\"profile\"]",
-			"div.content-meta__author",
+		Selectors: []SelectorEntry{
+			{Selector: "a[href*=\"profile\"]"},
+			{Selector: "div.content-meta__author"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "time", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"article",
-				".post-page__body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"article"},
+			{".post-page__body"},
 		},
 	},
 }

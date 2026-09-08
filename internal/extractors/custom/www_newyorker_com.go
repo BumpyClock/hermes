@@ -9,30 +9,28 @@ var NewYorkerCustomExtractor = &CustomExtractor{
 	Domain: "www.newyorker.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1[class^=\"content-header\"]",
-			"h1[class^=\"ArticleHeader__hed\"]",
-			"h1[class*=\"ContentHeaderHed\"]",
-			[]string{"meta[name=\"og:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "h1[class^=\"content-header\"]"},
+			{Selector: "h1[class^=\"ArticleHeader__hed\"]"},
+			{Selector: "h1[class*=\"ContentHeaderHed\"]"},
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"article header div[class^=\"BylinesWrapper\"]",
-			[]string{"meta[name=\"article:author\"]", "value"},
-			"div[class^=\"ArticleContributors\"] a[rel=\"author\"]",
-			"article header div[class*=\"Byline__multipleContributors\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "article header div[class^=\"BylinesWrapper\"]"},
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
+			{Selector: "div[class^=\"ArticleContributors\"] a[rel=\"author\"]"},
+			{Selector: "article header div[class*=\"Byline__multipleContributors\"]"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article__body",
-				"article.article.main-content",
-				"main[class^=\"Layout__content\"]",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article__body"},
+			{"article.article.main-content"},
+			{"main[class^=\"Layout__content\"]"},
 		},
 
 		// Transform functions for New Yorker-specific content
@@ -49,24 +47,24 @@ var NewYorkerCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
-			"time.content-header__publish-date",
-			[]string{"meta[name=\"pubdate\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+			{Selector: "time.content-header__publish-date"},
+			{Selector: "meta[name=\"pubdate\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"div[class^=\"ContentHeaderDek\"]",
-			"div.content-header__dek",
-			"h2[class^=\"ArticleHeader__dek\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "div[class^=\"ContentHeaderDek\"]"},
+			{Selector: "div.content-header__dek"},
+			{Selector: "h2[class^=\"ArticleHeader__dek\"]"},
 		},
 	},
 }

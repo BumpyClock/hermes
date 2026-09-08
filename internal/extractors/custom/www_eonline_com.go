@@ -9,38 +9,36 @@ var EOnlineCustomExtractor = &CustomExtractor{
 	Domain: "www.eonline.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.article-detail__title",
-			"h1.article__title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.article-detail__title"},
+			{Selector: "h1.article__title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".article-detail__meta__author",
-			".entry-meta__author a",
+		Selectors: []SelectorEntry{
+			{Selector: ".article-detail__meta__author"},
+			{Selector: ".entry-meta__author a"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
-			[]string{"meta[itemprop=\"datePublished\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+			{Selector: "meta[itemprop=\"datePublished\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article-detail__main-content section",
-				".post-content section, .post-content div.post-content__image",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article-detail__main-content section"},
+			{".post-content section, .post-content div.post-content__image"},
 		},
 
 		// Transform functions for E! Online-specific content

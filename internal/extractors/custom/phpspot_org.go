@@ -9,14 +9,14 @@ var PhpspotOrgExtractor = &CustomExtractor{
 	Domain: "phpspot.org",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h3.hl",
+		Selectors: []SelectorEntry{
+			{Selector: "h3.hl"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"h4.hl",
+		Selectors: []SelectorEntry{
+			{Selector: "h4.hl"},
 		},
 
 		// format: 'YYYY年MM月DD日' in JavaScript - note: Go implementation handles format in date cleaner
@@ -27,10 +27,8 @@ var PhpspotOrgExtractor = &CustomExtractor{
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.entrybody",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.entrybody"},
 		},
 
 		// defaultCleaner: false in JavaScript

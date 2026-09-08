@@ -18,40 +18,38 @@ var DaringFireballExtractor = &CustomExtractor{
 	},
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"title",
-			"h1",
-			"h2.entry-title",
-			"h1.entry-title",
+		Selectors: []SelectorEntry{
+			{Selector: "title"},
+			{Selector: "h1"},
+			{Selector: "h2.entry-title"},
+			{Selector: "h1.entry-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"[name='author']",
-			".author",
-			".byline",
+		Selectors: []SelectorEntry{
+			{Selector: "[name='author']"},
+			{Selector: ".author"},
+			{Selector: ".byline"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time", "datetime"},
-			[]string{"[datetime]", "datetime"},
-			"p.smallprint em", // Format: "★ Saturday, 30 August 2025"
+		Selectors: []SelectorEntry{
+			{Selector: "time", Attribute: "datetime"},
+			{Selector: "[datetime]", Attribute: "datetime"},
+			{Selector: "p.smallprint em"}, // Format: "★ Saturday, 30 August 2025"
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				// Target the main content area specifically
-				"div#Main", // Daring Fireball uses div#Main for article content
-				".main-content",
-				"main",
-				"article",
-				"body", // Last fallback
-			},
+		Selectors: []ContentSelectorGroup{
+			// Target the main content area specifically
+			{"div#Main"}, // Daring Fireball uses div#Main for article content
+			{".main-content"},
+			{"main"},
+			{"article"},
+			{"body"}, // Last fallback
 		},
 
 		// Clean out navigation and non-content elements (conservative)
@@ -96,10 +94,10 @@ var DaringFireballExtractor = &CustomExtractor{
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[property='og:image']", "content"},
-			[]string{"meta[name='twitter:image']", "content"},
-			[]string{"meta[name='og:image']", "content"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[property='og:image']", Attribute: "content"},
+			{Selector: "meta[name='twitter:image']", Attribute: "content"},
+			{Selector: "meta[name='og:image']", Attribute: "content"},
 		},
 	},
 }

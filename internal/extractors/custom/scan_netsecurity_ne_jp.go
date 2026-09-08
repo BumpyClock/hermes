@@ -9,36 +9,34 @@ var ScanNetsecurityNeJpExtractor = &CustomExtractor{
 	Domain: "scan.netsecurity.ne.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"header.arti-header h1.head",
+		Selectors: []SelectorEntry{
+			{Selector: "header.arti-header h1.head"},
 		},
 	},
 
 	// Author is null in JavaScript
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:modified_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:modified_time\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"header.arti-header p.arti-summary",
+		Selectors: []SelectorEntry{
+			{Selector: "header.arti-header p.arti-summary"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.arti-content.arti-content--thumbnail",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.arti-content.arti-content--thumbnail"},
 		},
 		DisableDefaultCleaner: true,
 

@@ -9,47 +9,45 @@ var WwwProspectmagazineCoUkExtractor = &CustomExtractor{
 	Domain: "www.prospectmagazine.co.uk",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			".blog-header__title",
-			".page-title",
+		Selectors: []SelectorEntry{
+			{Selector: ".blog-header__title"},
+			{Selector: ".page-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".blog-header__author-link",
-			".aside_author .title",
+		Selectors: []SelectorEntry{
+			{Selector: ".blog-header__author-link"},
+			{Selector: ".aside_author .title"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".blog__container",
-				"article .post_content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".blog__container"},
+			{"article .post_content"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
-			".post-info",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+			{Selector: ".post-info"},
 		},
 		// Note: JavaScript version has timezone: 'Europe/London'
 		// This is handled by dateparse library in Go
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".blog-header__description",
-			".page-subtitle",
+		Selectors: []SelectorEntry{
+			{Selector: ".blog-header__description"},
+			{Selector: ".page-subtitle"},
 		},
 	},
 }

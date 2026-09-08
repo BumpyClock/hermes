@@ -16,40 +16,38 @@ var WwwItmediaCoJpExtractor = &CustomExtractor{
 	},
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"#cmsTitle h1",
+		Selectors: []SelectorEntry{
+			{Selector: "#cmsTitle h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"#byline",
+		Selectors: []SelectorEntry{
+			{Selector: "#byline"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:modified_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:modified_time\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"#cmsAbstract h2",
+		Selectors: []SelectorEntry{
+			{Selector: "#cmsAbstract h2"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#cmsBody",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#cmsBody"},
 		},
 
 		// defaultCleaner: false in JavaScript

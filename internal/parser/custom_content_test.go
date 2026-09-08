@@ -78,9 +78,9 @@ func TestCustomContentFallbackDefaults(t *testing.T) {
 }
 
 func TestContentElementsForSelectorGroupsPreserveSourceOrderAndDeduplicate(t *testing.T) {
-	for name, selector := range map[string]interface{}{
-		"string slice":    []string{".second", ".first", ".first"},
-		"interface slice": []interface{}{".second", ".first", ".first"},
+	for name, selector := range map[string]custom.ContentSelectorGroup{
+		"selector group":    {".second", ".first", ".first"},
+		"CSS selector list": {".second, .first, .first"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			doc, err := goquery.NewDocumentFromReader(strings.NewReader(`
@@ -394,5 +394,41 @@ func TestProcessCustomContentPropagatesTransformErrors(t *testing.T) {
 	)
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("expected sentinel error, got %v", err)
+	}
+}
+
+func TestCustomMetadataSelectorPriorityAndDateAcceptance(t *testing.T) {
+	result, err := New().ParseHTML(`<html><body>
+		<h1 data-testid="headline">Primary headline</h1>
+		<h1 class="g-headline">Later headline</h1>
+		<meta name="author" value=" ">
+		<meta name="author" value="Ignored second match">
+		<div class="g-byline">By Selected Author</div>
+		<meta name="article:published_time" value="not a date">
+		<meta name="article:published" value="2026-09-07">
+	</body></html>`, "https://www.nytimes.com/example", &ParserOptions{ContentType: "html", Fallback: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Title != "Primary headline" {
+		t.Fatalf("title = %q, want Primary headline", result.Title)
+	}
+	if result.Author != "Selected Author" {
+		t.Fatalf("author = %q, want Selected Author", result.Author)
+	}
+	if result.DatePublished == nil || result.DatePublished.Format("2006-01-02") != "2026-09-07" {
+		t.Fatalf("date published = %v, want 2026-09-07", result.DatePublished)
+	}
+}
+
+func TestGeniusMetadataDoesNotApplyUnsupportedTransforms(t *testing.T) {
+	result, err := New().ParseHTML(`<html><head>
+		<meta itemprop="page_data" value='{"song":{"release_date":"2026-09-07","album":{"cover_art_url":"https://genius.com/image.jpg"}}}'>
+	</head><body><h1>Song title</h1></body></html>`, "https://genius.com/example", &ParserOptions{ContentType: "html", Fallback: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.DatePublished != nil || result.LeadImageURL != "" {
+		t.Fatalf("unsupported metadata transforms changed output: date = %v, image = %q", result.DatePublished, result.LeadImageURL)
 	}
 }

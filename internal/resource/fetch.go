@@ -48,65 +48,42 @@ func CreateDefaultHTTPClient() *HTTPClient {
 	}
 }
 
-// FetchResource fetches a resource from the given URL with retry logic.
-//
-// Deprecated: Use FetchResourceWithClient instead.
-func FetchResource(ctx context.Context, rawURL string, parsedURL *url.URL, headers map[string]string) (*FetchResult, error) {
-	// Create a default client for backward compatibility
-	defaultClient := CreateDefaultHTTPClient()
-	return FetchResourceWithClient(ctx, rawURL, parsedURL, headers, defaultClient)
-}
-
-// FetchResourceWithClient fetches a resource using the provided HTTP client.
-func FetchResourceWithClient(ctx context.Context, rawURL string, parsedURL *url.URL, headers map[string]string, httpClient *HTTPClient) (*FetchResult, error) {
+// Fetch retrieves and validates a response with the supplied HTTP client.
+func Fetch(ctx context.Context, rawURL string, parsedURL *url.URL, headers map[string]string, httpClient *HTTPClient) (*Response, error) {
 	// Parse URL if not provided
 	if parsedURL == nil {
 		var err error
 		parsedURL, err = url.Parse(rawURL)
 		if err != nil {
-			return &FetchResult{
-				Error:   true,
-				Message: fmt.Sprintf("Invalid URL: %v", err),
-			}, nil
+			//nolint:staticcheck // ST1005: Public error text must remain identical.
+			return nil, fmt.Errorf("Invalid URL: %v", err)
 		}
 	}
 
 	// Require HTTP client to be provided
 	if httpClient == nil {
-		return &FetchResult{
-			Error:   true,
-			Message: "HTTP client is required",
-		}, nil
+		return nil, fmt.Errorf("HTTP client is required")
 	}
-	client := httpClient
 
 	// Create a temporary client wrapper with request-specific headers.
 	// HTTPClient.doRequest performs the default-header merge once.
 	clientWithHeaders := &HTTPClient{
-		Client:  client.Client,
+		Client:  httpClient.Client,
 		Headers: headers,
 	}
 
 	// Perform request with retry using the pooled client
 	response, err := clientWithHeaders.Get(ctx, parsedURL.String())
 	if err != nil {
-		return &FetchResult{
-			Error:   true,
-			Message: fmt.Sprintf("HTTP request failed: %v", err),
-		}, nil
+		return nil, fmt.Errorf("HTTP request failed: %v", err)
 	}
 
 	// Validate response
 	if err := ValidateResponse(response, false); err != nil {
-		return &FetchResult{
-			Error:   true,
-			Message: err.Error(),
-		}, nil
+		return nil, err
 	}
 
-	return &FetchResult{
-		Response: response,
-	}, nil
+	return response, nil
 }
 
 // ValidateResponse validates that the response is suitable for parsing.
@@ -114,6 +91,7 @@ func ValidateResponse(response *Response, parseNon200 bool) error {
 	// Check status code
 	if response.StatusCode != 200 {
 		if !parseNon200 {
+			//nolint:staticcheck // ST1005: Public error text must remain identical.
 			return fmt.Errorf("Resource returned a response status code of %d and resource was instructed to reject non-200 status codes", response.StatusCode)
 		}
 	}
@@ -147,17 +125,4 @@ func BaseDomain(host string) string {
 	}
 
 	return strings.Join(parts[len(parts)-2:], ".")
-}
-
-// FetchResult represents the result of fetching a resource.
-type FetchResult struct {
-	Response       *Response
-	Error          bool
-	Message        string
-	AlreadyDecoded bool
-}
-
-// IsError returns true if the fetch result contains an error.
-func (fr *FetchResult) IsError() bool {
-	return fr.Error
 }

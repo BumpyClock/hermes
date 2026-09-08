@@ -9,34 +9,32 @@ func GetChicagoTribuneExtractor() *CustomExtractor {
 		Domain: "www.chicagotribune.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:title"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:title"]`, Attribute: "value"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.article_byline span:first-of-type",
+			Selectors: []SelectorEntry{
+				{Selector: "div.article_byline span:first-of-type"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				"time",
+			Selectors: []SelectorEntry{
+				{Selector: "time"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"article",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"article"},
 			},
 
 			Transforms: map[string]TransformFunction{

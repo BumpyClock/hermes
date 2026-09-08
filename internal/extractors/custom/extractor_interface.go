@@ -26,16 +26,16 @@ type CustomExtractor struct {
 // FieldExtractor defines how to extract a specific field from a document
 // JavaScript equivalent: { selectors: [...], allowMultiple: bool }.
 type FieldExtractor struct {
-	Selectors     []interface{} `json:"selectors"`     // Can be string or [string, string] for [selector, attribute]
-	AllowMultiple bool          `json:"allowMultiple"` // Allow multiple values
-	Format        string        `json:"format"`        // Date format (for date fields)
-	Timezone      string        `json:"timezone"`      // Timezone (for date fields)
+	Selectors     []SelectorEntry `json:"selectors"`
+	AllowMultiple bool            `json:"allowMultiple"` // Allow multiple values
+	Format        string          `json:"format"`        // Date format (for date fields)
+	Timezone      string          `json:"timezone"`      // Timezone (for date fields)
 }
 
 // ContentExtractor defines how to extract and clean main content
 // JavaScript equivalent: { selectors: [...], clean: [...], transforms: {...} }.
 type ContentExtractor struct {
-	*FieldExtractor
+	Selectors             []ContentSelectorGroup       `json:"selectors"`
 	Clean                 []string                     `json:"clean"`                 // Selectors to remove from content
 	Transforms            map[string]TransformFunction `json:"transforms"`            // Element transformations
 	DisableDefaultCleaner bool                         `json:"disableDefaultCleaner"` // Skip default content cleaning; zero value enables it
@@ -82,7 +82,10 @@ type ExtractorOptions struct {
 	Extend      map[string]interface{}
 }
 
-// SelectorEntry represents a parsed selector with optional attribute extraction.
+// ContentSelectorGroup combines CSS selectors in source order without duplicate elements.
+type ContentSelectorGroup []string
+
+// SelectorEntry selects text or an attribute from the first matching element.
 type SelectorEntry struct {
 	Selector  string
 	Attribute string // empty if not extracting attribute

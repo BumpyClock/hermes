@@ -8,49 +8,47 @@ var WwwRockpapershotgunComExtractor = &CustomExtractor{
 	Domain: "www.rockpapershotgun.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.title", // Primary title selector
-			"h1",       // Generic fallback
-			[]string{"meta[property=\"og:title\"]", "content"}, // Meta fallback
+		Selectors: []SelectorEntry{
+			{Selector: "h1.title"}, // Primary title selector
+			{Selector: "h1"},       // Generic fallback
+			{Selector: "meta[property=\"og:title\"]", Attribute: "content"}, // Meta fallback
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".byline .author a",                          // Primary author link
-			".byline .author",                            // Author span without link
-			[]string{"meta[name=\"author\"]", "content"}, // Meta fallback from JSON-LD
+		Selectors: []SelectorEntry{
+			{Selector: ".byline .author a"},                           // Primary author link
+			{Selector: ".byline .author"},                             // Author span without link
+			{Selector: "meta[name=\"author\"]", Attribute: "content"}, // Meta fallback from JSON-LD
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time", "datetime"},                                     // Primary datetime attribute
-			[]string{"meta[property=\"article:published_time\"]", "content"}, // Meta fallback
+		Selectors: []SelectorEntry{
+			{Selector: "time", Attribute: "datetime"},                                     // Primary datetime attribute
+			{Selector: "meta[property=\"article:published_time\"]", Attribute: "content"}, // Meta fallback
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"p.strapline", // Rock Paper Shotgun's subtitle/deck
+		Selectors: []SelectorEntry{
+			{Selector: "p.strapline"}, // Rock Paper Shotgun's subtitle/deck
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[property=\"og:image\"]", "content"}, // Primary image from meta
-			".headline_image", // Direct image selector fallback
+		Selectors: []SelectorEntry{
+			{Selector: "meta[property=\"og:image\"]", Attribute: "content"}, // Primary image from meta
+			{Selector: ".headline_image"},                                   // Direct image selector fallback
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article_body_content.article-styling", // Primary content container
-				".article_body_content",                 // Without styling class fallback
-				".article-content",                      // Generic article content
-				"article .article_body",                 // Article body fallback
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article_body_content.article-styling"}, // Primary content container
+			{".article_body_content"},                 // Without styling class fallback
+			{".article-content"},                      // Generic article content
+			{"article .article_body"},                 // Article body fallback
 		},
 
 		// Clean selectors - remove unwanted elements

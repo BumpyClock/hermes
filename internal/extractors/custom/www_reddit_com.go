@@ -16,34 +16,32 @@ var RedditCustomExtractor = &CustomExtractor{
 	Domain: "www.reddit.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			`div[data-test-id="post-content"] h1`,
-			`div[data-test-id="post-content"] h2`,
+		Selectors: []SelectorEntry{
+			{Selector: `div[data-test-id="post-content"] h1`},
+			{Selector: `div[data-test-id="post-content"] h2`},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			`div[data-test-id="post-content"] a[href*="user/"]`,
+		Selectors: []SelectorEntry{
+			{Selector: `div[data-test-id="post-content"] a[href*="user/"]`},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				// text post
-				[]string{`div[data-test-id="post-content"] p`},
-				// external link with media preview (YouTube, imgur album, etc...)
-				[]string{
-					`div[data-test-id="post-content"] a[target="_blank"]:not([data-click-id="timestamp"])`,
-					`div[data-test-id="post-content"] div[data-click-id="media"]`,
-				},
-				// Embedded media (Reddit video)
-				[]string{`div[data-test-id="post-content"] div[data-click-id="media"]`},
-				// external link
-				[]string{`div[data-test-id="post-content"] a`},
-				`div[data-test-id="post-content"]`,
+		Selectors: []ContentSelectorGroup{
+			// text post
+			{`div[data-test-id="post-content"] p`},
+			// external link with media preview (YouTube, imgur album, etc...)
+			{
+				`div[data-test-id="post-content"] a[target="_blank"]:not([data-click-id="timestamp"])`,
+				`div[data-test-id="post-content"] div[data-click-id="media"]`,
 			},
+			// Embedded media (Reddit video)
+			{`div[data-test-id="post-content"] div[data-click-id="media"]`},
+			// external link
+			{`div[data-test-id="post-content"] a`},
+			{`div[data-test-id="post-content"]`},
 		},
 
 		// Transform functions for Reddit-specific content
@@ -63,15 +61,15 @@ var RedditCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			`div[data-test-id="post-content"] span[data-click-id="timestamp"]`,
-			`div[data-test-id="post-content"] a[data-click-id="timestamp"]`,
+		Selectors: []SelectorEntry{
+			{Selector: `div[data-test-id="post-content"] span[data-click-id="timestamp"]`},
+			{Selector: `div[data-test-id="post-content"] a[data-click-id="timestamp"]`},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

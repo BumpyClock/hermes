@@ -18,41 +18,39 @@ func GetGothamistComExtractor() *CustomExtractor {
 		},
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1",
-				".entry-header h1",
+			Selectors: []SelectorEntry{
+				{Selector: "h1"},
+				{Selector: ".entry-header h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
+			Selectors: []SelectorEntry{
 				// Comment from JavaScript: "There are multiple article-metadata and byline-author classes, but the main article's is the 3rd child of the l-container class"
-				".article-metadata:nth-child(3) .byline-author",
-				".author",
+				{Selector: ".article-metadata:nth-child(3) .byline-author"},
+				{Selector: ".author"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"article:published_time\"]", "value"},
-				"abbr",
-				"abbr.published",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+				{Selector: "abbr"},
+				{Selector: "abbr.published"},
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".article-body",
-					".entry-body",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".article-body"},
+				{".entry-body"},
 			},
 
 			Transforms: map[string]TransformFunction{
