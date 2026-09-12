@@ -39,10 +39,10 @@ func TestParseFormats(t *testing.T) {
 			{"html", "html", "text/html; charset=utf-8", false},
 			{"markdown", "markdown", "text/markdown; charset=utf-8", false},
 			{"text", "text", "text/plain; charset=utf-8", false},
-			{"JSON", "html", "; charset=utf-8", false},
-			{"Html", "html", "; charset=utf-8", false},
-			{"MarkDown", "html", "; charset=utf-8", false},
-			{"TEXT", "html", "; charset=utf-8", false},
+			{"JSON", "html", "application/json", true},
+			{"Html", "html", "text/html; charset=utf-8", false},
+			{"MarkDown", "markdown", "text/markdown; charset=utf-8", false},
+			{"TEXT", "text", "text/plain; charset=utf-8", false},
 		} {
 			t.Run(method+"/"+test.format, func(t *testing.T) {
 				parsers := map[string]*mockParser{

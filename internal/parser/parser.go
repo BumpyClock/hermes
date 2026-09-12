@@ -7,7 +7,9 @@ package parser
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/BumpyClock/hermes/internal/resource"
 	"github.com/BumpyClock/hermes/internal/validation"
@@ -15,7 +17,9 @@ import (
 
 // Hermes (formerly Mercury) is the main parser implementation.
 type Hermes struct {
-	options ParserOptions
+	options               ParserOptions
+	defaultHTTPClientOnce sync.Once
+	defaultHTTPClient     *http.Client
 }
 
 // New creates a new Hermes parser instance.
@@ -62,7 +66,7 @@ func (h *Hermes) ParseWithContext(ctx context.Context, targetURL string, opts *P
 	}
 
 	// Use centralized HTTP client creation
-	httpClient := ensureHTTPClient(opts)
+	httpClient := h.ensureHTTPClient(opts)
 
 	doc, err := resource.CreateDocument(ctx, targetURL, "", parsedURL, opts.Headers, httpClient)
 	if err != nil {

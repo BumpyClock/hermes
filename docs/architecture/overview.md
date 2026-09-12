@@ -63,9 +63,12 @@ sequenceDiagram
 ## Internal extraction stages
 
 The resource package uses functions, not a resource object. `Fetch` returns a response and an ordinary error.
+Request headers override client headers, which override defaults; header names are case-insensitive, and input maps remain unchanged.
 `PrepareDocument` accepts bytes, content type, and the decoded-input flag. Supplied HTML skips character decoding.
 
 The parser extracts metadata sequentially within each request. Separate requests can still execute concurrently through the public client.
+Direct internal parser calls without a supplied HTTP client lazily share one default client per parser instance.
+Supplied clients remain authoritative, and parsing supplied HTML does not initialize the default client.
 Custom and generic paths share content conversion, content metrics, author/date fallback, and video result assembly.
 Their distinct selector priority, fallback policy, and cleanup order remain explicit.
 

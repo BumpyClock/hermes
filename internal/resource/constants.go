@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"net/http"
 	"regexp"
 	"time"
 )
@@ -78,22 +79,15 @@ func joinContentTypes() string {
 
 // MergeHeaders creates a complete header map by merging default and custom headers.
 func MergeHeaders(customHeaders map[string]string) map[string]string {
+	return mergeHeaders(REQUEST_HEADERS, STANDARD_HEADERS, customHeaders)
+}
+
+func mergeHeaders(headerSets ...map[string]string) map[string]string {
 	merged := make(map[string]string)
-
-	// Add default headers
-	for k, v := range REQUEST_HEADERS {
-		merged[k] = v
+	for _, headers := range headerSets {
+		for name, value := range headers {
+			merged[http.CanonicalHeaderKey(name)] = value
+		}
 	}
-
-	// Add standard headers
-	for k, v := range STANDARD_HEADERS {
-		merged[k] = v
-	}
-
-	// Override with custom headers
-	for k, v := range customHeaders {
-		merged[k] = v
-	}
-
 	return merged
 }

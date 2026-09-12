@@ -3,6 +3,7 @@ package resource_test
 import (
 	"context"
 	"errors"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -176,6 +177,87 @@ func TestFetchResource_WithCustomHeaders(t *testing.T) {
 	assert.Contains(t, userAgent, "Mozilla")
 }
 
+func TestFetchResource_PreservesClientHeaders(t *testing.T) {
+	defaultClientHeaders := map[string]string{
+		"X-Client-Only": "preserved",
+		"X-Shared":      "client",
+		"User-Agent":    "ClientAgent",
+	}
+	for _, test := range []struct {
+		name          string
+		clientHeaders map[string]string
+		headers       map[string]string
+		wantClient    string
+		wantValue     string
+		wantAgent     string
+	}{
+		{"client only", defaultClientHeaders, nil, "preserved", "client", "ClientAgent"},
+		{"request override", defaultClientHeaders, map[string]string{"X-Shared": "request", "User-Agent": "RequestAgent"}, "preserved", "request", "RequestAgent"},
+		{"case-insensitive override", defaultClientHeaders, map[string]string{"x-shared": "request", "user-agent": "RequestAgent"}, "preserved", "request", "RequestAgent"},
+		{"lowercase client headers", map[string]string{"x-client-only": "preserved", "x-shared": "client", "user-agent": "ClientAgent"}, nil, "preserved", "client", "ClientAgent"},
+		{"nil client headers", nil, map[string]string{"X-Shared": "request", "User-Agent": "RequestAgent"}, "", "request", "RequestAgent"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			received := make(chan http.Header, 1)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				received <- r.Header.Clone()
+				w.Header().Set("Content-Type", "text/html")
+				_, _ = w.Write([]byte("<html><body>Test</body></html>"))
+			}))
+			defer server.Close()
+
+			client := resource.NewHTTPClient(test.clientHeaders)
+			defer client.Client.CloseIdleConnections()
+			clientHeaders := maps.Clone(client.Headers)
+			requestHeaders := maps.Clone(test.headers)
+
+			result, err := resource.Fetch(context.Background(), server.URL, nil, test.headers, client)
+			require.NoError(t, err)
+			require.NotNil(t, result)
+
+			headers := <-received
+			assert.Equal(t, test.wantClient, headers.Get("X-Client-Only"))
+			assert.Equal(t, test.wantValue, headers.Get("X-Shared"))
+			assert.Equal(t, test.wantAgent, headers.Get("User-Agent"))
+			assert.Equal(t, "en-US,en;q=0.5", headers.Get("Accept-Language"))
+			assert.Equal(t, clientHeaders, client.Headers)
+			assert.Equal(t, requestHeaders, test.headers)
+		})
+	}
+}
+
+func TestFetchResource_RequestHeadersDoNotLeakToNextRequest(t *testing.T) {
+	received := make(chan http.Header, 2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		received <- r.Header.Clone()
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte("<html><body>Test</body></html>"))
+	}))
+	defer server.Close()
+
+	client := resource.NewHTTPClient(map[string]string{
+		"X-Shared":   "client",
+		"User-Agent": "ClientAgent",
+	})
+	defer client.Client.CloseIdleConnections()
+	clientHeaders := maps.Clone(client.Headers)
+
+	override := map[string]string{"x-shared": "request", "user-agent": "RequestAgent"}
+	_, err := resource.Fetch(context.Background(), server.URL, nil, override, client)
+	require.NoError(t, err)
+
+	_, err = resource.Fetch(context.Background(), server.URL, nil, nil, client)
+	require.NoError(t, err)
+
+	first, second := <-received, <-received
+	assert.Equal(t, "request", first.Get("X-Shared"))
+	assert.Equal(t, "RequestAgent", first.Get("User-Agent"))
+	assert.Equal(t, "client", second.Get("X-Shared"))
+	assert.Equal(t, "ClientAgent", second.Get("User-Agent"))
+	assert.Equal(t, clientHeaders, client.Headers)
+	assert.Equal(t, map[string]string{"x-shared": "request", "user-agent": "RequestAgent"}, override)
+}
+
 func TestValidateResponse_ContentLength(t *testing.T) {
 	response := &resource.Response{
 		StatusCode: 200,
@@ -241,27 +323,19 @@ func TestResource_GenerateDoc_InvalidContent(t *testing.T) {
 	assert.Contains(t, err.Error(), "does not appear to be text")
 }
 
-func TestResource_GenerateDoc_EmptyDocument(t *testing.T) {
-
-	// Use malformed HTML that won't parse correctly
+func TestPrepareDocument_BareText(t *testing.T) {
 	result := &resource.Response{
 		StatusCode: 200,
 		Headers: http.Header{
 			"Content-Type": []string{"text/html"},
 		},
-		Body: []byte("<html><head></head><body></body></html>"),
+		Body: []byte("not html at all"),
 	}
-
-	// This should actually succeed since goquery is more lenient
-	// Let's test with truly invalid HTML instead
-	result.Body = []byte("not html at all")
 
 	doc, err := resource.PrepareDocument(context.Background(), result.Body, result.GetContentType(), false)
-	// Even this might parse, so let's check if we get a document
-	if err == nil {
-		// If it parsed, check that we have some content
-		assert.NotNil(t, doc)
-	}
+	require.NoError(t, err)
+	require.NotNil(t, doc)
+	assert.Equal(t, "not html at all", doc.Find("body").Text())
 }
 
 func TestEncodingDetection(t *testing.T) {

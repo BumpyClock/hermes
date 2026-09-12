@@ -170,7 +170,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
         <p><strong>Parameters:</strong></p>
         <ul>
             <li><code>url</code> - The URL to parse (required)</li>
-            <li><code>format</code> - Output format: json, html, markdown, text (optional, default: json)</li>
+            <li><code>format</code> - Output format: json, html, markdown, text (case-insensitive; optional, default: json)</li>
         </ul>
         <p><strong>Example:</strong><br>
         <code>GET /parse?url=https://example.com&format=markdown</code></p>
@@ -248,6 +248,7 @@ func (s *Server) handleParse(w http.ResponseWriter, r *http.Request) {
 		s.sendError(w, http.StatusBadRequest, "invalid_format", "Format must be one of: json, html, markdown, text", targetURL, start)
 		return
 	}
+	format = strings.ToLower(format)
 
 	// Parse the URL
 	s.parseURL(w, r, targetURL, format, start)
@@ -390,7 +391,6 @@ func (s *Server) isValidURL(rawURL string) bool {
 
 // isValidFormat validates output format.
 func (s *Server) isValidFormat(format string) bool {
-	// Validation accepts case variants, but client and response selection remain case-sensitive.
 	_, ok := supportedFormats[strings.ToLower(format)]
 	return ok
 }

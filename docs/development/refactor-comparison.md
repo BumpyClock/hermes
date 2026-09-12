@@ -104,7 +104,10 @@ The acceptance checks passed:
 
 The cleanup removes unused implementations, per-field goroutines, duplicate title algorithms, and duplicate result assembly.
 Typed selectors replace ambiguous metadata and content values. The benchmark runner shares execution and report code.
-CLI and API example changes preserve empty-batch JSON and existing format-case behavior.
+The initial CLI and API example changes preserved empty-batch JSON and existing format-case behavior.
+The review follow-up intentionally fixes the API example's case variants: `JSON`, `Html`, `MarkDown`, and `TEXT` now use the same parser and response media type as their lowercase forms.
+It also preserves client-configured resource headers with case-insensitive request overrides and reuses the default HTTP client for direct internal parser calls.
+These corrections have focused HTTP tests; the historical comparison results above describe the initial cleanup.
 
 The response buffer pool remains. Five repeated body-read samples showed more allocations and higher latency with `io.ReadAll`.
 DOM tag replacement and distinct custom/generic cleanup policies also remain because their proposed replacements can change output.

@@ -69,7 +69,7 @@ func Fetch(ctx context.Context, rawURL string, parsedURL *url.URL, headers map[s
 	// HTTPClient.doRequest performs the default-header merge once.
 	clientWithHeaders := &HTTPClient{
 		Client:  httpClient.Client,
-		Headers: headers,
+		Headers: mergeHeaders(httpClient.Headers, headers),
 	}
 
 	// Perform request with retry using the pooled client
