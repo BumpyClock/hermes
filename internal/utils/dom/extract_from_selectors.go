@@ -3,11 +3,7 @@
 
 package dom
 
-import (
-	"strings"
-
-	"github.com/PuerkitoBio/goquery"
-)
+import "github.com/PuerkitoBio/goquery"
 
 // isGoodNode checks if a node is suitable for content extraction.
 func isGoodNode(node *goquery.Selection, maxChildren int) bool {
@@ -44,26 +40,26 @@ func ExtractFromSelectors(doc *goquery.Selection, selectors []string, maxChildre
 
 		// If we didn't get exactly one of this selector, this may be
 		// a list of articles or comments. Skip it.
-		if nodes.Length() == 1 {
-			node := nodes.First()
+		if nodes.Length() != 1 {
+			continue
+		}
+		node := nodes.First()
+		if !isGoodNode(node, maxChildren) {
+			continue
+		}
 
-			if isGoodNode(node, maxChildren) {
-				var content string
-				if textOnly {
-					content = node.Text()
-				} else {
-					html, _ := node.Html()
-					content = html
-				}
+		var content string
+		if textOnly {
+			content = node.Text()
+		} else {
+			content, _ = node.Html()
+		}
 
-				// Normalize whitespace to match JavaScript's text normalization
-				// Replace all whitespace sequences with single spaces
-				content = strings.Join(strings.Fields(content), " ")
-
-				if content != "" {
-					return &content
-				}
-			}
+		// Normalize whitespace to match JavaScript's text normalization
+		// Replace all whitespace sequences with single spaces
+		content = normalizeSpaces(content)
+		if content != "" {
+			return &content
 		}
 	}
 

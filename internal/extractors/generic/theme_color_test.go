@@ -1,11 +1,6 @@
 package generic
 
-import (
-	"strings"
-	"testing"
-
-	"github.com/PuerkitoBio/goquery"
-)
+import "testing"
 
 func TestGenericThemeColorExtractor(t *testing.T) {
 	extractor := &GenericThemeColorExtractor{}
@@ -114,10 +109,7 @@ func TestGenericThemeColorExtractor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tt.html))
-			if err != nil {
-				t.Fatalf("Failed to parse HTML: %v", err)
-			}
+			doc := newDoc(tt.html, t)
 
 			result := extractor.Extract(doc.Selection, "https://example.com", []string{})
 

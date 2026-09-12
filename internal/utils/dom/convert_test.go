@@ -65,22 +65,17 @@ func TestConvertToParagraphs(t *testing.T) {
 
 			result := dom.ConvertToParagraphs(doc)
 
-			// Check that we have the expected number of paragraphs
-			paragraphs := result.Find("p")
-
-			// Verify paragraph contents
-			found := 0
-			paragraphs.Each(func(i int, p *goquery.Selection) {
-				text := strings.TrimSpace(p.Text())
-				for _, expected := range tt.expected {
-					if strings.Contains(text, expected) {
-						found++
-						break
-					}
-				}
+			paragraphTexts := result.Find("p").Map(func(i int, p *goquery.Selection) string {
+				return strings.TrimSpace(p.Text())
 			})
 
-			assert.GreaterOrEqual(t, found, len(tt.expected), "Should find expected paragraph content")
+			nextExpected := 0
+			for _, text := range paragraphTexts {
+				if nextExpected < len(tt.expected) && text == tt.expected[nextExpected] {
+					nextExpected++
+				}
+			}
+			assert.Equal(t, len(tt.expected), nextExpected, "Expected paragraphs %q in order, got %q", tt.expected, paragraphTexts)
 		})
 	}
 }

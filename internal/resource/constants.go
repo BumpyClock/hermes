@@ -44,9 +44,6 @@ const MAX_CONTENT_LENGTH = 5242880
 // Maximum document size for processing (10 MB).
 const MAX_DOCUMENT_SIZE = 10485760
 
-// Maximum processing time for extraction (30 seconds).
-const MAX_PROCESSING_TIME = 30 * time.Second
-
 // Maximum number of DOM elements to process.
 const MAX_DOM_ELEMENTS = 50000
 
@@ -59,11 +56,6 @@ var (
 
 // Tags to remove during initial DOM cleanup.
 const TAGS_TO_REMOVE = "script,style,form"
-
-// Default encoding constants.
-const DEFAULT_ENCODING = "utf-8"
-
-var ENCODING_RE = regexp.MustCompile(`charset=([\w-]+)\b`)
 
 // joinContentTypes creates a regex-safe string of content types.
 func joinContentTypes() string {

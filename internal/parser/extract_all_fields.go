@@ -486,12 +486,6 @@ func parseDate(dateStr string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
 }
 
-// stripHTMLTags removes HTML tags from content for text output
-// Delegates to dom.StripTags for consistent behavior.
-func stripHTMLTags(content string) string {
-	return dom.StripTags(content)
-}
-
 // convertToMarkdown converts HTML content to Markdown using html-to-markdown library.
 func convertToMarkdown(content string) string {
 	// Create converter with options similar to TurndownService
@@ -536,7 +530,7 @@ func convertToMarkdown(content string) string {
 	markdown, err := converter.ConvertString(content)
 	if err != nil {
 		// Fallback to text extraction if conversion fails
-		return stripHTMLTags(content)
+		return dom.StripTags(content)
 	}
 
 	return markdown
@@ -555,7 +549,7 @@ func formatContent(content string, contentType string) string {
 	// Map aliases to canonical types
 	switch normalized {
 	case "text", "text/plain", "txt":
-		return text.NormalizeSpaces(stripHTMLTags(content))
+		return text.NormalizeSpaces(dom.StripTags(content))
 	case "markdown", "md", "text/markdown":
 		return convertToMarkdown(content)
 	case "html", "text/html", "":
@@ -654,7 +648,7 @@ func calculateWordCount(content string) int {
 	}
 
 	// Simple word count by splitting on whitespace
-	words := strings.Fields(stripHTMLTags(content))
+	words := strings.Fields(dom.StripTags(content))
 	return len(words)
 }
 

@@ -254,34 +254,6 @@ func TestExtractCleanNode(t *testing.T) {
 	})
 }
 
-// TestContentCleanOptions tests the options struct.
-func TestContentCleanOptions(t *testing.T) {
-	t.Run("default values", func(t *testing.T) {
-		opts := ContentCleanOptions{}
-
-		// Test default behavior
-		assert.False(t, opts.CleanConditionally)
-		assert.Equal(t, "", opts.Title)
-		assert.Equal(t, "", opts.URL)
-		assert.Nil(t, opts.DefaultCleaner) // Should be nil by default
-	})
-
-	t.Run("with values", func(t *testing.T) {
-		trueBool := true
-		opts := ContentCleanOptions{
-			CleanConditionally: true,
-			Title:              "Test Title",
-			URL:                "https://example.com",
-			DefaultCleaner:     &trueBool,
-		}
-
-		assert.True(t, opts.CleanConditionally)
-		assert.Equal(t, "Test Title", opts.Title)
-		assert.Equal(t, "https://example.com", opts.URL)
-		assert.True(t, *opts.DefaultCleaner)
-	})
-}
-
 // TestCleaningPipelineStages tests individual stages of the cleaning pipeline.
 func TestCleaningPipelineStages(t *testing.T) {
 	t.Run("rewrite top level", func(t *testing.T) {
@@ -295,10 +267,8 @@ func TestCleaningPipelineStages(t *testing.T) {
 		cleaned := ExtractCleanNode(body, doc, opts)
 
 		// Body should be rewritten to div
-		assert.NotNil(t, cleaned)
-		tagName := goquery.NodeName(cleaned)
-		// After rewrite, the element should be a div or maintain content
-		assert.True(t, tagName == "div" || tagName == "body")
+		require.NotNil(t, cleaned)
+		assert.Equal(t, "div", goquery.NodeName(cleaned))
 	})
 
 	t.Run("remove empty paragraphs", func(t *testing.T) {
@@ -326,13 +296,10 @@ func TestCleaningPipelineStages(t *testing.T) {
 
 		// Empty paragraphs should be removed
 		paragraphs := cleaned.Find("p")
-		validParagraphs := 0
-		paragraphs.Each(func(i int, s *goquery.Selection) {
-			if strings.TrimSpace(s.Text()) != "" {
-				validParagraphs++
-			}
+		paragraphTexts := paragraphs.Map(func(i int, s *goquery.Selection) string {
+			return strings.TrimSpace(s.Text())
 		})
-		assert.GreaterOrEqual(t, validParagraphs, 2) // At least the two with content
+		assert.Equal(t, []string{"Good content", "More good content"}, paragraphTexts)
 	})
 
 	t.Run("clean attributes", func(t *testing.T) {
@@ -361,14 +328,13 @@ func TestCleaningPipelineStages(t *testing.T) {
 
 		// Links should still have href but not onclick
 		links := cleaned.Find("a")
-		if links.Length() > 0 {
-			href, hrefExists := links.First().Attr("href")
-			assert.True(t, hrefExists)
-			assert.Equal(t, "https://example.com", href)
+		require.Equal(t, 1, links.Length())
+		href, hrefExists := links.First().Attr("href")
+		assert.True(t, hrefExists)
+		assert.Equal(t, "https://example.com", href)
 
-			_, onclickExists := links.First().Attr("onclick")
-			assert.False(t, onclickExists, "onclick should be removed")
-		}
+		_, onclickExists := links.First().Attr("onclick")
+		assert.False(t, onclickExists, "onclick should be removed")
 	})
 }
 

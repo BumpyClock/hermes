@@ -1,9 +1,7 @@
 package generic
 
 import (
-	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -87,9 +85,6 @@ func (extractor *GenericVideoExtractor) Extract(selection *goquery.Selection, pa
 				}
 			}
 		}
-
-		// Try JSON-LD structured data for VideoObject
-		video = extractor.extractFromJSONLD(selection, video)
 	}
 
 	// Return nil if no video metadata was found
@@ -99,67 +94,11 @@ func (extractor *GenericVideoExtractor) Extract(selection *goquery.Selection, pa
 
 	// Validate and clean up URLs
 	if video.URL != "" {
-		video.URL = extractor.normalizeURL(video.URL, pageURL)
+		video.URL = normalizeResourceURL(video.URL, pageURL)
 	}
 	if video.SecureURL != "" {
-		video.SecureURL = extractor.normalizeURL(video.SecureURL, pageURL)
+		video.SecureURL = normalizeResourceURL(video.SecureURL, pageURL)
 	}
 
 	return video
-}
-
-// extractFromJSONLD attempts to extract video information from JSON-LD structured data.
-func (extractor *GenericVideoExtractor) extractFromJSONLD(selection *goquery.Selection, video *VideoMetadata) *VideoMetadata {
-	// This is a simplified implementation - a full implementation would parse JSON-LD
-	// Looking for script[type="application/ld+json"] with VideoObject
-	// For now, we'll skip this complex parsing and return the existing video metadata
-	return video
-}
-
-// normalizeURL ensures the video URL is absolute.
-func (extractor *GenericVideoExtractor) normalizeURL(videoURL, pageURL string) string {
-	videoURL = strings.TrimSpace(videoURL)
-
-	// Already absolute
-	if strings.HasPrefix(videoURL, "http://") || strings.HasPrefix(videoURL, "https://") {
-		return videoURL
-	}
-
-	// Protocol-relative
-	if strings.HasPrefix(videoURL, "//") {
-		return "https:" + videoURL
-	}
-
-	// Parse the base URL
-	baseURL, err := url.Parse(pageURL)
-	if err != nil {
-		// If we can't parse the page URL, return the videoURL as-is
-		return videoURL
-	}
-
-	// Parse the relative URL
-	relativeURL, err := url.Parse(videoURL)
-	if err != nil {
-		// If we can't parse the videoURL, return it as-is
-		return videoURL
-	}
-
-	// Resolve the relative URL against the base URL
-	resolved := baseURL.ResolveReference(relativeURL)
-	return resolved.String()
-}
-
-// ExtractVideoURL is a convenience function that returns just the primary video URL.
-func (extractor *GenericVideoExtractor) ExtractVideoURL(selection *goquery.Selection, pageURL string, metaCache []string) string {
-	video := extractor.Extract(selection, pageURL, metaCache)
-	if video == nil {
-		return ""
-	}
-
-	// Prefer secure URL if available
-	if video.SecureURL != "" {
-		return video.SecureURL
-	}
-
-	return video.URL
 }

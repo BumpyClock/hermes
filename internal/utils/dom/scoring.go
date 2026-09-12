@@ -118,36 +118,6 @@ func itoa(i int) string {
 	return strconv.Itoa(i)
 }
 
-// Additional scoring functions to support cleanTags logic
-
-// countParagraphs counts paragraph elements.
-func countParagraphs(element *goquery.Selection) int {
-	return element.Find("p").Length()
-}
-
-// countImages counts image elements.
-func countImages(element *goquery.Selection) int {
-	return element.Find("img").Length()
-}
-
-// countInputs counts input/form elements.
-func countInputs(element *goquery.Selection) int {
-	return element.Find("input, textarea, select, button").Length()
-}
-
-// countLists counts list elements.
-func countLists(element *goquery.Selection) int {
-	return element.Find("ul, ol, dl").Length()
-}
-
-// textLength gets text length with whitespace normalization.
-func textLength(element *goquery.Selection) int {
-	text := strings.TrimSpace(element.Text())
-	// Normalize whitespace like JavaScript
-	text = strings.Join(strings.Fields(text), " ")
-	return len(text)
-}
-
 // addScore adds a score amount to a node
 // JavaScript: export default function addScore($node, $, amount).
 func addScore(element *goquery.Selection, amount int) *goquery.Selection {
@@ -296,9 +266,4 @@ func FindTopCandidate(doc *goquery.Document) *goquery.Selection {
 	// Sibling merging used to calculate extra candidates here, but returned the original candidate
 	// on every path. Keep current behavior explicit and skip dead traversal work.
 	return candidate
-}
-
-// linkDensityCompat provides link density calculation compatible with JavaScript tests.
-func linkDensityCompat(element *goquery.Selection) float64 {
-	return LinkDensity(element)
 }

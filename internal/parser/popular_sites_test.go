@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -111,7 +112,7 @@ func TestPopularSiteExtractors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := New().ParseHTML(tt.html, tt.url, &ParserOptions{Fallback: true, ContentType: "html"})
+			result, err := New().ParseHTMLWithContext(context.Background(), tt.html, tt.url, &ParserOptions{Fallback: true, ContentType: "html"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -136,7 +137,7 @@ func TestBBCExtractorExcludesNestedRecommendationArticle(t *testing.T) {
 	const mainParagraph = "The main BBC report contains the verified details readers need."
 	const recommendationParagraph = "Nested recommendation article that must not appear in extracted content."
 
-	result, err := New().ParseHTML(`<main><article><h1>BBC nested recommendation headline</h1>
+	result, err := New().ParseHTMLWithContext(context.Background(), `<main><article><h1>BBC nested recommendation headline</h1>
 		<p>`+mainParagraph+`</p>
 		<section data-component="recommendations"><article><p>`+recommendationParagraph+`</p></article></section>
 		<p>The final BBC report paragraph provides the concluding context.</p></article></main>`, "https://www.bbc.com/news/articles/example", &ParserOptions{Fallback: true, ContentType: "html"})

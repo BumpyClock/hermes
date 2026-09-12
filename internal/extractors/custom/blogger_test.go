@@ -7,11 +7,7 @@ func TestBlogspotUsesBloggerCanonicalExtractor(t *testing.T) {
 	if blogger == nil {
 		t.Fatal("expected Blogger extractor")
 	}
-	if GetBlogspotExtractor() != blogger {
-		t.Fatal("expected Blogspot compatibility getter to return Blogger extractor")
-	}
-
-	registered := GetAllCustomExtractors()
+	registered := buildAllExtractors()
 	if registered["BloggerExtractor"] != blogger {
 		t.Fatal("expected Blogger extractor to be registered")
 	}

@@ -167,7 +167,7 @@ func ExtractBreadcrumbTitle(splitTitle []string, text string, trimEnd bool) stri
 // Search the ends of the title, looking for bits that fuzzy match
 // the URL too closely. If one is found, discard it and return the rest.
 func CleanDomainFromTitle(splitTitle []string, urlStr string, spaceLimit int) string {
-	if urlStr == "" || len(splitTitle) < 2 {
+	if urlStr == "" || len(splitTitle) < 3 {
 		return ""
 	}
 
@@ -181,29 +181,19 @@ func CleanDomainFromTitle(splitTitle []string, urlStr string, spaceLimit int) st
 	nakedDomain := DOMAIN_ENDINGS_RE.ReplaceAllString(parsedURL.Host, "")
 
 	// Check start of title
-	if len(splitTitle) >= 2 {
-		startSlug := strings.ToLower(strings.Replace(splitTitle[0], " ", "", spaceLimit))
-		startSlugRatio := LevenshteinRatio(startSlug, nakedDomain)
-
-		if startSlugRatio > 0.4 && len(startSlug) > 5 {
-			// Join remaining segments (skip separator at index 1)
-			if len(splitTitle) >= 3 {
-				return strings.Join(splitTitle[2:], "")
-			}
-		}
+	startSlug := strings.ToLower(strings.Replace(splitTitle[0], " ", "", spaceLimit))
+	startSlugRatio := LevenshteinRatio(startSlug, nakedDomain)
+	if startSlugRatio > 0.4 && len(startSlug) > 5 {
+		// Join remaining segments (skip separator at index 1)
+		return strings.Join(splitTitle[2:], "")
 	}
 
 	// Check end of title
-	if len(splitTitle) >= 2 {
-		endSlug := strings.ToLower(strings.Replace(splitTitle[len(splitTitle)-1], " ", "", spaceLimit))
-		endSlugRatio := LevenshteinRatio(endSlug, nakedDomain)
-
-		if endSlugRatio > 0.4 && len(endSlug) >= 5 {
-			// Join all segments except last two (content and separator)
-			if len(splitTitle) >= 3 {
-				return strings.Join(splitTitle[:len(splitTitle)-2], "")
-			}
-		}
+	endSlug := strings.ToLower(strings.Replace(splitTitle[len(splitTitle)-1], " ", "", spaceLimit))
+	endSlugRatio := LevenshteinRatio(endSlug, nakedDomain)
+	if endSlugRatio > 0.4 && len(endSlug) >= 5 {
+		// Join all segments except last two (content and separator)
+		return strings.Join(splitTitle[:len(splitTitle)-2], "")
 	}
 
 	return ""

@@ -164,7 +164,7 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 	}
 
 	imgScores := make(map[string]int)
-	imgArray := make([]interface{}, imgs.Length())
+	imageCount := imgs.Length()
 
 	imgs.Each(func(index int, img *goquery.Selection) {
 		src, exists := img.Attr("src")
@@ -178,7 +178,7 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 		score += scoreByParents(img)
 		score += scoreBySibling(img)
 		score += scoreByDimensions(img)
-		score += int(scoreByPosition(imgArray, index))
+		score += int(scoreByPosition(imageCount, index))
 
 		imgScores[src] = score
 	})
@@ -361,8 +361,8 @@ func scoreByDimensions(img *goquery.Selection) int {
 }
 
 // scoreByPosition gives bonus to images earlier in the content.
-func scoreByPosition(imgs []interface{}, index int) float64 {
-	return float64(len(imgs))/2.0 - float64(index)
+func scoreByPosition(imageCount, index int) float64 {
+	return float64(imageCount)/2.0 - float64(index)
 }
 
 // getSig gets the signature (class + id) of an element for scoring.

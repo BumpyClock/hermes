@@ -26,8 +26,5 @@ func CleanLeadImageURL(imageURL, baseURL string) string {
 		}
 	}
 
-	if validated := CleanLeadImageURLValidated(resolved); validated != nil {
-		return *validated
-	}
-	return ""
+	return CleanLeadImageURLString(resolved)
 }

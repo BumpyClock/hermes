@@ -62,25 +62,16 @@ func main() {
 func runParse(cmd *cobra.Command, args []string) error {
 	urls := args
 
-	// Create hermes client with options
-	clientOptions := []hermes.Option{
-		hermes.WithTimeout(timeout),
-	}
-
-	// Set content type based on output format for the parser
-	// This determines how the content is extracted, not just how it's formatted
+	contentType := "html"
 	switch outputFormat {
-	case "html":
-		clientOptions = append(clientOptions, hermes.WithContentType("html"))
-	case "markdown":
-		clientOptions = append(clientOptions, hermes.WithContentType("markdown"))
-	case "text":
-		clientOptions = append(clientOptions, hermes.WithContentType("text"))
-	default:
-		clientOptions = append(clientOptions, hermes.WithContentType("html"))
+	case "markdown", "text":
+		contentType = outputFormat
 	}
 
-	client := hermes.New(clientOptions...)
+	client := hermes.New(
+		hermes.WithTimeout(timeout),
+		hermes.WithContentType(contentType),
+	)
 
 	// Use batch processing for concurrent parsing
 	results := batchParse(client, urls)

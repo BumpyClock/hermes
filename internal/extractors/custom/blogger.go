@@ -48,9 +48,3 @@ var BloggerCustomExtractor = &CustomExtractor{
 func GetBloggerExtractor() *CustomExtractor {
 	return BloggerCustomExtractor
 }
-
-// GetBlogspotExtractor returns the canonical Blogger custom extractor.
-// Kept as a compatibility alias for older internal tests/tools.
-func GetBlogspotExtractor() *CustomExtractor {
-	return BloggerCustomExtractor
-}

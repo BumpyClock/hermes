@@ -11,7 +11,6 @@ import "sync"
 // TODO: If tests begin calling this helper in parallel, add a mutex or sync.Once
 // reinitialization mechanism to ensure thread-safe reset operations.
 func ResetExtractorsForTest() {
-	allExtractors = nil
 	domainToExtractor = nil
 	extractorOnce = sync.Once{}
 }

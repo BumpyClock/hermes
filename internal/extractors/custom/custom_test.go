@@ -112,13 +112,6 @@ func TestMediumImageTransform(t *testing.T) {
 	}
 }
 
-func BenchmarkGetAllCustomExtractors(b *testing.B) {
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		GetAllCustomExtractors()
-	}
-}
-
 func BenchmarkGetCustomExtractorByDomain(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
