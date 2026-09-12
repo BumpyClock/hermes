@@ -8,7 +8,6 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -113,16 +112,4 @@ func ValidateResponse(response *Response, parseNon200 bool) error {
 	}
 
 	return nil
-}
-
-// BaseDomain extracts the base domain from a host
-// Gets the last two pieces of the URL and joins them back together
-// This is to get 'livejournal.com' from 'erotictrains.livejournal.com'.
-func BaseDomain(host string) string {
-	parts := strings.Split(host, ".")
-	if len(parts) < 2 {
-		return host
-	}
-
-	return strings.Join(parts[len(parts)-2:], ".")
 }

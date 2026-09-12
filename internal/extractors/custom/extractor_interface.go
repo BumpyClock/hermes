@@ -76,12 +76,6 @@ func (ft *FunctionTransform) Transform(selection *goquery.Selection) error {
 	return ft.Fn(selection)
 }
 
-// ExtractorOptions provides configuration for extraction operations.
-type ExtractorOptions struct {
-	ContentType string
-	Extend      map[string]interface{}
-}
-
 // ContentSelectorGroup combines CSS selectors in source order without duplicate elements.
 type ContentSelectorGroup []string
 

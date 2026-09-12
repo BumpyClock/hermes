@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,7 +25,7 @@ func BenchmarkParseHTML(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
+		_, err := p.ParseHTMLWithContext(context.Background(), htmlStr, url, &parser.ParserOptions{})
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -57,7 +58,7 @@ func BenchmarkParseMultipleFixtures(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
+				_, err := p.ParseHTMLWithContext(context.Background(), htmlStr, url, &parser.ParserOptions{})
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -88,7 +89,7 @@ func BenchmarkDifferentContentTypes(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, err := p.ParseHTML(htmlStr, url, &opts)
+				_, err := p.ParseHTMLWithContext(context.Background(), htmlStr, url, &opts)
 				if err != nil {
 					b.Fatal(err)
 				}

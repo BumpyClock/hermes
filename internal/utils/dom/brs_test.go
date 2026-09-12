@@ -106,10 +106,10 @@ func TestBrsToPs(t *testing.T) {
 
 func TestParagraphize(t *testing.T) {
 	tests := []struct {
-		name            string
-		html            string
-		expectedPs      int
-		preservedFormat bool
+		name               string
+		html               string
+		expectedPs         int
+		expectedFormatting map[string]string
 	}{
 		{
 			name: "converts br with following content",
@@ -120,8 +120,8 @@ func TestParagraphize(t *testing.T) {
 				<span>and inline elements</span>
 				<div>Block element stops conversion</div>
 			</body></html>`,
-			expectedPs:      1,
-			preservedFormat: true,
+			expectedPs:         1,
+			expectedFormatting: map[string]string{"strong": "formatting", "span": "and inline elements"},
 		},
 		{
 			name: "handles empty content after br",
@@ -129,8 +129,7 @@ func TestParagraphize(t *testing.T) {
 				<br><br>
 				<div>Immediate block element</div>
 			</body></html>`,
-			expectedPs:      0, // No paragraph created due to immediate block
-			preservedFormat: false,
+			expectedPs: 0, // No paragraph created due to immediate block
 		},
 		{
 			name: "stops at block level elements",
@@ -141,8 +140,8 @@ func TestParagraphize(t *testing.T) {
 				<p>Block paragraph stops here</p>
 				More text after block
 			</body></html>`,
-			expectedPs:      2, // New p + existing p
-			preservedFormat: true,
+			expectedPs:         2, // New p + existing p
+			expectedFormatting: map[string]string{"span": "inline span"},
 		},
 	}
 
@@ -154,19 +153,10 @@ func TestParagraphize(t *testing.T) {
 			result := dom.BrsToPs(doc)
 
 			paragraphs := result.Find("p")
-			assert.GreaterOrEqual(t, paragraphs.Length(), tt.expectedPs, "Should have expected number of paragraphs")
+			assert.Equal(t, tt.expectedPs, paragraphs.Length(), "Should have expected number of paragraphs")
 
-			if tt.preservedFormat {
-				// Check that formatting is preserved in converted paragraphs
-				found := false
-				paragraphs.Each(func(i int, p *goquery.Selection) {
-					if p.Find("strong, span").Length() > 0 {
-						found = true
-					}
-				})
-				if result.Find("strong, span").Length() > 0 {
-					assert.True(t, found, "Should preserve formatting in converted paragraphs")
-				}
+			for selector, expectedText := range tt.expectedFormatting {
+				assert.Equal(t, expectedText, paragraphs.Find(selector).Text(), "Should preserve %s in converted paragraphs", selector)
 			}
 		})
 	}

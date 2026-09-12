@@ -214,7 +214,8 @@ func (s *Server) handleParse(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		targetURL, format, err = s.parseGETParams(r)
+		query := r.URL.Query()
+		targetURL, format = query.Get("url"), query.Get("format")
 	case http.MethodPost:
 		targetURL, format, err = s.parsePOSTParams(r)
 	default:
@@ -243,22 +244,14 @@ func (s *Server) handleParse(w http.ResponseWriter, r *http.Request) {
 		format = "json"
 	}
 
-	// Validate format
-	if !s.isValidFormat(format) {
+	format = strings.ToLower(format)
+	if _, ok := supportedFormats[format]; !ok {
 		s.sendError(w, http.StatusBadRequest, "invalid_format", "Format must be one of: json, html, markdown, text", targetURL, start)
 		return
 	}
-	format = strings.ToLower(format)
 
 	// Parse the URL
 	s.parseURL(w, r, targetURL, format, start)
-}
-
-// parseGETParams extracts parameters from GET request.
-func (s *Server) parseGETParams(r *http.Request) (string, string, error) {
-	targetURL := r.URL.Query().Get("url")
-	format := r.URL.Query().Get("format")
-	return targetURL, format, nil
 }
 
 // parsePOSTParams extracts parameters from POST request JSON body.
@@ -302,11 +295,11 @@ func (s *Server) parseURL(w http.ResponseWriter, r *http.Request, targetURL, for
 	}
 
 	// Send successful response
-	s.sendSuccess(w, result, format, targetURL, start)
+	s.sendSuccess(w, result, format, start)
 }
 
 // sendSuccess sends a successful response in the requested format.
-func (s *Server) sendSuccess(w http.ResponseWriter, result *hermes.Result, format, url string, start time.Time) {
+func (s *Server) sendSuccess(w http.ResponseWriter, result *hermes.Result, format string, start time.Time) {
 	duration := time.Since(start)
 
 	// For non-JSON formats, return content directly
@@ -387,10 +380,4 @@ func (s *Server) isValidURL(rawURL string) bool {
 	}
 
 	return u.Scheme == "http" || u.Scheme == "https"
-}
-
-// isValidFormat validates output format.
-func (s *Server) isValidFormat(format string) bool {
-	_, ok := supportedFormats[strings.ToLower(format)]
-	return ok
 }

@@ -2,6 +2,7 @@ package parser_test
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"strings"
@@ -13,7 +14,7 @@ import (
 func TestParseHTMLDoesNotEmitFetchDebugLogs(t *testing.T) {
 	output := captureStdout(t, func() {
 		p := parser.New()
-		_, err := p.ParseHTML(`
+		_, err := p.ParseHTMLWithContext(context.Background(), `
 			<!doctype html>
 			<html>
 				<head><title>Quiet Article</title></head>

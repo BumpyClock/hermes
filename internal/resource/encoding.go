@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"bufio"
 	"strings"
 
 	"github.com/saintfish/chardet"
@@ -62,32 +61,6 @@ func getEncodingFromContentType(contentType string) encoding.Encoding {
 		if strings.HasPrefix(strings.ToLower(part), "charset=") {
 			charset := strings.TrimPrefix(strings.ToLower(part), "charset=")
 			charset = strings.Trim(charset, "\"'")
-			return getEncodingByName(charset)
-		}
-	}
-
-	return nil
-}
-
-// getEncodingFromHTML tries to extract encoding from HTML meta tags.
-func getEncodingFromHTML(data []byte) encoding.Encoding {
-	// Look for charset in first 1KB of HTML
-	searchData := data
-	if len(searchData) > 1024 {
-		searchData = data[:1024]
-	}
-
-	content := strings.ToLower(string(searchData))
-
-	// Look for <meta charset="...">
-	if idx := strings.Index(content, "charset="); idx != -1 {
-		start := idx + 8
-		end := start
-		for end < len(content) && content[end] != '"' && content[end] != '\'' && content[end] != '>' && content[end] != ' ' {
-			end++
-		}
-		if end > start {
-			charset := content[start:end]
 			return getEncodingByName(charset)
 		}
 	}
@@ -206,42 +179,4 @@ func IsTextContent(contentType string) bool {
 		strings.Contains(contentType, "text/plain") ||
 		strings.Contains(contentType, "application/xml") ||
 		strings.Contains(contentType, "text/xml")
-}
-
-// GetEncodingFromMeta extracts encoding from HTML meta tags
-// This matches the JavaScript getEncoding function behavior.
-func GetEncodingFromMeta(htmlContent string) encoding.Encoding {
-	// First try HTML meta tag parsing
-	if enc := getEncodingFromHTML([]byte(htmlContent)); enc != nil {
-		return enc
-	}
-
-	// Fallback to default
-	return unicode.UTF8
-}
-
-// GetEncodingByCharset returns encoding by charset name (public wrapper).
-func GetEncodingByCharset(charset string) encoding.Encoding {
-	return getEncodingByName(charset)
-}
-
-// NormalizeHTML performs basic HTML normalization.
-func NormalizeHTML(html string) string {
-	// Convert line endings
-	html = strings.ReplaceAll(html, "\r\n", "\n")
-	html = strings.ReplaceAll(html, "\r", "\n")
-
-	// Basic whitespace cleanup
-	scanner := bufio.NewScanner(strings.NewReader(html))
-	var result strings.Builder
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line != "" {
-			result.WriteString(line)
-			result.WriteString("\n")
-		}
-	}
-
-	return result.String()
 }

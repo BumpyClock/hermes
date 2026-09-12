@@ -102,13 +102,11 @@ func TestConstants_Lists(t *testing.T) {
 	assert.Contains(t, dom.STRIP_OUTPUT_TAGS, "script")
 	assert.Contains(t, dom.STRIP_OUTPUT_TAGS, "style")
 
-	assert.NotEmpty(t, dom.WHITELIST_ATTRS)
-	assert.Contains(t, dom.WHITELIST_ATTRS, "src")
-	assert.Contains(t, dom.WHITELIST_ATTRS, "href")
+	assert.True(t, dom.WHITELIST_ATTRS_RE.MatchString("src"))
+	assert.True(t, dom.WHITELIST_ATTRS_RE.MatchString("href"))
 
-	assert.NotEmpty(t, dom.BLOCK_LEVEL_TAGS)
-	assert.Contains(t, dom.BLOCK_LEVEL_TAGS, "div")
-	assert.Contains(t, dom.BLOCK_LEVEL_TAGS, "p")
+	assert.True(t, dom.BLOCK_LEVEL_TAGS_RE.MatchString("div"))
+	assert.True(t, dom.BLOCK_LEVEL_TAGS_RE.MatchString("p"))
 
 	assert.Equal(t, "hermes-parser-keep", dom.KEEP_CLASS)
 }
@@ -138,16 +136,4 @@ func TestConstants_CandidatesRegex(t *testing.T) {
 	for _, testCase := range whitelistCases {
 		assert.True(t, dom.CANDIDATES_WHITELIST.MatchString(testCase), "Should match whitelist: %s", testCase)
 	}
-}
-
-func TestConstants_HelperFunctions(t *testing.T) {
-	// Test helper functions
-	removeSelectors := dom.GetRemoveAttrSelectors()
-	assert.NotEmpty(t, removeSelectors)
-	assert.Contains(t, removeSelectors, "[style]")
-	assert.Contains(t, removeSelectors, "[align]")
-
-	emptySelectors := dom.GetRemoveEmptySelectors()
-	assert.NotEmpty(t, emptySelectors)
-	assert.Contains(t, emptySelectors, "p:empty")
 }

@@ -2,6 +2,8 @@ package resource_test
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,15 +14,6 @@ import (
 
 	"github.com/BumpyClock/hermes/internal/resource"
 )
-
-func TestNewHTTPClient(t *testing.T) {
-	headers := map[string]string{
-		"Custom-Header": "test-value",
-	}
-
-	client := resource.NewHTTPClient(headers)
-	assert.NotNil(t, client)
-}
 
 func TestHTTPClientGet(t *testing.T) {
 	// Create test server
@@ -35,7 +28,7 @@ func TestHTTPClientGet(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := resource.NewHTTPClient(nil)
+	client := resource.CreateDefaultHTTPClient()
 	resp, err := client.Get(context.Background(), server.URL)
 
 	require.NoError(t, err)
@@ -60,7 +53,8 @@ func TestHTTPClientCustomHeaders(t *testing.T) {
 		"X-Custom": customHeader,
 	}
 
-	client := resource.NewHTTPClient(headers)
+	client := resource.CreateDefaultHTTPClient()
+	client.Headers = headers
 	resp, err := client.Get(context.Background(), server.URL)
 
 	require.NoError(t, err)
@@ -81,7 +75,7 @@ func TestHTTPClientRetry(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := resource.NewHTTPClient(nil)
+	client := resource.CreateDefaultHTTPClient()
 	resp, err := client.GetWithRetry(context.Background(), server.URL, 3)
 
 	require.NoError(t, err)
@@ -99,7 +93,7 @@ func TestHTTPClientTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
 
-	client := resource.NewHTTPClient(nil)
+	client := resource.CreateDefaultHTTPClient()
 	_, err := client.Get(ctx, server.URL)
 
 	require.Error(t, err)
@@ -107,14 +101,45 @@ func TestHTTPClientTimeout(t *testing.T) {
 }
 
 func TestHTTPClientError(t *testing.T) {
+	attemptCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attemptCount++
 		w.WriteHeader(http.StatusNotFound)
 	}))
 	defer server.Close()
 
-	client := resource.NewHTTPClient(nil)
+	client := resource.CreateDefaultHTTPClient()
 	_, err := client.Get(context.Background(), server.URL)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "404")
+	require.EqualError(t, err, "failed after 4 attempts: HTTP 404: 404 Not Found")
+	assert.Equal(t, 1, attemptCount)
+}
+
+func TestHTTPClientResponseBodyReadFailure(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		status     int
+		wantError  string
+		wrappedEOF bool
+	}{
+		{"success", http.StatusOK, "failed after 1 attempts: reading response body: unexpected EOF", true},
+		{"client error", http.StatusNotFound, "failed after 1 attempts: HTTP 404: 404 Not Found (failed to read error response)", false},
+		{"server error", http.StatusInternalServerError, "failed after 1 attempts: HTTP 500: 500 Internal Server Error (failed to read error response)", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Length", "100")
+				w.WriteHeader(tc.status)
+				_, _ = w.Write([]byte("truncated"))
+			}))
+			defer server.Close()
+
+			client := resource.CreateDefaultHTTPClient()
+			resp, err := client.GetWithRetry(context.Background(), server.URL, 0)
+
+			require.EqualError(t, err, tc.wantError)
+			assert.Nil(t, resp)
+			assert.Equal(t, tc.wrappedEOF, errors.Is(err, io.ErrUnexpectedEOF))
+		})
+	}
 }

@@ -51,18 +51,6 @@ func CleanLeadImageURLValidated(leadImageURL string) *string {
 	return &trimmed
 }
 
-// isIPAddress checks if a string looks like an IP address
-// Simple heuristic to allow IP addresses in development.
-func isIPAddress(host string) bool {
-	// Simple check: if it contains only digits, dots, and colons (IPv4/IPv6)
-	for _, r := range host {
-		if (r < '0' || r > '9') && r != '.' && r != ':' {
-			return false
-		}
-	}
-	return strings.Count(host, ".") == 3 || strings.Contains(host, ":")
-}
-
 // CleanLeadImageURLString provides a string-returning version for backward compatibility
 // Returns empty string if URL is invalid, cleaned URL if valid.
 func CleanLeadImageURLString(leadImageURL string) string {

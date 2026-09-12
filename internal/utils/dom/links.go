@@ -79,6 +79,7 @@ func absolutizeSet(doc *goquery.Document, baseURL *url.URL) {
 		}
 
 		// JavaScript: const absoluteCandidates = candidates.map(candidate => {
+		unique := make(map[string]bool)
 		var absoluteCandidates []string
 		for _, candidate := range candidates {
 			// a candidate URL cannot start or end with a comma
@@ -92,22 +93,16 @@ func absolutizeSet(doc *goquery.Document, baseURL *url.URL) {
 				// JavaScript: parts[0] = URL.resolve(rootUrl, parts[0]);
 				parts[0] = makeAbsoluteURL(parts[0], baseURL)
 				// JavaScript: return parts.join(' ');
-				absoluteCandidates = append(absoluteCandidates, strings.Join(parts, " "))
+				absoluteCandidate := strings.Join(parts, " ")
+				if !unique[absoluteCandidate] {
+					unique[absoluteCandidate] = true
+					absoluteCandidates = append(absoluteCandidates, absoluteCandidate)
+				}
 			}
 		}
 
 		// JavaScript: const absoluteUrlSet = [...new Set(absoluteCandidates)].join(', ');
-		// Remove duplicates and join
-		unique := make(map[string]bool)
-		var finalCandidates []string
-		for _, candidate := range absoluteCandidates {
-			if !unique[candidate] {
-				unique[candidate] = true
-				finalCandidates = append(finalCandidates, candidate)
-			}
-		}
-
-		absoluteURLSet := strings.Join(finalCandidates, ", ")
+		absoluteURLSet := strings.Join(absoluteCandidates, ", ")
 		element.SetAttr("srcset", absoluteURLSet)
 	})
 }
@@ -142,103 +137,4 @@ func makeAbsoluteURL(href string, base *url.URL) string {
 	// Resolve against base URL
 	absoluteURL := base.ResolveReference(relativeURL)
 	return absoluteURL.String()
-}
-
-// ArticleBaseURL extracts the base URL for the article, removing fragments and query parameters.
-func ArticleBaseURL(rawURL string) string {
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return rawURL
-	}
-
-	// Remove fragment and query
-	parsedURL.Fragment = ""
-	parsedURL.RawQuery = ""
-
-	return parsedURL.String()
-}
-
-// RemoveAnchor removes the anchor/fragment from a URL.
-func RemoveAnchor(rawURL string) string {
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return rawURL
-	}
-
-	parsedURL.Fragment = ""
-	return parsedURL.String()
-}
-
-// ValidateURL checks if a URL is valid and well-formed.
-func ValidateURL(rawURL string) bool {
-	if rawURL == "" {
-		return false
-	}
-
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return false
-	}
-
-	// Must have a scheme and host
-	if parsedURL.Scheme == "" || parsedURL.Host == "" {
-		return false
-	}
-
-	// Must be http or https
-	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-		return false
-	}
-
-	return true
-}
-
-// GetDomain extracts the domain from a URL.
-func GetDomain(rawURL string) string {
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return ""
-	}
-
-	// Remove www. prefix if present
-	host := parsedURL.Host
-	return strings.TrimPrefix(host, "www.")
-}
-
-// GetBaseDomain extracts the base domain (removing subdomains) from a URL.
-func GetBaseDomain(rawURL string) string {
-	domain := GetDomain(rawURL)
-	if domain == "" {
-		return ""
-	}
-
-	// Simple logic: if there are more than 2 parts, take the last 2
-	parts := strings.Split(domain, ".")
-	if len(parts) >= 2 {
-		return strings.Join(parts[len(parts)-2:], ".")
-	}
-
-	return domain
-}
-
-// SanitizeURL cleans up a URL by removing tracking parameters and normalizing.
-func SanitizeURL(rawURL string) string {
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return rawURL
-	}
-
-	// Remove common tracking parameters
-	trackingParams := []string{
-		"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
-		"fbclid", "gclid", "ref", "source", "campaign",
-	}
-
-	query := parsedURL.Query()
-	for _, param := range trackingParams {
-		query.Del(param)
-	}
-
-	parsedURL.RawQuery = query.Encode()
-	return parsedURL.String()
 }

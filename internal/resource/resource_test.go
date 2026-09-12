@@ -206,7 +206,8 @@ func TestFetchResource_PreservesClientHeaders(t *testing.T) {
 			}))
 			defer server.Close()
 
-			client := resource.NewHTTPClient(test.clientHeaders)
+			client := resource.CreateDefaultHTTPClient()
+			client.Headers = test.clientHeaders
 			defer client.Client.CloseIdleConnections()
 			clientHeaders := maps.Clone(client.Headers)
 			requestHeaders := maps.Clone(test.headers)
@@ -235,10 +236,11 @@ func TestFetchResource_RequestHeadersDoNotLeakToNextRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := resource.NewHTTPClient(map[string]string{
+	client := resource.CreateDefaultHTTPClient()
+	client.Headers = map[string]string{
 		"X-Shared":   "client",
 		"User-Agent": "ClientAgent",
-	})
+	}
 	defer client.Client.CloseIdleConnections()
 	clientHeaders := maps.Clone(client.Headers)
 
@@ -290,49 +292,14 @@ func TestValidateResponse_NonOKStatus(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBaseDomain(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"www.example.com", "example.com"},
-		{"subdomain.example.com", "example.com"},
-		{"deep.subdomain.example.com", "example.com"},
-		{"example.com", "example.com"},
-		{"localhost", "localhost"},
-	}
-
-	for _, test := range tests {
-		result := resource.BaseDomain(test.input)
-		assert.Equal(t, test.expected, result, "BaseDomain(%s)", test.input)
-	}
-}
-
 func TestResource_GenerateDoc_InvalidContent(t *testing.T) {
-
-	result := &resource.Response{
-		StatusCode: 200,
-		Headers: http.Header{
-			"Content-Type": []string{"application/json"},
-		},
-		Body: []byte("not html content"),
-	}
-
-	_, err := resource.PrepareDocument(context.Background(), result.Body, result.GetContentType(), false)
+	_, err := resource.PrepareDocument(context.Background(), []byte("not html content"), "application/json", false)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "does not appear to be text")
 }
 
 func TestPrepareDocument_BareText(t *testing.T) {
-	result := &resource.Response{
-		StatusCode: 200,
-		Headers: http.Header{
-			"Content-Type": []string{"text/html"},
-		},
-		Body: []byte("not html at all"),
-	}
-
-	doc, err := resource.PrepareDocument(context.Background(), result.Body, result.GetContentType(), false)
+	doc, err := resource.PrepareDocument(context.Background(), []byte("not html at all"), "text/html", false)
 	require.NoError(t, err)
 	require.NotNil(t, doc)
 	assert.Equal(t, "not html at all", doc.Find("body").Text())
@@ -375,15 +342,7 @@ func TestResource_Create_EncodingMismatch(t *testing.T) {
 </html>`
 
 	// Simulate server response with different encoding
-	result := &resource.Response{
-		StatusCode: 200,
-		Headers: http.Header{
-			"Content-Type": []string{"text/html; charset=utf-8"},
-		},
-		Body: []byte(htmlWithMetaCharset),
-	}
-
-	doc, err := resource.PrepareDocument(context.Background(), result.Body, result.GetContentType(), false)
+	doc, err := resource.PrepareDocument(context.Background(), []byte(htmlWithMetaCharset), "text/html; charset=utf-8", false)
 	require.NoError(t, err)
 
 	// Should have normalized the meta tag

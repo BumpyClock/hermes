@@ -34,35 +34,15 @@ func New(opts ...*ParserOptions) *Hermes {
 	return &Hermes{options: options}
 }
 
-// Parse extracts content from a URL.
-func (h *Hermes) Parse(targetURL string, opts *ParserOptions) (*Result, error) {
-	return h.ParseWithContext(context.Background(), targetURL, opts)
-}
-
-// ParseHTML extracts content from supplied HTML.
-func (h *Hermes) ParseHTML(html, targetURL string, opts *ParserOptions) (*Result, error) {
-	return h.ParseHTMLWithContext(context.Background(), html, targetURL, opts)
-}
-
 // ParseWithContext extracts content from a URL with context support.
 func (h *Hermes) ParseWithContext(ctx context.Context, targetURL string, opts *ParserOptions) (*Result, error) {
 	if opts == nil {
 		opts = &h.options
 	}
 	// Validate URL
-	parsedURL, err := url.Parse(targetURL)
+	parsedURL, err := parseAndValidateURL(ctx, targetURL, opts.AllowPrivateNetworks)
 	if err != nil {
 		return nil, err
-	}
-
-	// Use unified URL validation
-	validationOpts := validation.DefaultValidationOptions()
-	validationOpts.AllowPrivateNetworks = opts.AllowPrivateNetworks
-	validationOpts.AllowLocalhost = opts.AllowPrivateNetworks // Localhost should be allowed when private networks are allowed
-
-	validationErr := validation.ValidateParsedURL(ctx, parsedURL, targetURL, validationOpts)
-	if validationErr != nil {
-		return nil, fmt.Errorf("URL validation failed: %w", validationErr)
 	}
 
 	// Use centralized HTTP client creation
@@ -83,17 +63,9 @@ func (h *Hermes) ParseHTMLWithContext(ctx context.Context, html, targetURL strin
 		opts = &h.options
 	}
 	// Validate URL
-	parsedURL, err := url.Parse(targetURL)
+	parsedURL, err := parseAndValidateURL(ctx, targetURL, opts.AllowPrivateNetworks)
 	if err != nil {
 		return nil, err
-	}
-
-	validationOpts := validation.DefaultValidationOptions()
-	validationOpts.AllowPrivateNetworks = opts.AllowPrivateNetworks
-	validationOpts.AllowLocalhost = opts.AllowPrivateNetworks
-	validationErr := validation.ValidateParsedURL(ctx, parsedURL, targetURL, validationOpts)
-	if validationErr != nil {
-		return nil, fmt.Errorf("URL validation failed: %w", validationErr)
 	}
 
 	// HTML input is already prepared, so no HTTP client is needed for this path.
@@ -104,4 +76,20 @@ func (h *Hermes) ParseHTMLWithContext(ctx context.Context, html, targetURL strin
 
 	// Use the real extraction logic with context
 	return h.extractAllFieldsWithContext(ctx, doc, targetURL, parsedURL, *opts)
+}
+
+func parseAndValidateURL(ctx context.Context, targetURL string, allowPrivateNetworks bool) (*url.URL, error) {
+	parsedURL, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, err
+	}
+
+	validationOpts := validation.DefaultValidationOptions()
+	validationOpts.AllowPrivateNetworks = allowPrivateNetworks
+	validationOpts.AllowLocalhost = allowPrivateNetworks
+	if err := validation.ValidateParsedURL(ctx, parsedURL, targetURL, validationOpts); err != nil {
+		return nil, fmt.Errorf("URL validation failed: %w", err)
+	}
+
+	return parsedURL, nil
 }

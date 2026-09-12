@@ -114,10 +114,9 @@ func TestResource_InternationalContent_Windows1251(t *testing.T) {
 
 func TestResource_EncodingDetection_Various(t *testing.T) {
 	tests := []struct {
-		name        string
-		charset     string
-		content     string
-		expectError bool
+		name    string
+		charset string
+		content string
 	}{
 		{
 			name:    "UTF-8",
@@ -156,16 +155,12 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 
 			doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.NotNil(t, doc)
+			require.NoError(t, err)
+			assert.NotNil(t, doc)
 
-				// Should at least parse successfully
-				title := doc.Find("title").Text()
-				assert.Equal(t, "Test", title)
-			}
+			// Should at least parse successfully
+			title := doc.Find("title").Text()
+			assert.Equal(t, "Test", title)
 		})
 	}
 }

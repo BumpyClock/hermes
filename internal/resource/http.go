@@ -15,13 +15,6 @@ type HTTPClient struct {
 	Headers map[string]string // Exported for external use
 }
 
-// NewHTTPClient creates a new HTTP client with sensible defaults.
-func NewHTTPClient(headers map[string]string) *HTTPClient {
-	client := CreateDefaultHTTPClient()
-	client.Headers = headers
-	return client
-}
-
 // Get performs a GET request with optional retries.
 func (c *HTTPClient) Get(ctx context.Context, url string) (*Response, error) {
 	return c.GetWithRetry(ctx, url, 3)
@@ -86,33 +79,25 @@ func (c *HTTPClient) doRequest(ctx context.Context, url string) (*Response, erro
 		return nil, fmt.Errorf("performing request: %w", err)
 	}
 
-	// Check for HTTP errors
-	if resp.StatusCode >= 400 {
-		// Read error response body using pooled buffer for better error reporting
-		errorBody, readErr := pools.GlobalResponseBodyPool.ReadResponseBody(resp)
-		if readErr != nil {
-			return nil, fmt.Errorf("HTTP %d: %s (failed to read error response)", resp.StatusCode, resp.Status)
-		}
-		return &Response{
-			StatusCode: resp.StatusCode,
-			Status:     resp.Status,
-			Headers:    resp.Header,
-			Body:       errorBody,
-		}, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
-	}
-
 	// Read response body using pooled buffer for efficiency
 	body, err := pools.GlobalResponseBodyPool.ReadResponseBody(resp)
 	if err != nil {
+		if resp.StatusCode >= 400 {
+			return nil, fmt.Errorf("HTTP %d: %s (failed to read error response)", resp.StatusCode, resp.Status)
+		}
 		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 
-	return &Response{
+	response := &Response{
 		StatusCode: resp.StatusCode,
 		Status:     resp.Status,
 		Headers:    resp.Header,
 		Body:       body,
-	}, nil
+	}
+	if resp.StatusCode >= 400 {
+		return response, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+	}
+	return response, nil
 }
 
 // Response represents an HTTP response.

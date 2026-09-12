@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestParseHTMLUsesGothamistTransformsForImageCaptions(t *testing.T) {
-	result, err := New().ParseHTML(`
+	result, err := New().ParseHTMLWithContext(context.Background(), `
 		<html><body>
 			<h1>Gothamist headline</h1>
 			<div class="article-body">
@@ -26,16 +27,13 @@ func TestParseHTMLUsesGothamistTransformsForImageCaptions(t *testing.T) {
 	if result.ExtractorUsed != "custom:gothamist.com" {
 		t.Fatalf("extractor used %q, want custom:gothamist.com", result.ExtractorUsed)
 	}
-	if !strings.Contains(result.Content, "<figure>") || !strings.Contains(result.Content, "<figcaption>Photo caption</figcaption>") {
-		t.Fatalf("Gothamist image transform missing: %q", result.Content)
-	}
 	if !strings.Contains(result.Content, "<figure><img src=\"https://gothamist.com/photo.jpg\" alt=\"Photo\"/><figcaption>Photo caption</figcaption></figure>") {
 		t.Fatalf("Gothamist image/caption nesting incorrect: %q", result.Content)
 	}
 }
 
 func TestCustomExtractorPreservesRawContentSelectorFallbackOrder(t *testing.T) {
-	result, err := New().ParseHTML(`
+	result, err := New().ParseHTMLWithContext(context.Background(), `
 		<html><body>
 			<article><p class="gallery">discarded()</p></article>
 			<div itemprop="articleBody"><p>fallback content must not be selected</p></div>
@@ -63,7 +61,7 @@ func TestCustomContentFallbackDefaults(t *testing.T) {
 		{name: "explicit no fallback", opts: ParserOptions{ContentType: "html", Fallback: false}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := New().ParseHTML(`<html><body><main><p>Short generic fallback.</p></main></body></html>`, "https://arstechnica.com/example", &test.opts)
+			result, err := New().ParseHTMLWithContext(context.Background(), `<html><body><main><p>Short generic fallback.</p></main></body></html>`, "https://arstechnica.com/example", &test.opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -116,7 +114,7 @@ func TestContentElementsForSelectorGroupsPreserveSourceOrderAndDeduplicate(t *te
 }
 
 func TestParseHTMLUsesStringSliceContentSelectorGroup(t *testing.T) {
-	result, err := New().ParseHTML(`
+	result, err := New().ParseHTMLWithContext(context.Background(), `
 		<html><body><section>
 			<header><h1>Grouped selector headline</h1></header>
 			<h2>Section heading</h2>
@@ -281,9 +279,6 @@ func TestProcessCustomContentCleanRemovesSelectedTopLevelElement(t *testing.T) {
 	if doc.Find("article").Length() != 1 || doc.Find("article p").Text() != "content" {
 		t.Fatalf("cleaning mutated source DOM: %q", doc.Text())
 	}
-	if !strings.Contains(source, "<article><p>content</p></article>") {
-		t.Fatalf("source article/text was modified: %q", source)
-	}
 }
 
 func TestProcessCustomContentSkipsDefaultCleanerWhenDisabled(t *testing.T) {
@@ -398,7 +393,7 @@ func TestProcessCustomContentPropagatesTransformErrors(t *testing.T) {
 }
 
 func TestCustomMetadataSelectorPriorityAndDateAcceptance(t *testing.T) {
-	result, err := New().ParseHTML(`<html><body>
+	result, err := New().ParseHTMLWithContext(context.Background(), `<html><body>
 		<h1 data-testid="headline">Primary headline</h1>
 		<h1 class="g-headline">Later headline</h1>
 		<meta name="author" value=" ">
@@ -422,7 +417,7 @@ func TestCustomMetadataSelectorPriorityAndDateAcceptance(t *testing.T) {
 }
 
 func TestGeniusMetadataDoesNotApplyUnsupportedTransforms(t *testing.T) {
-	result, err := New().ParseHTML(`<html><head>
+	result, err := New().ParseHTMLWithContext(context.Background(), `<html><head>
 		<meta itemprop="page_data" value='{"song":{"release_date":"2026-09-07","album":{"cover_art_url":"https://genius.com/image.jpg"}}}'>
 	</head><body><h1>Song title</h1></body></html>`, "https://genius.com/example", &ParserOptions{ContentType: "html", Fallback: false})
 	if err != nil {

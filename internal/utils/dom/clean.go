@@ -78,11 +78,6 @@ func CleanHeaders(doc *goquery.Document, title string) *goquery.Document {
 	return doc
 }
 
-// CleanHeadersWithoutTitle is a convenience function for when title is not available.
-func CleanHeadersWithoutTitle(doc *goquery.Document) *goquery.Document {
-	return CleanHeaders(doc, "")
-}
-
 // removeUnlessContent implements the JavaScript removeUnlessContent logic exactly
 // JavaScript: function removeUnlessContent($node, $, weight).
 func removeUnlessContent(node *goquery.Selection, weight int) bool {

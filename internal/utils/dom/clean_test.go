@@ -116,7 +116,7 @@ func TestCleanHeaders(t *testing.T) {
 			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tt.html))
 			require.NoError(t, err)
 
-			result := dom.CleanHeadersWithoutTitle(doc)
+			result := dom.CleanHeaders(doc, "")
 
 			// Count remaining headers
 			headers := result.Find("h2, h3, h4, h5, h6")
@@ -655,7 +655,7 @@ func TestCleaningPipeline(t *testing.T) {
 	result := dom.StripJunkTags(doc)
 	result = dom.StripUnlikelyCandidates(result)
 	result = dom.CleanAttributes(result)
-	result = dom.CleanHeadersWithoutTitle(result)
+	result = dom.CleanHeaders(result, "")
 	result = dom.CleanTags(result)
 	result = dom.RemoveEmpty(result)
 	result = dom.CleanImages(result)
@@ -701,7 +701,7 @@ func BenchmarkCleaningFunctions(b *testing.B) {
 	b.Run("CleanHeaders", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
-			dom.CleanHeadersWithoutTitle(doc)
+			dom.CleanHeaders(doc, "")
 		}
 	})
 
@@ -717,7 +717,7 @@ func BenchmarkCleaningFunctions(b *testing.B) {
 			doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
 			doc = dom.StripJunkTags(doc)
 			doc = dom.CleanAttributes(doc)
-			doc = dom.CleanHeadersWithoutTitle(doc)
+			doc = dom.CleanHeaders(doc, "")
 			doc = dom.CleanTags(doc)
 			doc = dom.RemoveEmpty(doc)
 			dom.CleanImages(doc)

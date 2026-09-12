@@ -46,7 +46,7 @@ Read [extractor documentation](docs/api/extractors.md) for custom extractor chan
 Read [contributor guidance](docs/development/contributing.md) for test and contribution conventions.
 Update the affected documentation when behavior or public API contracts change.
 
-Register new custom extractors in `GetAllCustomExtractors`.
+Register new custom extractors in `buildAllExtractors` in `internal/extractors/custom/index.go`.
 Test site selectors and transforms against local fixtures.
 Preserve SSRF denial behavior and context propagation across HTTP requests.
 The public `Result` does not expose the internal pagination URL.

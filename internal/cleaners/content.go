@@ -128,9 +128,10 @@ func cleanImagesInSelection(selection *goquery.Selection) {
 		height, _ := img.Attr("height")
 
 		// Check if it's a spacer by name
-		if strings.Contains(strings.ToLower(src), "spacer") ||
-			strings.Contains(strings.ToLower(src), "blank") ||
-			strings.Contains(strings.ToLower(src), "clear.gif") {
+		lowerSrc := strings.ToLower(src)
+		if strings.Contains(lowerSrc, "spacer") ||
+			strings.Contains(lowerSrc, "blank") ||
+			strings.Contains(lowerSrc, "clear.gif") {
 			img.Remove()
 			return
 		}
@@ -352,7 +353,7 @@ func removeEmptyInSelection(selection *goquery.Selection) {
 	selection.Find("p, div, span").Each(func(i int, elem *goquery.Selection) {
 		text := strings.TrimSpace(elem.Text())
 		// Remove if empty or only whitespace/br tags
-		if text == "" || text == "\n" {
+		if text == "" {
 			// Check if it only contains br tags or whitespace
 			html, _ := elem.Html()
 			cleanHTML := strings.TrimSpace(html)
@@ -364,9 +365,6 @@ func removeEmptyInSelection(selection *goquery.Selection) {
 }
 
 func cleanAttributesInSelection(selection *goquery.Selection) {
-	// Keep only essential attributes
-	keepAttrs := []string{"href", "src", "alt", "title", "srcset"}
-
 	selection.Find("*").Each(func(i int, elem *goquery.Selection) {
 		// Get all current attributes
 		node := elem.Get(0)
@@ -377,19 +375,9 @@ func cleanAttributesInSelection(selection *goquery.Selection) {
 		// Collect attributes to remove
 		var attrsToRemove []string
 		for _, attr := range node.Attr {
-			keep := false
-			for _, keepAttr := range keepAttrs {
-				if attr.Key == keepAttr {
-					keep = true
-					break
-				}
-			}
-			// Also keep data-content-score and class (for hermes-parser-keep)
-			if attr.Key == "data-content-score" || attr.Key == "class" {
-				keep = true
-			}
-
-			if !keep {
+			switch attr.Key {
+			case "href", "src", "alt", "title", "srcset", "data-content-score", "class":
+			default:
 				attrsToRemove = append(attrsToRemove, attr.Key)
 			}
 		}

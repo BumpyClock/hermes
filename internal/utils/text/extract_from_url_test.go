@@ -118,31 +118,25 @@ func TestExtractFromURL(t *testing.T) {
 
 	// Test case 6: Empty inputs
 	t.Run("handles empty inputs", func(t *testing.T) {
-		// Empty URL
-		result, found := ExtractFromURL("", []*regexp.Regexp{regexp.MustCompile(`/(20\d{2})/`)})
-		if found {
-			t.Error("Expected no match for empty URL")
+		tests := []struct {
+			name     string
+			url      string
+			patterns []*regexp.Regexp
+		}{
+			{"empty URL", "", []*regexp.Regexp{regexp.MustCompile(`/(20\d{2})/`)}},
+			{"empty regex list", "https://example.com/2023/article", []*regexp.Regexp{}},
+			{"nil regex list", "https://example.com/2023/article", nil},
 		}
-		if result != "" {
-			t.Errorf("Expected empty string, got '%s'", result)
-		}
-
-		// Empty regex list
-		result, found = ExtractFromURL("https://example.com/2023/article", []*regexp.Regexp{})
-		if found {
-			t.Error("Expected no match for empty regex list")
-		}
-		if result != "" {
-			t.Errorf("Expected empty string, got '%s'", result)
-		}
-
-		// Nil regex list
-		result, found = ExtractFromURL("https://example.com/2023/article", nil)
-		if found {
-			t.Error("Expected no match for nil regex list")
-		}
-		if result != "" {
-			t.Errorf("Expected empty string, got '%s'", result)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				result, found := ExtractFromURL(tt.url, tt.patterns)
+				if found {
+					t.Error("Expected no match")
+				}
+				if result != "" {
+					t.Errorf("Expected empty string, got '%s'", result)
+				}
+			})
 		}
 	})
 

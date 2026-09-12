@@ -18,7 +18,7 @@ func TestErrorCodeClassification(t *testing.T) {
 		name         string
 		setupFunc    func() (string, context.Context)
 		expectedCode ErrorCode
-		shouldError  bool
+		blockPrivate bool
 	}{
 		{
 			name: "ErrInvalidURL - empty URL",
@@ -26,7 +26,6 @@ func TestErrorCodeClassification(t *testing.T) {
 				return "", context.Background()
 			},
 			expectedCode: ErrInvalidURL,
-			shouldError:  true,
 		},
 		{
 			name: "ErrTimeout - context deadline exceeded",
@@ -44,7 +43,6 @@ func TestErrorCodeClassification(t *testing.T) {
 				return server.URL, ctx
 			},
 			expectedCode: ErrTimeout,
-			shouldError:  true,
 		},
 		{
 			name: "ErrTimeout - context canceled",
@@ -62,16 +60,14 @@ func TestErrorCodeClassification(t *testing.T) {
 				return server.URL, ctx
 			},
 			expectedCode: ErrTimeout,
-			shouldError:  true,
 		},
 		{
 			name: "ErrSSRF - private network blocked",
 			setupFunc: func() (string, context.Context) {
-				// This test needs a client that blocks private networks, so we'll handle this specially
-				return "SSRF_TEST_SPECIAL", context.Background()
+				return "http://192.168.1.1/test", context.Background()
 			},
 			expectedCode: ErrSSRF,
-			shouldError:  true,
+			blockPrivate: true,
 		},
 		{
 			name: "ErrFetch - network error",
@@ -80,7 +76,6 @@ func TestErrorCodeClassification(t *testing.T) {
 				return "http://thisdoesnotexist.invalid/test", context.Background()
 			},
 			expectedCode: ErrFetch,
-			shouldError:  true,
 		},
 		{
 			name: "ErrFetch - connection refused",
@@ -89,7 +84,6 @@ func TestErrorCodeClassification(t *testing.T) {
 				return "http://localhost:99999/test", context.Background()
 			},
 			expectedCode: ErrFetch,
-			shouldError:  true,
 		},
 	}
 
@@ -97,47 +91,36 @@ func TestErrorCodeClassification(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			url, ctx := tt.setupFunc()
 
-			// Handle SSRF test specially - needs a client that blocks private networks
 			testClient := client
-			if url == "SSRF_TEST_SPECIAL" {
-				testClient = New()              // Default client blocks private networks
-				url = "http://192.168.1.1/test" // Use private IP to trigger SSRF
+			if tt.blockPrivate {
+				testClient = New()
 			}
 
 			result, err := testClient.Parse(ctx, url)
-
-			if !tt.shouldError {
-				if err != nil {
-					t.Fatalf("Expected no error, got: %v", err)
-				}
-				if result == nil {
-					t.Fatal("Expected result, got nil")
-				}
-				return
-			}
-
-			// Should have error
-			if err == nil {
-				t.Fatal("Expected error, got none")
-			}
-
-			// Check error type
-			var parseErr *ParseError
-			if !errors.As(err, &parseErr) {
-				t.Fatalf("Expected ParseError, got: %T", err)
-			}
-
-			if parseErr.Code != tt.expectedCode {
-				t.Errorf("Expected error code %d (%s), got %d (%s). Error: %v",
-					tt.expectedCode, tt.expectedCode.String(),
-					parseErr.Code, parseErr.Code.String(),
-					parseErr.Error())
-			}
-
-			if result != nil {
-				t.Errorf("Expected nil result on error, got: %v", result)
-			}
+			assertParseFailure(t, result, err, tt.expectedCode, "Parse")
 		})
+	}
+}
+
+func assertParseFailure(t *testing.T, result *Result, err error, expectedCode ErrorCode, expectedOp string) {
+	t.Helper()
+	if err == nil {
+		t.Fatal("Expected error, got none")
+	}
+	var parseErr *ParseError
+	if !errors.As(err, &parseErr) {
+		t.Fatalf("Expected ParseError, got: %T", err)
+	}
+	if parseErr.Code != expectedCode {
+		t.Errorf("Expected error code %d (%s), got %d (%s). Error: %v",
+			expectedCode, expectedCode.String(),
+			parseErr.Code, parseErr.Code.String(), parseErr)
+	}
+	if result != nil {
+		t.Errorf("Expected nil result on error, got: %v", result)
+	}
+	if parseErr.Op != expectedOp {
+		t.Errorf("Expected operation %q, got %q", expectedOp, parseErr.Op)
 	}
 }
 
@@ -248,26 +231,7 @@ func TestParseHTMLErrorHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := client.ParseHTML(ctx, tt.html, tt.url)
 
-			if err == nil {
-				t.Fatal("Expected error, got none")
-			}
-
-			var parseErr *ParseError
-			if !errors.As(err, &parseErr) {
-				t.Fatalf("Expected ParseError, got: %T", err)
-			}
-
-			if parseErr.Code != tt.expectedCode {
-				t.Errorf("Expected error code %d, got %d", tt.expectedCode, parseErr.Code)
-			}
-
-			if parseErr.Op != "ParseHTML" {
-				t.Errorf("Expected operation 'ParseHTML', got '%s'", parseErr.Op)
-			}
-
-			if result != nil {
-				t.Error("Expected nil result on error")
-			}
+			assertParseFailure(t, result, err, tt.expectedCode, "ParseHTML")
 		})
 	}
 }
@@ -290,22 +254,7 @@ func TestContextCancellationErrorClassification(t *testing.T) {
 
 		result, err := client.Parse(ctx, server.URL)
 
-		if err == nil {
-			t.Fatal("Expected timeout error, got none")
-		}
-
-		var parseErr *ParseError
-		if !errors.As(err, &parseErr) {
-			t.Fatalf("Expected ParseError, got: %T", err)
-		}
-
-		if parseErr.Code != ErrTimeout {
-			t.Errorf("Expected ErrTimeout, got %d", parseErr.Code)
-		}
-
-		if result != nil {
-			t.Error("Expected nil result on timeout")
-		}
+		assertParseFailure(t, result, err, ErrTimeout, "Parse")
 	})
 
 	t.Run("context canceled", func(t *testing.T) {
@@ -316,23 +265,7 @@ func TestContextCancellationErrorClassification(t *testing.T) {
 
 		result, err := client.Parse(ctx, server.URL)
 
-		if err == nil {
-			t.Fatal("Expected cancellation error, got none")
-		}
-
-		var parseErr *ParseError
-		if !errors.As(err, &parseErr) {
-			t.Fatalf("Expected ParseError, got: %T", err)
-		}
-
-		// Context cancellation should be classified as timeout
-		if parseErr.Code != ErrTimeout {
-			t.Errorf("Expected ErrTimeout for cancellation, got %d", parseErr.Code)
-		}
-
-		if result != nil {
-			t.Error("Expected nil result on cancellation")
-		}
+		assertParseFailure(t, result, err, ErrTimeout, "Parse")
 	})
 }
 
@@ -345,43 +278,24 @@ func TestNetworkErrorClassification(t *testing.T) {
 		name         string
 		url          string
 		expectedCode ErrorCode
-		description  string
 	}{
 		{
 			name:         "DNS resolution failure",
 			url:          "http://definitely-does-not-exist.invalid",
 			expectedCode: ErrFetch,
-			description:  "non-existent domain should trigger DNS error",
 		},
 		{
 			name:         "Connection refused",
 			url:          "http://localhost:99999",
 			expectedCode: ErrFetch,
-			description:  "unused port should trigger connection refused",
 		},
-		// Note: Private network test moved to separate function since this client allows private networks
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := client.Parse(ctx, tt.url)
 
-			if err == nil {
-				t.Fatalf("Expected error for %s, got none", tt.description)
-			}
-
-			var parseErr *ParseError
-			if !errors.As(err, &parseErr) {
-				t.Fatalf("Expected ParseError, got: %T", err)
-			}
-
-			if parseErr.Code != tt.expectedCode {
-				t.Errorf("Expected error code %d for %s, got %d", tt.expectedCode, tt.description, parseErr.Code)
-			}
-
-			if result != nil {
-				t.Error("Expected nil result on error")
-			}
+			assertParseFailure(t, result, err, tt.expectedCode, "Parse")
 		})
 	}
 }
@@ -396,19 +310,16 @@ func TestSSRFProtectionNetworkErrors(t *testing.T) {
 		name         string
 		url          string
 		expectedCode ErrorCode
-		description  string
 	}{
 		{
 			name:         "Private network blocked",
 			url:          "http://192.168.1.1",
 			expectedCode: ErrSSRF,
-			description:  "private IP should be blocked by SSRF protection",
 		},
 		{
 			name:         "Localhost blocked",
 			url:          "http://127.0.0.1:8080",
 			expectedCode: ErrSSRF,
-			description:  "localhost should be blocked by SSRF protection",
 		},
 	}
 
@@ -416,22 +327,7 @@ func TestSSRFProtectionNetworkErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := client.Parse(ctx, tt.url)
 
-			if err == nil {
-				t.Fatalf("Expected error for %s, got none", tt.description)
-			}
-
-			var parseErr *ParseError
-			if !errors.As(err, &parseErr) {
-				t.Fatalf("Expected ParseError, got: %T", err)
-			}
-
-			if parseErr.Code != tt.expectedCode {
-				t.Errorf("Expected error code %d for %s, got %d. Error: %v", tt.expectedCode, tt.description, parseErr.Code, parseErr.Error())
-			}
-
-			if result != nil {
-				t.Error("Expected nil result on error")
-			}
+			assertParseFailure(t, result, err, tt.expectedCode, "Parse")
 		})
 	}
 }
