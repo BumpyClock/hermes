@@ -9,35 +9,33 @@ var PopSugarCustomExtractor = &CustomExtractor{
 	Domain: "www.popsugar.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h2.post-title",
-			"title-text",
+		Selectors: []SelectorEntry{
+			{Selector: "h2.post-title"},
+			{Selector: "title-text"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#content"},
 		},
 
 		// Clean selectors - remove unwanted elements

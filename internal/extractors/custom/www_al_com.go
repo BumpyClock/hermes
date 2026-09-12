@@ -9,35 +9,33 @@ func GetWwwAlComExtractor() *CustomExtractor {
 		Domain: "www.al.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"title\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"title\"]", Attribute: "value"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"article_author\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"article_author\"]", Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"article_date_original\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"article_date_original\"]", Attribute: "value"},
 			},
 			// Note: timezone: 'EST' is handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".entry-content",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".entry-content"},
 			},
 
 			Transforms: map[string]TransformFunction{

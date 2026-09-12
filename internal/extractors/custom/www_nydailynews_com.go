@@ -9,38 +9,36 @@ func GetNYDailyNewsExtractor() *CustomExtractor {
 		Domain: "www.nydailynews.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.headline",
-				"h1#ra-headline",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.headline"},
+				{Selector: "h1#ra-headline"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				".article_byline span",
-				[]string{`meta[name="parsely-author"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: ".article_byline span"},
+				{Selector: `meta[name="parsely-author"]`, Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				"time",
-				[]string{`meta[name="sailthru.date"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "time"},
+				{Selector: `meta[name="sailthru.date"]`, Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"article",
-					"article#ra-body",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"article"},
+				{"article#ra-body"},
 			},
 
 			Transforms: map[string]TransformFunction{

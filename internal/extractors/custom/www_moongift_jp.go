@@ -9,14 +9,14 @@ var WwwMoongiftJpExtractor = &CustomExtractor{
 	Domain: "www.moongift.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.title a",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.title a"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"ul.meta li:not(.social):first-of-type",
+		Selectors: []SelectorEntry{
+			{Selector: "ul.meta li:not(.social):first-of-type"},
 		},
 
 		// timezone: 'Asia/Tokyo' in JavaScript - note: Go implementation handles timezone in date cleaner
@@ -24,22 +24,20 @@ var WwwMoongiftJpExtractor = &CustomExtractor{
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:description\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#main",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#main"},
 		},
 
 		// Clean service promotion content

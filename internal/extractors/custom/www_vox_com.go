@@ -13,28 +13,26 @@ var VoxCustomExtractor = &CustomExtractor{
 	Domain: "www.vox.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1[class*=\"h74scy\"]",
-			"h1.c-page-title", // Legacy fallback
+		Selectors: []SelectorEntry{
+			{Selector: "h1[class*=\"h74scy\"]"},
+			{Selector: "h1.c-page-title"}, // Legacy fallback
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".duet--article--article-body-component",
-				"div[id*='zephr-anchor']",
-				".duet--layout--entry-body",
-				// Legacy selectors as fallback
-				[]string{"figure.e-image--hero", ".c-entry-content"},
-				".c-entry-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".duet--article--article-body-component"},
+			{"div[id*='zephr-anchor']"},
+			{".duet--layout--entry-body"},
+			// Legacy selectors as fallback
+			{"figure.e-image--hero", ".c-entry-content"},
+			{".c-entry-content"},
 		},
 
 		// Transform functions for Vox-specific content
@@ -63,21 +61,21 @@ var VoxCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"p[class*=\"h74scyi\"]", // Modern Vox subtitle
-			".p-dek",                // Legacy fallback
+		Selectors: []SelectorEntry{
+			{Selector: "p[class*=\"h74scyi\"]"}, // Modern Vox subtitle
+			{Selector: ".p-dek"},                // Legacy fallback
 		},
 	},
 }

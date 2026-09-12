@@ -9,37 +9,35 @@ func GetNPRExtractor() *CustomExtractor {
 		Domain: "www.npr.org",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1",
-				".storytitle",
+			Selectors: []SelectorEntry{
+				{Selector: "h1"},
+				{Selector: ".storytitle"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"p.byline__name.byline__name--block",
+			Selectors: []SelectorEntry{
+				{Selector: "p.byline__name.byline__name--block"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`.dateblock time[datetime]`, "datetime"},
-				[]string{`meta[name="date"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `.dateblock time[datetime]`, Attribute: "datetime"},
+				{Selector: `meta[name="date"]`, Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
-				[]string{`meta[name="twitter:image:src"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
+				{Selector: `meta[name="twitter:image:src"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".storytext",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".storytext"},
 			},
 
 			Transforms: map[string]TransformFunction{

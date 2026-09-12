@@ -9,37 +9,35 @@ var MashableComExtractor = &CustomExtractor{
 	Domain: "mashable.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"header h1",
-			"h1.title",
+		Selectors: []SelectorEntry{
+			{Selector: "header h1"},
+			{Selector: "h1.title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:author\"]", "value"},
-			"span.author_name a",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
+			{Selector: "span.author_name a"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#article",
-				"section.article-content.blueprint",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#article"},
+			{"section.article-content.blueprint"},
 		},
 
 		// Transform functions for Mashable-specific content

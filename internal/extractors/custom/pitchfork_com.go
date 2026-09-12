@@ -9,55 +9,53 @@ var PitchforkCustomExtractor = &CustomExtractor{
 	Domain: "pitchfork.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:title\"]", "value"},
-			"title",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
+			{Selector: "title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:author\"]", "value"},
-			".authors-detail__display-name",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
+			{Selector: ".authors-detail__display-name"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"div[class^=\"InfoSliceWrapper-\"]",
-			[]string{".pub-date", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "div[class^=\"InfoSliceWrapper-\"]"},
+			{Selector: ".pub-date", Attribute: "datetime"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:description\"]", "value"},
-			".review-detail__abstract",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:description\"]", Attribute: "value"},
+			{Selector: ".review-detail__abstract"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
-			[]string{".single-album-tombstone__art img", "src"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
+			{Selector: ".single-album-tombstone__art img", Attribute: "src"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.body__inner-container",
-				".review-detail__text",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.body__inner-container"},
+			{".review-detail__text"},
 		},
 	},
 
 	// Extended fields for music review scores
 	Extend: map[string]*FieldExtractor{
 		"score": {
-			Selectors: []interface{}{
-				"p[class*=\"Rating\"]",
-				".score",
+			Selectors: []SelectorEntry{
+				{Selector: "p[class*=\"Rating\"]"},
+				{Selector: ".score"},
 			},
 		},
 	},

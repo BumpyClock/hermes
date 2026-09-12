@@ -9,35 +9,33 @@ func GetWwwBroadwayworldComExtractor() *CustomExtractor {
 		Domain: "www.broadwayworld.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1[itemprop=headline]",
-				"h1.article-title",
+			Selectors: []SelectorEntry{
+				{Selector: "h1[itemprop=headline]"},
+				{Selector: "h1.article-title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"span[itemprop=author]",
+			Selectors: []SelectorEntry{
+				{Selector: "span[itemprop=author]"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[itemprop=datePublished]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[itemprop=datePublished]", Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div[itemprop=articlebody]",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div[itemprop=articlebody]"},
 			},
 
 			Transforms: map[string]TransformFunction{

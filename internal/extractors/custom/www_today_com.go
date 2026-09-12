@@ -9,38 +9,36 @@ func GetWwwTodayComExtractor() *CustomExtractor {
 		Domain: "www.today.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.article-hero-headline__htag",
-				"h1.entry-headline",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.article-hero-headline__htag"},
+				{Selector: "h1.entry-headline"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"span.byline-name",
-				[]string{"meta[name=\"author\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "span.byline-name"},
+				{Selector: "meta[name=\"author\"]", Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				"time[datetime]",
-				[]string{"meta[name=\"DC.date.issued\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "time[datetime]"},
+				{Selector: "meta[name=\"DC.date.issued\"]", Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div.article-body__content",
-					".entry-container",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div.article-body__content"},
+				{".entry-container"},
 			},
 
 			Transforms: map[string]TransformFunction{

@@ -9,25 +9,23 @@ var TheAtlanticCustomExtractor = &CustomExtractor{
 	Domain: "www.theatlantic.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			".c-article-header__hed",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: ".c-article-header__hed"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
-			".c-byline__author",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
+			{Selector: ".c-byline__author"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"article",
-				".article-body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"article"},
+			{".article-body"},
 		},
 
 		// Clean selectors - remove unwanted elements
@@ -44,20 +42,20 @@ var TheAtlanticCustomExtractor = &CustomExtractor{
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"description\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time[itemprop=\"datePublished\"]", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "time[itemprop=\"datePublished\"]", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

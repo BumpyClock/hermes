@@ -17,22 +17,20 @@ var MediumCustomExtractor = &CustomExtractor{
 	Domain: "medium.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			[]string{"meta[name=\"og:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{"article"},
-		},
+		Selectors: []ContentSelectorGroup{{"article"}},
 
 		// Clean selectors - remove unwanted elements
 		Clean: []string{"button", "svg", `[class*="follow"]`},
@@ -68,14 +66,14 @@ var MediumCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

@@ -9,36 +9,34 @@ var GetnewsJpExtractor = &CustomExtractor{
 	Domain: "getnews.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"article h1",
+		Selectors: []SelectorEntry{
+			{Selector: "article h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:author\"]", "value"},
-			"span.prof",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
+			{Selector: "span.prof"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
-			[]string{"ul.cattag-top time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+			{Selector: "ul.cattag-top time", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.post-bodycopy",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.post-bodycopy"},
 		},
 	},
 }

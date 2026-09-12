@@ -9,36 +9,34 @@ var FandomWikiaCustomExtractor = &CustomExtractor{
 	Domain: "fandom.wikia.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.entry-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.entry-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".author vcard",
-			".fn",
+		Selectors: []SelectorEntry{
+			{Selector: ".author vcard"},
+			{Selector: ".fn"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".grid-content",
-				".entry-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".grid-content"},
+			{".entry-content"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

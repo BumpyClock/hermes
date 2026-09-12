@@ -15,13 +15,10 @@ var NYMagCustomExtractor = &CustomExtractor{
 	Domain: "nymag.com",
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			// Order by most likely. Extractor will stop on first occurrence
-			Selectors: []interface{}{
-				"div.article-content",
-				"section.body",
-				"article.article",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.article-content"},
+			{"section.body"},
+			{"article.article"},
 		},
 
 		// Selectors to remove from the extracted content
@@ -43,30 +40,30 @@ var NYMagCustomExtractor = &CustomExtractor{
 	},
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.lede-feature-title",
-			"h1.headline-primary",
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.lede-feature-title"},
+			{Selector: "h1.headline-primary"},
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".by-authors",
-			".lede-feature-author",
+		Selectors: []SelectorEntry{
+			{Selector: ".by-authors"},
+			{Selector: ".lede-feature-author"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".lede-feature-teaser",
+		Selectors: []SelectorEntry{
+			{Selector: ".lede-feature-teaser"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time.article-timestamp[datetime]", "datetime"},
-			"time.article-timestamp",
+		Selectors: []SelectorEntry{
+			{Selector: "time.article-timestamp[datetime]", Attribute: "datetime"},
+			{Selector: "time.article-timestamp"},
 		},
 	},
 }

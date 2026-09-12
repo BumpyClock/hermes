@@ -9,22 +9,22 @@ var SectIijAdJpExtractor = &CustomExtractor{
 	Domain: "sect.iij.ad.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.title-box-inner h1",
-			"h3",
+		Selectors: []SelectorEntry{
+			{Selector: "div.title-box-inner h1"},
+			{Selector: "h3"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"p.post-author a",
-			"dl.entrydate dd",
+		Selectors: []SelectorEntry{
+			{Selector: "p.post-author a"},
+			{Selector: "dl.entrydate dd"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"time",
+		Selectors: []SelectorEntry{
+			{Selector: "time"},
 		},
 		// JavaScript: format: 'YYYY年MM月DD日', timezone: 'Asia/Tokyo'
 		// Go handles Japanese date formats and timezone automatically
@@ -33,17 +33,15 @@ var SectIijAdJpExtractor = &CustomExtractor{
 	// Dek is null in JavaScript
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".entry-inner",
-				"#article",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".entry-inner"},
+			{"#article"},
 		},
 
 		// Clean selectors

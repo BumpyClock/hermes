@@ -9,41 +9,39 @@ var WwwSbnationComExtractor = &CustomExtractor{
 	Domain: "www.sbnation.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.c-page-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.c-page-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"p.c-entry-summary.p-dek",
-			"h2.c-entry-summary.p-dek",
+		Selectors: []SelectorEntry{
+			{Selector: "p.c-entry-summary.p-dek"},
+			{Selector: "h2.c-entry-summary.p-dek"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.c-entry-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.c-entry-content"},
 		},
 	},
 }

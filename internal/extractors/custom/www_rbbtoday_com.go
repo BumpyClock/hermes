@@ -9,41 +9,39 @@ var WwwRbbtodayComExtractor = &CustomExtractor{
 	Domain: "www.rbbtoday.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".writer.writer-name",
+		Selectors: []SelectorEntry{
+			{Selector: ".writer.writer-name"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"header time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "header time", Attribute: "datetime"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"description\"]", "value"},
-			".arti-summary",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"description\"]", Attribute: "value"},
+			{Selector: ".arti-summary"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".arti-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".arti-content"},
 		},
 
 		// Clean promotional content

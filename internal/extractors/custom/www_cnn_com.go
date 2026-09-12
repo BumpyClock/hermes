@@ -15,39 +15,37 @@ func GetCNNExtractor() *CustomExtractor {
 		Domain: "www.cnn.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.pg-headline",
-				"h1",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.pg-headline"},
+				{Selector: "h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="author"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="author"]`, Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="article:published_time"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="article:published_time"]`, Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					// More specific selector to grab lead image and body
-					[]string{".media__video--thumbnail", ".zn-body-text"},
-					// Fallback for the above
-					".zn-body-text",
-					`div[itemprop="articleBody"]`,
-				},
+			Selectors: []ContentSelectorGroup{
+				// More specific selector to grab lead image and body
+				{".media__video--thumbnail", ".zn-body-text"},
+				// Fallback for the above
+				{".zn-body-text"},
+				{`div[itemprop="articleBody"]`},
 			},
 
 			Transforms: map[string]TransformFunction{

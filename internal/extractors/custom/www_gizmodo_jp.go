@@ -15,34 +15,32 @@ var WwwGizmodoJpExtractor = &CustomExtractor{
 	Domain: "www.gizmodo.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.p-post-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.p-post-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"li.p-post-AssistAuthor",
+		Selectors: []SelectorEntry{
+			{Selector: "li.p-post-AssistAuthor"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"li.p-post-AssistTime time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "li.p-post-AssistTime time", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"article.p-post",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"article.p-post"},
 		},
 
 		// Transform functions for Gizmodo Japan-specific content

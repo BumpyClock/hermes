@@ -13,42 +13,40 @@ var NewsMynaviJpExtractor = &CustomExtractor{
 	Domain: "news.mynavi.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"a.articleHeader_name",
-			"main div.article-author a.article-author__name",
+		Selectors: []SelectorEntry{
+			{Selector: "a.articleHeader_name"},
+			{Selector: "main div.article-author a.article-author__name"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:description\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.article-body",
-				"main article div",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.article-body"},
+			{"main article div"},
 		},
 
 		// Transform functions for MyNavi News-specific lazy loaded images

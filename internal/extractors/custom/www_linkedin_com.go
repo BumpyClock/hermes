@@ -9,27 +9,25 @@ var LinkedInCustomExtractor = &CustomExtractor{
 	Domain: "www.linkedin.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			".article-title",
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: ".article-title"},
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".main-author-card h3",
-			[]string{"meta[name=\"article:author\"]", "value"},
-			".entity-name a[rel=author]",
+		Selectors: []SelectorEntry{
+			{Selector: ".main-author-card h3"},
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
+			{Selector: ".entity-name a[rel=author]"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article-content__body",
-				[]string{"header figure", ".prose"},
-				".prose",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article-content__body"},
+			{"header figure", ".prose"},
+			{".prose"},
 		},
 
 		// Clean selectors - remove unwanted elements
@@ -39,16 +37,16 @@ var LinkedInCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".base-main-card__metadata",
-			[]string{`time[itemprop="datePublished"]`, "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: ".base-main-card__metadata"},
+			{Selector: `time[itemprop="datePublished"]`, Attribute: "datetime"},
 		},
 		// Timezone from JavaScript: 'America/Los_Angeles'
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

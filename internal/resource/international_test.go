@@ -11,7 +11,6 @@ import (
 )
 
 func TestResource_InternationalContent_UTF8(t *testing.T) {
-	r := resource.NewResource()
 
 	// UTF-8 content with various international characters
 	htmlContent := `<!DOCTYPE html>
@@ -36,7 +35,7 @@ func TestResource_InternationalContent_UTF8(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
 
@@ -61,7 +60,6 @@ func TestResource_InternationalContent_UTF8(t *testing.T) {
 }
 
 func TestResource_InternationalContent_ISO88591(t *testing.T) {
-	r := resource.NewResource()
 
 	// HTML that declares ISO-8859-1 encoding
 	htmlContent := `<!DOCTYPE html>
@@ -76,7 +74,7 @@ func TestResource_InternationalContent_ISO88591(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
 
@@ -90,7 +88,6 @@ func TestResource_InternationalContent_ISO88591(t *testing.T) {
 }
 
 func TestResource_InternationalContent_Windows1251(t *testing.T) {
-	r := resource.NewResource()
 
 	// HTML with Windows-1251 (Cyrillic) encoding declaration
 	htmlContent := `<!DOCTYPE html>
@@ -106,7 +103,7 @@ func TestResource_InternationalContent_Windows1251(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, doc)
 
@@ -144,8 +141,6 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 		},
 	}
 
-	r := resource.NewResource()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			htmlContent := `<!DOCTYPE html>
@@ -159,7 +154,7 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 </body>
 </html>`
 
-			doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+			doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -176,7 +171,6 @@ func TestResource_EncodingDetection_Various(t *testing.T) {
 }
 
 func TestResource_LazyImages_International(t *testing.T) {
-	r := resource.NewResource()
 
 	// HTML with lazy images and international URLs
 	htmlContent := `<!DOCTYPE html>
@@ -192,7 +186,7 @@ func TestResource_LazyImages_International(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 
 	// Check that lazy images with international URLs were processed
@@ -207,7 +201,6 @@ func TestResource_LazyImages_International(t *testing.T) {
 }
 
 func TestResource_MetaTags_International(t *testing.T) {
-	r := resource.NewResource()
 
 	// HTML with international OpenGraph and meta tags
 	htmlContent := `<!DOCTYPE html>
@@ -224,7 +217,7 @@ func TestResource_MetaTags_International(t *testing.T) {
 </body>
 </html>`
 
-	doc, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+	doc, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 	require.NoError(t, err)
 
 	// Check that international content in meta tags is preserved
@@ -243,7 +236,6 @@ func TestResource_MetaTags_International(t *testing.T) {
 
 // Benchmark with international content.
 func BenchmarkResource_InternationalContent(b *testing.B) {
-	r := resource.NewResource()
 
 	htmlContent := `<!DOCTYPE html>
 <html>
@@ -267,7 +259,7 @@ func BenchmarkResource_InternationalContent(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := r.Create(context.Background(), "http://example.com", htmlContent, nil, nil)
+		_, err := resource.CreateDocument(context.Background(), "http://example.com", htmlContent, nil, nil, nil)
 		if err != nil {
 			b.Fatal(err)
 		}

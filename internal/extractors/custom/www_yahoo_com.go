@@ -9,34 +9,32 @@ func GetWwwYahooComExtractor() *CustomExtractor {
 		Domain: "www.yahoo.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"header.canvas-header",
+			Selectors: []SelectorEntry{
+				{Selector: "header.canvas-header"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"span.provider-name",
+			Selectors: []SelectorEntry{
+				{Selector: "span.provider-name"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"time.date[datetime]", "datetime"},
+			Selectors: []SelectorEntry{
+				{Selector: "time.date[datetime]", Attribute: "datetime"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".content-canvas",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".content-canvas"},
 			},
 
 			Transforms: map[string]TransformFunction{

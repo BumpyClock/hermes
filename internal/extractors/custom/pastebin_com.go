@@ -9,24 +9,22 @@ var PastebinCustomExtractor = &CustomExtractor{
 	Domain: "pastebin.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".username",
-			".paste_box_line2 .t_us + a",
+		Selectors: []SelectorEntry{
+			{Selector: ".username"},
+			{Selector: ".paste_box_line2 .t_us + a"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".source",
-				"#selectable .text",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".source"},
+			{"#selectable .text"},
 		},
 
 		// Transform functions for Pastebin code content
@@ -44,17 +42,17 @@ var PastebinCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".date",
-			".paste_box_line2 .t_da + span",
+		Selectors: []SelectorEntry{
+			{Selector: ".date"},
+			{Selector: ".paste_box_line2 .t_da + span"},
 		},
 		// Timezone from JavaScript: 'America/New_York'
 		// Format from JavaScript: 'MMMM D, YYYY'
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

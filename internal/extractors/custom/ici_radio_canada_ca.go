@@ -9,44 +9,42 @@ var IciRadioCanadaCaExtractor = &CustomExtractor{
 	Domain: "ici.radio-canada.ca",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"dc.creator\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"dc.creator\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"section.document-content-style",
-				[]string{".main-multimedia-item", ".news-story-content"},
-			},
+		Selectors: []ContentSelectorGroup{
+			{"section.document-content-style"},
+			{".main-multimedia-item", ".news-story-content"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"dc.date.created\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"dc.date.created\"]", Attribute: "value"},
 		},
 		// Note: JavaScript version has format: 'YYYY-MM-DD|HH[h]mm' and timezone: 'America/New_York'
 		// This is handled by dateparse library in Go which can parse various formats automatically
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.lead-container",
-			".bunker-component.lead",
+		Selectors: []SelectorEntry{
+			{Selector: "div.lead-container"},
+			{Selector: ".bunker-component.lead"},
 		},
 	},
 }

@@ -9,22 +9,20 @@ var BiorxivOrgExtractor = &CustomExtractor{
 	Domain: "biorxiv.org",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1#page-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1#page-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.highwire-citation-biorxiv-article-top > div.highwire-cite-authors",
+		Selectors: []SelectorEntry{
+			{Selector: "div.highwire-citation-biorxiv-article-top > div.highwire-cite-authors"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div#abstract-1",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div#abstract-1"},
 		},
 	},
 }

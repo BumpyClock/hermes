@@ -9,28 +9,26 @@ var WwwYomiuriCoJpExtractor = &CustomExtractor{
 	Domain: "www.yomiuri.co.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.title-article.c-article-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.title-article.c-article-title"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.p-main-contents",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.p-main-contents"},
 		},
 	},
 }

@@ -13,16 +13,14 @@ var TwitterCustomExtractor = &CustomExtractor{
 	Domain: "twitter.com",
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".tweet.permalink-tweet .username",
+		Selectors: []SelectorEntry{
+			{Selector: ".tweet.permalink-tweet .username"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				`.permalink[role=main]`,
-			},
+		Selectors: []ContentSelectorGroup{
+			{`.permalink[role=main]`},
 		},
 		DisableDefaultCleaner: true,
 
@@ -48,8 +46,8 @@ var TwitterCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{`.permalink-tweet ._timestamp[data-time-ms]`, "data-time-ms"},
+		Selectors: []SelectorEntry{
+			{Selector: `.permalink-tweet ._timestamp[data-time-ms]`, Attribute: "data-time-ms"},
 		},
 	},
 }

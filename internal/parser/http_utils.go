@@ -6,15 +6,17 @@ package parser
 import "github.com/BumpyClock/hermes/internal/resource"
 
 // ensureHTTPClient ensures we have a proper HTTPClient wrapper, creating a default if needed.
-func ensureHTTPClient(opts *ParserOptions) *resource.HTTPClient {
-	if opts.HTTPClient != nil {
-		return &resource.HTTPClient{
-			Client:  opts.HTTPClient,
-			Headers: opts.Headers,
-		}
+func (h *Hermes) ensureHTTPClient(opts *ParserOptions) *resource.HTTPClient {
+	client := opts.HTTPClient
+	if client == nil {
+		h.defaultHTTPClientOnce.Do(func() {
+			h.defaultHTTPClient = resource.CreateDefaultHTTPClient().Client
+		})
+		client = h.defaultHTTPClient
 	}
 
-	defaultClient := resource.CreateDefaultHTTPClient()
-	defaultClient.Headers = opts.Headers
-	return defaultClient
+	return &resource.HTTPClient{
+		Client:  client,
+		Headers: opts.Headers,
+	}
 }

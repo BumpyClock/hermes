@@ -31,39 +31,37 @@ var DeadspinComExtractor = &CustomExtractor{
 	},
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"header h1",
-			"h1.headline",
+		Selectors: []SelectorEntry{
+			{Selector: "header h1"},
+			{Selector: "h1.headline"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"a[data-ga*=\"Author\"]",
-			".author",
+		Selectors: []SelectorEntry{
+			{Selector: "a[data-ga*=\"Author\"]"},
+			{Selector: ".author"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
-			[]string{"time.updated[datetime]", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+			{Selector: "time.updated[datetime]", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".js_post-content",
-				".post-content",
-				".entry-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".js_post-content"},
+			{".post-content"},
+			{".entry-content"},
 		},
 
 		// Transform functions for Deadspin-specific content

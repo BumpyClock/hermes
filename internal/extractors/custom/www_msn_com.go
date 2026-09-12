@@ -9,28 +9,26 @@ func GetWwwMsnComExtractor() *CustomExtractor {
 		Domain: "www.msn.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1",
+			Selectors: []SelectorEntry{
+				{Selector: "h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"span.authorname-txt",
+			Selectors: []SelectorEntry{
+				{Selector: "span.authorname-txt"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				"span.time",
+			Selectors: []SelectorEntry{
+				{Selector: "span.time"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div.richtext",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div.richtext"},
 			},
 
 			Transforms: map[string]TransformFunction{

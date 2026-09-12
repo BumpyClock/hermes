@@ -83,10 +83,7 @@ func runParse(cmd *cobra.Command, args []string) error {
 	client := hermes.New(clientOptions...)
 
 	// Use batch processing for concurrent parsing
-	results, err := batchParse(client, urls)
-	if err != nil {
-		return err
-	}
+	results := batchParse(client, urls)
 
 	// Filter out failed results for output
 	var successfulResults []ParseResult
@@ -136,7 +133,7 @@ type ParseResult struct {
 }
 
 // batchParse processes multiple URLs concurrently using semaphore pattern.
-func batchParse(client *hermes.Client, urls []string) ([]ParseResult, error) {
+func batchParse(client hermes.Parser, urls []string) []ParseResult {
 	results := make([]ParseResult, len(urls))
 	sem := make(chan struct{}, concurrency) // Semaphore for concurrency control
 	var wg sync.WaitGroup
@@ -167,7 +164,13 @@ func batchParse(client *hermes.Client, urls []string) ([]ParseResult, error) {
 	}
 
 	wg.Wait()
-	return results, nil
+	return results
+}
+
+type batchOutput struct {
+	ParseTime string         `json:"parseTime"`
+	Result    *hermes.Result `json:"result"`
+	URL       string         `json:"url"`
 }
 
 // formatOutput formats the successful results according to the output format.
@@ -189,12 +192,12 @@ func formatOutput(results []ParseResult, singleURL bool) error {
 		}
 	} else {
 		// Multiple URLs - create JSON array with metadata
-		var allResults []interface{}
+		var allResults []batchOutput
 		for _, result := range results {
-			allResults = append(allResults, map[string]interface{}{
-				"url":       result.URL,
-				"parseTime": result.ParseTime.String(),
-				"result":    result.Result,
+			allResults = append(allResults, batchOutput{
+				ParseTime: result.ParseTime.String(),
+				Result:    result.Result,
+				URL:       result.URL,
 			})
 		}
 		output, err = json.MarshalIndent(allResults, "", "  ")

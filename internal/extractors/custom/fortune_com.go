@@ -9,37 +9,35 @@ func GetFortuneComExtractor() *CustomExtractor {
 		Domain: "fortune.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1",
+			Selectors: []SelectorEntry{
+				{Selector: "h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="author"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="author"]`, Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				".MblGHNMJ",
+			Selectors: []SelectorEntry{
+				{Selector: ".MblGHNMJ"},
 			},
 			// JavaScript equivalent: timezone: 'UTC'
 			// Note: Timezone handling would be implemented in date parsing logic
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					[]string{"picture", "article.row"}, // Multi-match selector: [picture, article.row]
-					"article.row",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"picture", "article.row"}, // Multi-match selector: [picture, article.row]
+				{"article.row"},
 			},
 
 			Transforms: map[string]TransformFunction{

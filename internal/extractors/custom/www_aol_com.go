@@ -9,35 +9,33 @@ func GetWwwAolComExtractor() *CustomExtractor {
 		Domain: "www.aol.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.p-article__title",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.p-article__title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"author\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"author\"]", Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				".p-article__byline__date",
+			Selectors: []SelectorEntry{
+				{Selector: ".p-article__byline__date"},
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".article-content",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".article-content"},
 			},
 
 			Transforms: map[string]TransformFunction{

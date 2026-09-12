@@ -9,39 +9,37 @@ func GetWwwRawstoryComExtractor() *CustomExtractor {
 		Domain: "www.rawstory.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:title\"]", "value"},
-				".blog-title",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
+				{Selector: ".blog-title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.main-post-head .social-author__name",
-				".blog-author a:first-of-type",
+			Selectors: []SelectorEntry{
+				{Selector: "div.main-post-head .social-author__name"},
+				{Selector: ".blog-author a:first-of-type"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"article:published_time\"]", "value"},
-				".blog-author a:last-of-type",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+				{Selector: ".blog-author a:last-of-type"},
 			},
 			// Note: timezone: 'EST' is handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".post-body",
-					".blog-content",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".post-body"},
+				{".blog-content"},
 			},
 
 			Transforms: map[string]TransformFunction{

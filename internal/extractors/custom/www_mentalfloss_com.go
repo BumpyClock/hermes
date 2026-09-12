@@ -9,41 +9,39 @@ func GetWwwMentalflossComExtractor() *CustomExtractor {
 		Domain: "www.mentalfloss.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:title\"]", "value"},
-				"h1.title",
-				".title-group",
-				".inner",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
+				{Selector: "h1.title"},
+				{Selector: ".title-group"},
+				{Selector: ".inner"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"a[data-vars-label*=\"authors\"]",
-				".field-name-field-enhanced-authors",
+			Selectors: []SelectorEntry{
+				{Selector: "a[data-vars-label*=\"authors\"]"},
+				{Selector: ".field-name-field-enhanced-authors"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"article:published_time\"]", "value"},
-				".date-display-single",
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+				{Selector: ".date-display-single"},
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"article main",
-					"div.field.field-name-body",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"article main"},
+				{"div.field.field-name-body"},
 			},
 
 			Transforms: map[string]TransformFunction{

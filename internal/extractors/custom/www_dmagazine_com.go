@@ -9,41 +9,39 @@ func GetWwwDmagazineComExtractor() *CustomExtractor {
 		Domain: "www.dmagazine.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.story__title",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.story__title"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				".story__info .story__info__item:first-child",
+			Selectors: []SelectorEntry{
+				{Selector: ".story__info .story__info__item:first-child"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				".story__info",
+			Selectors: []SelectorEntry{
+				{Selector: ".story__info"},
 			},
 			// Note: timezone: 'America/Chicago' and format: 'MMMM D, YYYY h:mm a' are handled by date cleaner in Go version
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				".story__subhead",
+			Selectors: []SelectorEntry{
+				{Selector: ".story__subhead"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"article figure a:first-child", "href"},
+			Selectors: []SelectorEntry{
+				{Selector: "article figure a:first-child", Attribute: "href"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".story__content",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".story__content"},
 			},
 
 			Transforms: map[string]TransformFunction{

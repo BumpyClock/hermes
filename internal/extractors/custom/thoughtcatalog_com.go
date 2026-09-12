@@ -9,25 +9,23 @@ var ThoughtCatalogCustomExtractor = &CustomExtractor{
 	Domain: "thoughtcatalog.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.title",
-			[]string{"meta[name=\"og:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "h1.title"},
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"cite a",
-			"div.col-xs-12.article_header div.writer-container.writer-container-inline.writer-no-avatar h4.writer-name",
-			"h1.writer-name",
+		Selectors: []SelectorEntry{
+			{Selector: "cite a"},
+			{Selector: "div.col-xs-12.article_header div.writer-container.writer-container-inline.writer-no-avatar h4.writer-name"},
+			{Selector: "h1.writer-name"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".entry.post",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".entry.post"},
 		},
 
 		// Clean selectors - remove unwanted elements
@@ -38,14 +36,14 @@ var ThoughtCatalogCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 }

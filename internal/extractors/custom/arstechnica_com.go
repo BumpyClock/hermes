@@ -13,40 +13,38 @@ var ArstechnicaComExtractor = &CustomExtractor{
 	Domain: "arstechnica.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{"article h1", "h1", "title"},
+		Selectors: []SelectorEntry{{Selector: "article h1"}, {Selector: "h1"}, {Selector: "title"}},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
-			"*[rel=\"author\"] *[itemprop=\"name\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
+			{Selector: "*[rel=\"author\"] *[itemprop=\"name\"]"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{".byline time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: ".byline time", Attribute: "datetime"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"h2[itemprop=\"description\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "h2[itemprop=\"description\"]"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"article",
-				"div[itemprop=\"articleBody\"]",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"article"},
+			{"div[itemprop=\"articleBody\"]"},
 		},
 
 		// Transform functions for Ars Technica-specific content

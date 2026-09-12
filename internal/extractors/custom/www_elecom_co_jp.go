@@ -13,23 +13,21 @@ func GetWwwElecomCoJpExtractor() *CustomExtractor {
 		Domain: "www.elecom.co.jp",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"title",
+			Selectors: []SelectorEntry{
+				{Selector: "title"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				"p.section-last",
+			Selectors: []SelectorEntry{
+				{Selector: "p.section-last"},
 			},
 			// Note: format: 'YYYY.MM.DD' and timezone: 'Asia/Tokyo' are handled by date cleaner in Go version
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"td.TableMain2",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"td.TableMain2"},
 			},
 			DisableDefaultCleaner: true, // JavaScript disables default cleaning.
 

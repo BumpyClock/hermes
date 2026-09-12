@@ -9,35 +9,33 @@ var USMagazineCustomExtractor = &CustomExtractor{
 	Domain: "www.usmagazine.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"header h1",
+		Selectors: []SelectorEntry{
+			{Selector: "header h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"a.author",
-			"a.article-byline.tracked-offpage",
+		Selectors: []SelectorEntry{
+			{Selector: "a.author"},
+			{Selector: "a.article-byline.tracked-offpage"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.article-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.article-content"},
 		},
 
 		// Clean selectors - remove unwanted elements

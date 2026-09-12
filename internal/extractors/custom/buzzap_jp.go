@@ -9,28 +9,26 @@ var BuzzapJpExtractor = &CustomExtractor{
 	Domain: "buzzap.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.entry-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.entry-title"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time.entry-date", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "time.entry-date", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.ctiframe",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.ctiframe"},
 		},
 
 		// defaultCleaner: false in JavaScript

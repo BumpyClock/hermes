@@ -9,29 +9,27 @@ var WwwJnsaOrgExtractor = &CustomExtractor{
 	Domain: "www.jnsa.org",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"#wgtitle h2",
+		Selectors: []SelectorEntry{
+			{Selector: "#wgtitle h2"},
 		},
 	},
 
 	// Author is null in JavaScript
 	Excerpt: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:description\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#main_area",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#main_area"},
 		},
 
 		// Clean selectors

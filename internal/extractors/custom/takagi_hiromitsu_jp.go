@@ -9,30 +9,28 @@ var TakagihiromitsuJpExtractor = &CustomExtractor{
 	Domain: "takagi-hiromitsu.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h3",
+		Selectors: []SelectorEntry{
+			{Selector: "h3"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[http-equiv=\"Last-Modified\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[http-equiv=\"Last-Modified\"]", Attribute: "value"},
 		},
 	},
 
 	// Dek is null in JavaScript
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.body"},
 		},
 		DisableDefaultCleaner: true,
 	},

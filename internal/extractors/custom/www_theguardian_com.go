@@ -9,44 +9,42 @@ func GetTheGuardianExtractor() *CustomExtractor {
 		Domain: "www.theguardian.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1",
-				".content__headline",
+			Selectors: []SelectorEntry{
+				{Selector: "h1"},
+				{Selector: ".content__headline"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				`address[data-link-name="byline"]`,
-				"p.byline",
+			Selectors: []SelectorEntry{
+				{Selector: `address[data-link-name="byline"]`},
+				{Selector: "p.byline"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="article:published_time"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="article:published_time"]`, Attribute: "value"},
 			},
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				`div[data-gu-name="standfirst"]`,
-				".content__standfirst",
+			Selectors: []SelectorEntry{
+				{Selector: `div[data-gu-name="standfirst"]`},
+				{Selector: ".content__standfirst"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"#maincontent",
-					".content__article-body",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"#maincontent"},
+				{".content__article-body"},
 			},
 
 			Transforms: map[string]TransformFunction{

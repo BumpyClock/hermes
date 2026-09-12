@@ -9,42 +9,40 @@ func GetReutersExtractor() *CustomExtractor {
 		Domain: "www.reuters.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				`h1[data-testid="Heading"]`,
-				`h1[class*="ArticleHeader-headline-"]`,
-				"h1.article-headline",
+			Selectors: []SelectorEntry{
+				{Selector: `h1[data-testid="Heading"]`},
+				{Selector: `h1[class*="ArticleHeader-headline-"]`},
+				{Selector: "h1.article-headline"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				`[data-testid="AuthorName"]`,
-				[]string{`meta[name="article:author"]`, "value"},
-				[]string{`meta[name="og:article:author"]`, "value"},
-				".author",
+			Selectors: []SelectorEntry{
+				{Selector: `[data-testid="AuthorName"]`},
+				{Selector: `meta[name="article:author"]`, Attribute: "value"},
+				{Selector: `meta[name="og:article:author"]`, Attribute: "value"},
+				{Selector: ".author"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="article:published_time"]`, "value"},
-				[]string{`meta[name="og:article:published_time"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="article:published_time"]`, Attribute: "value"},
+				{Selector: `meta[name="og:article:published_time"]`, Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					`[data-testid="ArticleBody"]`,
-					"div.ArticleBodyWrapper",
-					"#article-text",
-				},
+			Selectors: []ContentSelectorGroup{
+				{`[data-testid="ArticleBody"]`},
+				{"div.ArticleBodyWrapper"},
+				{"#article-text"},
 			},
 
 			Transforms: map[string]TransformFunction{

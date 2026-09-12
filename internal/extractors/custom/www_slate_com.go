@@ -9,42 +9,40 @@ func GetWwwSlateComExtractor() *CustomExtractor {
 		Domain: "www.slate.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				".hed",
-				"h1",
+			Selectors: []SelectorEntry{
+				{Selector: ".hed"},
+				{Selector: "h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				"a[rel=author]",
+			Selectors: []SelectorEntry{
+				{Selector: "a[rel=author]"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				".pub-date",
+			Selectors: []SelectorEntry{
+				{Selector: ".pub-date"},
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				".dek",
+			Selectors: []SelectorEntry{
+				{Selector: ".dek"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".body",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".body"},
 			},
 
 			Transforms: map[string]TransformFunction{

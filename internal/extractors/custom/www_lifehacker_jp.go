@@ -15,38 +15,36 @@ var WwwLifehackerJpExtractor = &CustomExtractor{
 	Domain: "www.lifehacker.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1[class^=\"article_pArticle_Title\"]",
-			"h1.lh-summary-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1[class^=\"article_pArticle_Title\"]"},
+			{Selector: "h1.lh-summary-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
-			"p.lh-entryDetailInner--credit",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
+			{Selector: "p.lh-entryDetailInner--credit"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
-			[]string{"div.lh-entryDetail-header time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+			{Selector: "div.lh-entryDetail-header time", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div[class^=\"article_pArticle_Body__\"]",
-				"div.lh-entryDetail-body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div[class^=\"article_pArticle_Body__\"]"},
+			{"div.lh-entryDetail-body"},
 		},
 
 		// Transform functions for Lifehacker Japan-specific lazy loaded images

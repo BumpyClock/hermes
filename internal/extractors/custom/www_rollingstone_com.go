@@ -9,46 +9,44 @@ var RollingStoneCustomExtractor = &CustomExtractor{
 	Domain: "www.rollingstone.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.l-article-header__row--title",
-			"h1.content-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.l-article-header__row--title"},
+			{Selector: "h1.content-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"a.c-byline__link",
-			"a.content-author.tracked-offpage",
+		Selectors: []SelectorEntry{
+			{Selector: "a.c-byline__link"},
+			{Selector: "a.content-author.tracked-offpage"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
-			"time.content-published-date",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+			{Selector: "time.content-published-date"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"h2.l-article-header__row--lead",
-			".content-description",
+		Selectors: []SelectorEntry{
+			{Selector: "h2.l-article-header__row--lead"},
+			{Selector: ".content-description"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".l-article-content",
-				[]string{".lead-container", ".article-content"},
-				".article-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".l-article-content"},
+			{".lead-container", ".article-content"},
+			{".article-content"},
 		},
 
 		// Clean selectors - remove unwanted elements

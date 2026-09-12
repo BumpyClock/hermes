@@ -9,36 +9,34 @@ var TechlogIijAdJpExtractor = &CustomExtractor{
 	Domain: "techlog.iij.ad.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.entry-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.entry-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"a[rel=\"author\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "a[rel=\"author\"]"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time.entry-date", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "time.entry-date", Attribute: "datetime"},
 		},
 	},
 
 	// Dek is null in JavaScript
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.entry-content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.entry-content"},
 		},
 		DisableDefaultCleaner: true,
 

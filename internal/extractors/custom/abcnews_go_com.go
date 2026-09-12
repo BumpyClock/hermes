@@ -9,42 +9,40 @@ func GetABCNewsExtractor() *CustomExtractor {
 		Domain: "abcnews.go.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				`div[class*="Article_main__body"] h1`,
-				".article-header h1",
+			Selectors: []SelectorEntry{
+				{Selector: `div[class*="Article_main__body"] h1`},
+				{Selector: ".article-header h1"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				".ShareByline span:nth-child(2)",
-				".authors",
+			Selectors: []SelectorEntry{
+				{Selector: ".ShareByline span:nth-child(2)"},
+				{Selector: ".authors"},
 			},
 			// Note: clean: ['.author-overlay', '.by-text'] is handled differently in Go
 			// The JavaScript version applies clean to author field specifically
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				".ShareByline",
-				".timestamp",
+			Selectors: []SelectorEntry{
+				{Selector: ".ShareByline"},
+				{Selector: ".timestamp"},
 			},
 			// Note: format: 'MMMM D, YYYY h:mm a' and timezone: 'America/New_York'
 			// are handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"article",
-					".article-copy",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"article"},
+				{".article-copy"},
 			},
 
 			Transforms: map[string]TransformFunction{

@@ -9,37 +9,35 @@ func GetCNBCExtractor() *CustomExtractor {
 		Domain: "www.cnbc.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.title",
-				"h1.ArticleHeader-headline",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.title"},
+				{Selector: "h1.ArticleHeader-headline"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="author"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="author"]`, Attribute: "value"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="article:published_time"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="article:published_time"]`, Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div#article_body.content",
-					"div.story",
-					"div.ArticleBody-articleBody",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div#article_body.content"},
+				{"div.story"},
+				{"div.ArticleBody-articleBody"},
 			},
 
 			Transforms: map[string]TransformFunction{

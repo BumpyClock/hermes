@@ -24,12 +24,9 @@ func BenchmarkParseHTML(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
+		_, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
 		if err != nil {
 			b.Fatal(err)
-		}
-		if result.IsError() {
-			b.Fatal(result.Message)
 		}
 	}
 }
@@ -60,12 +57,9 @@ func BenchmarkParseMultipleFixtures(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				result, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
+				_, err := p.ParseHTML(htmlStr, url, &parser.ParserOptions{})
 				if err != nil {
 					b.Fatal(err)
-				}
-				if result.IsError() {
-					b.Fatal(result.Message)
 				}
 			}
 		})
@@ -94,12 +88,9 @@ func BenchmarkDifferentContentTypes(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				result, err := p.ParseHTML(htmlStr, url, &opts)
+				_, err := p.ParseHTML(htmlStr, url, &opts)
 				if err != nil {
 					b.Fatal(err)
-				}
-				if result.IsError() {
-					b.Fatal(result.Message)
 				}
 			}
 		})

@@ -15,34 +15,32 @@ func GetWwwApartmenttherapyComExtractor() *CustomExtractor {
 		Domain: "www.apartmenttherapy.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				"h1.headline",
+			Selectors: []SelectorEntry{
+				{Selector: "h1.headline"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				".PostByline__name",
+			Selectors: []SelectorEntry{
+				{Selector: ".PostByline__name"},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{".PostByline__timestamp[datetime]", "datetime"},
+			Selectors: []SelectorEntry{
+				{Selector: ".PostByline__timestamp[datetime]", Attribute: "datetime"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"meta[name=\"og:image\"]", "value"},
+			Selectors: []SelectorEntry{
+				{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div.post__content",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div.post__content"},
 			},
 
 			Transforms: map[string]TransformFunction{

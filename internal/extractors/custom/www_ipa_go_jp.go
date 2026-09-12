@@ -9,16 +9,16 @@ var WwwIpaGoJpExtractor = &CustomExtractor{
 	Domain: "www.ipa.go.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	// Author is null in JavaScript
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"p.ipar_text_right",
+		Selectors: []SelectorEntry{
+			{Selector: "p.ipar_text_right"},
 		},
 		// JavaScript: format: 'YYYY年M月D日', timezone: 'Asia/Tokyo'
 		// Go handles Japanese date formats and timezone automatically
@@ -27,10 +27,8 @@ var WwwIpaGoJpExtractor = &CustomExtractor{
 	// Dek is null in JavaScript
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#ipar_main",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#ipar_main"},
 		},
 		DisableDefaultCleaner: true,
 

@@ -9,62 +9,60 @@ func GetBloombergExtractor() *CustomExtractor {
 		Domain: "www.bloomberg.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
+			Selectors: []SelectorEntry{
 				// normal articles
-				".lede-headline",
+				{Selector: ".lede-headline"},
 
 				// /graphics/ template
-				"h1.article-title",
+				{Selector: "h1.article-title"},
 
 				// /news/ template
-				`h1[class^="headline"]`,
-				"h1.lede-text-only__hed",
+				{Selector: `h1[class^="headline"]`},
+				{Selector: "h1.lede-text-only__hed"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="parsely-author"]`, "value"},
-				".byline-details__link",
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="parsely-author"]`, Attribute: "value"},
+				{Selector: ".byline-details__link"},
 
 				// /graphics/ template
-				".bydek",
+				{Selector: ".bydek"},
 
 				// /news/ template
-				".author",
-				`p[class*="author"]`,
+				{Selector: ".author"},
+				{Selector: `p[class*="author"]`},
 			},
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{"time.published-at", "datetime"},
-				[]string{"time[datetime]", "datetime"},
-				[]string{`meta[name="date"]`, "value"},
-				[]string{`meta[name="parsely-pub-date"]`, "value"},
-				[]string{`meta[name="parsely-pub-date"]`, "content"},
+			Selectors: []SelectorEntry{
+				{Selector: "time.published-at", Attribute: "datetime"},
+				{Selector: "time[datetime]", Attribute: "datetime"},
+				{Selector: `meta[name="date"]`, Attribute: "value"},
+				{Selector: `meta[name="parsely-pub-date"]`, Attribute: "value"},
+				{Selector: `meta[name="parsely-pub-date"]`, Attribute: "content"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
-				[]string{`meta[name="og:image"]`, "content"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
+				{Selector: `meta[name="og:image"]`, Attribute: "content"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".article-body__content",
-					".body-content",
+			Selectors: []ContentSelectorGroup{
+				{".article-body__content"},
+				{".body-content"},
 
-					// /graphics/ template
-					"section.copy-block",
+				// /graphics/ template
+				{"section.copy-block"},
 
-					// /news/ template
-					".body-copy",
-				},
+				// /news/ template
+				{".body-copy"},
 			},
 
 			Transforms: map[string]TransformFunction{

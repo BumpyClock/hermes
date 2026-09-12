@@ -9,41 +9,39 @@ var WwwAsahiComExtractor = &CustomExtractor{
 	Domain: "www.asahi.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"main h1",
-			".ArticleTitle h1",
+		Selectors: []SelectorEntry{
+			{Selector: "main h1"},
+			{Selector: ".ArticleTitle h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"pubdate\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"pubdate\"]", Attribute: "value"},
 		},
 	},
 
 	Excerpt: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:description\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"main",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"main"},
 		},
 
 		// defaultCleaner: false in JavaScript

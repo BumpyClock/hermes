@@ -9,22 +9,20 @@ var WwwSpektrumDeExtractor = &CustomExtractor{
 	Domain: "www.spektrum.de",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			".content__title",
+		Selectors: []SelectorEntry{
+			{Selector: ".content__title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".content__author__info__name",
+		Selectors: []SelectorEntry{
+			{Selector: ".content__author__info__name"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"article.content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"article.content"},
 		},
 
 		// Clean selectors - remove unwanted elements
@@ -41,28 +39,28 @@ var WwwSpektrumDeExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".content__meta__date",
+		Selectors: []SelectorEntry{
+			{Selector: ".content__meta__date"},
 		},
 		// Note: JavaScript version has timezone: 'Europe/Berlin' - this is handled by dateparse in Go
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
+		Selectors: []SelectorEntry{
 			// This is how the meta tag appears in the original source code.
-			[]string{"meta[name=\"og:image\"]", "value"},
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 			// This is how the meta tag appears in the DOM in Chrome.
 			// The selector is included here to make the code work within the browser as well.
-			[]string{"meta[property=\"og:image\"]", "content"},
+			{Selector: "meta[property=\"og:image\"]", Attribute: "content"},
 			// This is the image that is shown on the page.
 			// It can be slightly cropped compared to the original in the meta tag.
-			".image__article__top img",
+			{Selector: ".image__article__top img"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".content__intro",
+		Selectors: []SelectorEntry{
+			{Selector: ".content__intro"},
 		},
 	},
 }

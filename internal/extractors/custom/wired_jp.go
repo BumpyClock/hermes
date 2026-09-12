@@ -15,45 +15,43 @@ var WiredJpExtractor = &CustomExtractor{
 	Domain: "wired.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1[data-testid=\"ContentHeaderHed\"]",
-			"h1.post-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1[data-testid=\"ContentHeaderHed\"]"},
+			{Selector: "h1.post-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:author\"]", "value"},
-			"p[itemprop=\"author\"]",
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:author\"]", Attribute: "value"},
+			{Selector: "p[itemprop=\"author\"]"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
-			[]string{"time", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
+			{Selector: "time", Attribute: "datetime"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			"div[class^=\"ContentHeaderDek\"]",
-			".post-intro",
+		Selectors: []SelectorEntry{
+			{Selector: "div[class^=\"ContentHeaderDek\"]"},
+			{Selector: ".post-intro"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div[data-attribute-verso-pattern=\"article-body\"]",
-				"article.article-detail",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div[data-attribute-verso-pattern=\"article-body\"]"},
+			{"article.article-detail"},
 		},
 
 		// Transform functions for Wired Japan-specific content

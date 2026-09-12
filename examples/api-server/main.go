@@ -31,9 +31,21 @@ const (
 	requestTimeout = 20 * time.Second
 )
 
+type formatMetadata struct {
+	contentType string
+	mediaType   string
+}
+
+var supportedFormats = map[string]formatMetadata{
+	"json":     {contentType: "html", mediaType: "application/json"},
+	"html":     {contentType: "html", mediaType: "text/html"},
+	"markdown": {contentType: "markdown", mediaType: "text/markdown"},
+	"text":     {contentType: "text", mediaType: "text/plain"},
+}
+
 // Server holds reusable Hermes clients and server configuration.
 type Server struct {
-	clients map[string]*hermes.Client
+	clients map[string]hermes.Parser
 	port    string
 }
 
@@ -71,12 +83,14 @@ func main() {
 
 	// Create server with reusable clients per parser content type.
 	server := &Server{
-		clients: map[string]*hermes.Client{
-			"html":     newServerClient("html"),
-			"markdown": newServerClient("markdown"),
-			"text":     newServerClient("text"),
-		},
-		port: serverPort,
+		clients: make(map[string]hermes.Parser),
+		port:    serverPort,
+	}
+
+	for _, format := range supportedFormats {
+		if _, exists := server.clients[format.contentType]; !exists {
+			server.clients[format.contentType] = newServerClient(format.contentType)
+		}
 	}
 
 	// Setup routes
@@ -111,13 +125,13 @@ func newServerClient(contentType string) *hermes.Client {
 }
 
 func contentTypeForFormat(format string) string {
-	if format == "json" {
-		return "html"
+	if metadata, ok := supportedFormats[format]; ok {
+		return metadata.contentType
 	}
 	return format
 }
 
-func (s *Server) clientForFormat(format string) *hermes.Client {
+func (s *Server) clientForFormat(format string) hermes.Parser {
 	contentType := contentTypeForFormat(format)
 	if client, ok := s.clients[contentType]; ok {
 		return client
@@ -156,7 +170,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
         <p><strong>Parameters:</strong></p>
         <ul>
             <li><code>url</code> - The URL to parse (required)</li>
-            <li><code>format</code> - Output format: json, html, markdown, text (optional, default: json)</li>
+            <li><code>format</code> - Output format: json, html, markdown, text (case-insensitive; optional, default: json)</li>
         </ul>
         <p><strong>Example:</strong><br>
         <code>GET /parse?url=https://example.com&format=markdown</code></p>
@@ -234,6 +248,7 @@ func (s *Server) handleParse(w http.ResponseWriter, r *http.Request) {
 		s.sendError(w, http.StatusBadRequest, "invalid_format", "Format must be one of: json, html, markdown, text", targetURL, start)
 		return
 	}
+	format = strings.ToLower(format)
 
 	// Parse the URL
 	s.parseURL(w, r, targetURL, format, start)
@@ -296,17 +311,7 @@ func (s *Server) sendSuccess(w http.ResponseWriter, result *hermes.Result, forma
 
 	// For non-JSON formats, return content directly
 	if format != "json" {
-		var contentType string
-		switch format {
-		case "html":
-			contentType = "text/html"
-		case "markdown":
-			contentType = "text/markdown"
-		case "text":
-			contentType = "text/plain"
-		}
-
-		w.Header().Set("Content-Type", contentType+"; charset=utf-8")
+		w.Header().Set("Content-Type", supportedFormats[format].mediaType+"; charset=utf-8")
 		w.Header().Set("X-Processing-Time", duration.String())
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprint(w, result.Content)
@@ -386,14 +391,6 @@ func (s *Server) isValidURL(rawURL string) bool {
 
 // isValidFormat validates output format.
 func (s *Server) isValidFormat(format string) bool {
-	validFormats := []string{"json", "html", "markdown", "text"}
-	format = strings.ToLower(format)
-
-	for _, valid := range validFormats {
-		if format == valid {
-			return true
-		}
-	}
-
-	return false
+	_, ok := supportedFormats[strings.ToLower(format)]
+	return ok
 }

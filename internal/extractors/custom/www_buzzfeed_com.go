@@ -15,25 +15,23 @@ var BuzzFeedCustomExtractor = &CustomExtractor{
 	SupportedDomains: []string{"www.buzzfeednews.com"},
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.embed-headline-title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.embed-headline-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			`a[data-action="user/username"]`,
-			"byline__author",
-			[]string{"meta[name=\"author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: `a[data-action="user/username"]`},
+			{Selector: "byline__author"},
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`div[class^="featureimage_featureImageWrapper"]`, ".js-subbuzz-wrapper"},
-				[]string{".js-subbuzz-wrapper"},
-			},
+		Selectors: []ContentSelectorGroup{
+			{`div[class^="featureimage_featureImageWrapper"]`, ".js-subbuzz-wrapper"},
+			{".js-subbuzz-wrapper"},
 		},
 		DisableDefaultCleaner: true,
 
@@ -67,20 +65,20 @@ var BuzzFeedCustomExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"time[datetime]", "datetime"},
+		Selectors: []SelectorEntry{
+			{Selector: "time[datetime]", Attribute: "datetime"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".embed-headline-description",
+		Selectors: []SelectorEntry{
+			{Selector: ".embed-headline-description"},
 		},
 	},
 }

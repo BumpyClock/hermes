@@ -9,20 +9,20 @@ var WwwInfoqComExtractor = &CustomExtractor{
 	Domain: "www.infoq.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1.heading",
+		Selectors: []SelectorEntry{
+			{Selector: "h1.heading"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.widget.article__authors",
+		Selectors: []SelectorEntry{
+			{Selector: "div.widget.article__authors"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			".article__readTime.date",
+		Selectors: []SelectorEntry{
+			{Selector: ".article__readTime.date"},
 		},
 		// Note: format and timezone would be handled at extraction time
 		// format: 'YYYY年MM月DD日' (from JavaScript)
@@ -30,22 +30,20 @@ var WwwInfoqComExtractor = &CustomExtractor{
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:description\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:description\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.article__data",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.article__data"},
 		},
 		DisableDefaultCleaner: true, // JavaScript disables default cleaning.
 	},

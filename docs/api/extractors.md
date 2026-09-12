@@ -14,6 +14,14 @@ Hermes selects extractors without public configuration.
 
 ## Extraction contracts
 
+Custom metadata selectors use `SelectorEntry` values with a CSS selector and an optional attribute name.
+Each selector reads only the first matched element. Title, author, and image fields stop at the first nonempty raw value.
+Date selectors continue until a value passes date conversion.
+
+Custom content selectors use ordered `ContentSelectorGroup` values. Each group combines its selectors in source order and excludes duplicate elements.
+The first group with nonempty raw content controls extraction, even if cleanup removes that content.
+
+
 Theme color extraction accepts standard `content` attributes and normalized `value` attributes. The `theme-color` tag has priority over `msapplication-TileColor`.
 
 Generic content cleanup operates on a copy of the selected article. It preserves the source document and excludes unrelated page elements from cleanup.

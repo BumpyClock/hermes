@@ -13,34 +13,32 @@ var DeadlineCustomExtractor = &CustomExtractor{
 	Domain: "deadline.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"section.author h2",
+		Selectors: []SelectorEntry{
+			{Selector: "section.author h2"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.a-article-grid__main.pmc-a-grid article.pmc-a-grid-item",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.a-article-grid__main.pmc-a-grid article.pmc-a-grid-item"},
 		},
 
 		// Transform functions for Deadline-specific content

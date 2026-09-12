@@ -9,21 +9,21 @@ var WwwPublickey1JpExtractor = &CustomExtractor{
 	Domain: "www.publickey1.jp",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".bloggerinchief p:first-of-type",
-			"#subcol p:has(img)",
+		Selectors: []SelectorEntry{
+			{Selector: ".bloggerinchief p:first-of-type"},
+			{Selector: "#subcol p:has(img)"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.pubdate",
+		Selectors: []SelectorEntry{
+			{Selector: "div.pubdate"},
 		},
 
 		// format: 'YYYY年MM月DD日' in JavaScript - note: Go implementation handles format in date cleaner
@@ -34,16 +34,14 @@ var WwwPublickey1JpExtractor = &CustomExtractor{
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"#maincol",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"#maincol"},
 		},
 
 		// defaultCleaner: false in JavaScript

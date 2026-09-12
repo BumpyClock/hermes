@@ -13,34 +13,32 @@ var WwwFortinetComExtractor = &CustomExtractor{
 	Domain: "www.fortinet.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".b15-blog-meta__author",
+		Selectors: []SelectorEntry{
+			{Selector: ".b15-blog-meta__author"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.responsivegrid.aem-GridColumn.aem-GridColumn--default--12",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.responsivegrid.aem-GridColumn.aem-GridColumn--default--12"},
 		},
 
 		// Transform functions for Fortinet-specific content

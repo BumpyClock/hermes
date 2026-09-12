@@ -15,31 +15,29 @@ func GetNYTimesExtractor() *CustomExtractor {
 		Domain: "www.nytimes.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				`h1[data-testid="headline"]`,
-				"h1.g-headline",
-				`h1[itemprop="headline"]`,
-				"h1.headline",
-				"h1 .balancedHeadline",
+			Selectors: []SelectorEntry{
+				{Selector: `h1[data-testid="headline"]`},
+				{Selector: "h1.g-headline"},
+				{Selector: `h1[itemprop="headline"]`},
+				{Selector: "h1.headline"},
+				{Selector: "h1 .balancedHeadline"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="author"]`, "value"},
-				".g-byline",
-				".byline",
-				[]string{`meta[name="byl"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="author"]`, Attribute: "value"},
+				{Selector: ".g-byline"},
+				{Selector: ".byline"},
+				{Selector: `meta[name="byl"]`, Attribute: "value"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					"div.g-blocks",
-					`section[name="articleBody"]`,
-					"article#story",
-				},
+			Selectors: []ContentSelectorGroup{
+				{"div.g-blocks"},
+				{`section[name="articleBody"]`},
+				{"article#story"},
 			},
 
 			Transforms: map[string]TransformFunction{
@@ -77,15 +75,15 @@ func GetNYTimesExtractor() *CustomExtractor {
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="article:published_time"]`, "value"},
-				[]string{`meta[name="article:published"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="article:published_time"]`, Attribute: "value"},
+				{Selector: `meta[name="article:published"]`, Attribute: "value"},
 			},
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 	}

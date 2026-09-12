@@ -13,8 +13,6 @@ import (
 	"github.com/BumpyClock/hermes/internal/utils/text"
 )
 
-// Title cleaning constants are now provided in constants.go
-
 // CleanTitle cleans and normalizes title text by removing site names, HTML tags, and extra whitespace
 // This is a faithful port of the JavaScript cleanTitle function.
 func CleanTitle(title string, url string, doc *goquery.Document) string {
@@ -44,6 +42,15 @@ func CleanTitle(title string, url string, doc *goquery.Document) string {
 // ResolveSplitTitle resolves whether any of the segments should be removed from a title with separators
 // Given a title with separators in it (colons, dashes, etc), resolve whether any of the segments should be removed.
 func ResolveSplitTitle(title, url string) string {
+	return resolveSplitTitle(title, url, true, 1)
+}
+
+// ResolveExtractedTitle preserves breadcrumb spaces and removes all domain slug spaces before tag removal.
+func ResolveExtractedTitle(title, url string) string {
+	return resolveSplitTitle(title, url, false, -1)
+}
+
+func resolveSplitTitle(title, url string, trimBreadcrumb bool, domainSpaceLimit int) string {
 	// Splits while preserving splitters, like:
 	// ['The New New York', ' - ', 'The Washington Post']
 	splitTitle := SplitTitleWithSeparators(title)
@@ -52,12 +59,12 @@ func ResolveSplitTitle(title, url string) string {
 	}
 
 	// Try extracting breadcrumb title
-	if newTitle := ExtractBreadcrumbTitle(splitTitle, title); newTitle != "" {
+	if newTitle := ExtractBreadcrumbTitle(splitTitle, title, trimBreadcrumb); newTitle != "" {
 		return newTitle
 	}
 
 	// Try cleaning domain from title
-	if newTitle := CleanDomainFromTitle(splitTitle, url); newTitle != "" {
+	if newTitle := CleanDomainFromTitle(splitTitle, url, domainSpaceLimit); newTitle != "" {
 		return newTitle
 	}
 
@@ -100,7 +107,7 @@ func SplitTitleWithSeparators(title string) []string {
 // This must be a very breadcrumbed title, like:
 // The Best Gadgets on Earth : Bits : Blogs : NYTimes.com
 // NYTimes - Blogs - Bits - The Best Gadgets on Earth.
-func ExtractBreadcrumbTitle(splitTitle []string, text string) string {
+func ExtractBreadcrumbTitle(splitTitle []string, text string, trimEnd bool) string {
 	if len(splitTitle) >= 6 {
 		// Look to see if we can find a breadcrumb splitter that happens
 		// more than once. If we can, we'll be able to better pull out
@@ -144,7 +151,10 @@ func ExtractBreadcrumbTitle(splitTitle []string, text string) string {
 		}
 
 		if len(longestEnd) > 10 {
-			return strings.TrimSpace(longestEnd)
+			if trimEnd {
+				return strings.TrimSpace(longestEnd)
+			}
+			return longestEnd
 		}
 
 		return text
@@ -156,7 +166,7 @@ func ExtractBreadcrumbTitle(splitTitle []string, text string) string {
 // CleanDomainFromTitle removes domain name matches from title segments
 // Search the ends of the title, looking for bits that fuzzy match
 // the URL too closely. If one is found, discard it and return the rest.
-func CleanDomainFromTitle(splitTitle []string, urlStr string) string {
+func CleanDomainFromTitle(splitTitle []string, urlStr string, spaceLimit int) string {
 	if urlStr == "" || len(splitTitle) < 2 {
 		return ""
 	}
@@ -172,7 +182,7 @@ func CleanDomainFromTitle(splitTitle []string, urlStr string) string {
 
 	// Check start of title
 	if len(splitTitle) >= 2 {
-		startSlug := strings.ToLower(strings.Replace(splitTitle[0], " ", "", 1))
+		startSlug := strings.ToLower(strings.Replace(splitTitle[0], " ", "", spaceLimit))
 		startSlugRatio := LevenshteinRatio(startSlug, nakedDomain)
 
 		if startSlugRatio > 0.4 && len(startSlug) > 5 {
@@ -185,7 +195,7 @@ func CleanDomainFromTitle(splitTitle []string, urlStr string) string {
 
 	// Check end of title
 	if len(splitTitle) >= 2 {
-		endSlug := strings.ToLower(strings.Replace(splitTitle[len(splitTitle)-1], " ", "", 1))
+		endSlug := strings.ToLower(strings.Replace(splitTitle[len(splitTitle)-1], " ", "", spaceLimit))
 		endSlugRatio := LevenshteinRatio(endSlug, nakedDomain)
 
 		if endSlugRatio > 0.4 && len(endSlug) >= 5 {

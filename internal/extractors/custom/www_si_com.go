@@ -13,43 +13,41 @@ var WwwSiComExtractor = &CustomExtractor{
 	Domain: "www.si.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			"h1.headline",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: "h1.headline"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"author\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"author\"]", Attribute: "value"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"published\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"published\"]", Attribute: "value"},
 		},
 		Timezone: "America/New_York",
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".m-detail-header--dek",
+		Selectors: []SelectorEntry{
+			{Selector: ".m-detail-header--dek"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".m-detail--body",
-				[]interface{}{"p", ".marquee_large_2x", ".component.image"},
-			},
+		Selectors: []ContentSelectorGroup{
+			{".m-detail--body"},
+			{"p", ".marquee_large_2x", ".component.image"},
 		},
 
 		// Transform functions for SI-specific content

@@ -9,24 +9,22 @@ var WwwLemondeFrExtractor = &CustomExtractor{
 	Domain: "www.lemonde.fr",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			"h1",
-			"h1.article__title",
+		Selectors: []SelectorEntry{
+			{Selector: "h1"},
+			{Selector: "h1.article__title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".article__author-link",
-			".author__name",
+		Selectors: []SelectorEntry{
+			{Selector: ".article__author-link"},
+			{Selector: ".author__name"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article__content",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article__content"},
 		},
 
 		// Clean selectors - remove unwanted elements
@@ -36,20 +34,20 @@ var WwwLemondeFrExtractor = &CustomExtractor{
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".article__desc",
+		Selectors: []SelectorEntry{
+			{Selector: ".article__desc"},
 		},
 	},
 }

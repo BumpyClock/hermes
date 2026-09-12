@@ -9,37 +9,35 @@ var ScienceflyComExtractor = &CustomExtractor{
 	Domain: "sciencefly.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			".entry-title",
-			".cb-entry-title",
-			".cb-single-title",
+		Selectors: []SelectorEntry{
+			{Selector: ".entry-title"},
+			{Selector: ".cb-entry-title"},
+			{Selector: ".cb-single-title"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"div.cb-author",
-			"div.cb-author-title",
+		Selectors: []SelectorEntry{
+			{Selector: "div.cb-author"},
+			{Selector: "div.cb-author-title"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"article:published_time\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"article:published_time\"]", Attribute: "value"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"div.theiaPostSlider_slides img", "src"},
+		Selectors: []SelectorEntry{
+			{Selector: "div.theiaPostSlider_slides img", Attribute: "src"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				"div.theiaPostSlider_slides",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"div.theiaPostSlider_slides"},
 		},
 	},
 }

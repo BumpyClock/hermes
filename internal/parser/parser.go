@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/BumpyClock/hermes/internal/resource"
 	"github.com/BumpyClock/hermes/internal/validation"
@@ -16,8 +17,9 @@ import (
 
 // Hermes (formerly Mercury) is the main parser implementation.
 type Hermes struct {
-	options    ParserOptions
-	httpClient *http.Client // Store HTTP client
+	options               ParserOptions
+	defaultHTTPClientOnce sync.Once
+	defaultHTTPClient     *http.Client
 }
 
 // New creates a new Hermes parser instance.
@@ -29,80 +31,24 @@ func New(opts ...*ParserOptions) *Hermes {
 		options = *DefaultParserOptions()
 	}
 
-	h := &Hermes{
-		options: options,
-	}
-
-	// Store HTTP client if provided
-	if options.HTTPClient != nil {
-		h.httpClient = options.HTTPClient
-	}
-
-	return h
-}
-
-// NewParser creates a new parser instance (convenience function).
-func NewParser() *Hermes {
-	return New()
+	return &Hermes{options: options}
 }
 
 // Parse extracts content from a URL.
 func (h *Hermes) Parse(targetURL string, opts *ParserOptions) (*Result, error) {
-	// Use provided options or defaults
-	if opts == nil {
-		opts = &h.options
-	}
+	return h.ParseWithContext(context.Background(), targetURL, opts)
+}
 
-	// Use the simple parsing approach
-	return h.parseWithoutOptimization(targetURL, opts)
+// ParseHTML extracts content from supplied HTML.
+func (h *Hermes) ParseHTML(html, targetURL string, opts *ParserOptions) (*Result, error) {
+	return h.ParseHTMLWithContext(context.Background(), html, targetURL, opts)
 }
 
 // ParseWithContext extracts content from a URL with context support.
 func (h *Hermes) ParseWithContext(ctx context.Context, targetURL string, opts *ParserOptions) (*Result, error) {
-	// Use provided options or defaults
 	if opts == nil {
 		opts = &h.options
 	}
-
-	// Use the context-aware parsing path
-	return h.parseWithoutOptimizationContext(ctx, targetURL, opts)
-}
-
-// ParseHTML extracts content from provided HTML.
-func (h *Hermes) ParseHTML(html string, targetURL string, opts *ParserOptions) (*Result, error) {
-	// Use provided options or defaults
-	if opts == nil {
-		opts = &h.options
-	}
-
-	// Use the simple parsing approach
-	return h.parseHTMLWithoutOptimization(html, targetURL, opts)
-}
-
-// ParseHTMLWithContext extracts content from provided HTML with context support.
-func (h *Hermes) ParseHTMLWithContext(ctx context.Context, html string, targetURL string, opts *ParserOptions) (*Result, error) {
-	// Use provided options or defaults
-	if opts == nil {
-		opts = &h.options
-	}
-
-	// Use the context-aware parsing path
-	return h.parseHTMLWithoutOptimizationContext(ctx, html, targetURL, opts)
-}
-
-// parseWithoutOptimization performs basic parsing without optimization layers.
-// Used internally by the optimization framework to avoid circular dependencies.
-//
-// Deprecated: This method uses context.Background() which prevents proper cancellation.
-// Use parseWithoutOptimizationContext instead.
-func (h *Hermes) parseWithoutOptimization(targetURL string, opts *ParserOptions) (*Result, error) {
-	// Use background context for backward compatibility - DEPRECATED
-	// Callers should use ParseWithContext for proper context handling
-	return h.parseWithoutOptimizationContext(context.Background(), targetURL, opts)
-}
-
-// parseWithoutOptimizationContext performs basic parsing with context support.
-func (h *Hermes) parseWithoutOptimizationContext(ctx context.Context, targetURL string, opts *ParserOptions) (*Result, error) {
 	// Validate URL
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
@@ -119,13 +65,10 @@ func (h *Hermes) parseWithoutOptimizationContext(ctx context.Context, targetURL 
 		return nil, fmt.Errorf("URL validation failed: %w", validationErr)
 	}
 
-	// Create resource instance and fetch content with context
-	r := resource.NewResource()
-
 	// Use centralized HTTP client creation
-	httpClient := ensureHTTPClient(opts)
+	httpClient := h.ensureHTTPClient(opts)
 
-	doc, err := r.CreateWithClient(ctx, targetURL, "", parsedURL, opts.Headers, httpClient)
+	doc, err := resource.CreateDocument(ctx, targetURL, "", parsedURL, opts.Headers, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -134,18 +77,11 @@ func (h *Hermes) parseWithoutOptimizationContext(ctx context.Context, targetURL 
 	return h.extractAllFieldsWithContext(ctx, doc, targetURL, parsedURL, *opts)
 }
 
-// parseHTMLWithoutOptimization performs basic HTML parsing without optimization layers.
-//
-// Deprecated: This method uses context.Background() which prevents proper cancellation.
-// Use parseHTMLWithoutOptimizationContext instead.
-func (h *Hermes) parseHTMLWithoutOptimization(html, targetURL string, opts *ParserOptions) (*Result, error) {
-	// Use background context for backward compatibility - DEPRECATED
-	// Callers should use ParseHTMLWithContext for proper context handling
-	return h.parseHTMLWithoutOptimizationContext(context.Background(), html, targetURL, opts)
-}
-
-// parseHTMLWithoutOptimizationContext performs HTML parsing with context support.
-func (h *Hermes) parseHTMLWithoutOptimizationContext(ctx context.Context, html, targetURL string, opts *ParserOptions) (*Result, error) {
+// ParseHTMLWithContext extracts content from supplied HTML with context support.
+func (h *Hermes) ParseHTMLWithContext(ctx context.Context, html, targetURL string, opts *ParserOptions) (*Result, error) {
+	if opts == nil {
+		opts = &h.options
+	}
 	// Validate URL
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
@@ -160,11 +96,8 @@ func (h *Hermes) parseHTMLWithoutOptimizationContext(ctx context.Context, html, 
 		return nil, fmt.Errorf("URL validation failed: %w", validationErr)
 	}
 
-	// Create resource instance and parse HTML with context
-	r := resource.NewResource()
-
 	// HTML input is already prepared, so no HTTP client is needed for this path.
-	doc, err := r.CreateWithClient(ctx, targetURL, html, parsedURL, opts.Headers, nil)
+	doc, err := resource.CreateDocument(ctx, targetURL, html, parsedURL, opts.Headers, nil)
 	if err != nil {
 		return nil, err
 	}

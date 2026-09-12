@@ -9,44 +9,42 @@ var WwwCbssportsComExtractor = &CustomExtractor{
 	Domain: "www.cbssports.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			".Article-headline",
-			".article-headline",
+		Selectors: []SelectorEntry{
+			{Selector: ".Article-headline"},
+			{Selector: ".article-headline"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			".ArticleAuthor-nameText",
-			".author-name",
+		Selectors: []SelectorEntry{
+			{Selector: ".ArticleAuthor-nameText"},
+			{Selector: ".author-name"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[itemprop=\"datePublished\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[itemprop=\"datePublished\"]", Attribute: "value"},
 		},
 		Timezone: "UTC",
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".Article-subline",
-			".article-subline",
+		Selectors: []SelectorEntry{
+			{Selector: ".Article-subline"},
+			{Selector: ".article-subline"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				".article",
-			},
+		Selectors: []ContentSelectorGroup{
+			{".article"},
 		},
 	},
 }

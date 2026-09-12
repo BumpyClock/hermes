@@ -13,45 +13,43 @@ var WwwCnetComExtractor = &CustomExtractor{
 	Domain: "www.cnet.com",
 
 	Title: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:title\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:title\"]", Attribute: "value"},
 		},
 	},
 
 	Author: &FieldExtractor{
-		Selectors: []interface{}{
-			"span.author",
-			"a.author",
+		Selectors: []SelectorEntry{
+			{Selector: "span.author"},
+			{Selector: "a.author"},
 		},
 	},
 
 	DatePublished: &FieldExtractor{
-		Selectors: []interface{}{
-			"time",
+		Selectors: []SelectorEntry{
+			{Selector: "time"},
 		},
 		// Note: timezone support would be handled at extraction time
 		// timezone: 'America/Los_Angeles' (from JavaScript)
 	},
 
 	Dek: &FieldExtractor{
-		Selectors: []interface{}{
-			".c-head_dek",
-			".article-dek",
+		Selectors: []SelectorEntry{
+			{Selector: ".c-head_dek"},
+			{Selector: ".article-dek"},
 		},
 	},
 
 	LeadImageURL: &FieldExtractor{
-		Selectors: []interface{}{
-			[]string{"meta[name=\"og:image\"]", "value"},
+		Selectors: []SelectorEntry{
+			{Selector: "meta[name=\"og:image\"]", Attribute: "value"},
 		},
 	},
 
 	Content: &ContentExtractor{
-		FieldExtractor: &FieldExtractor{
-			Selectors: []interface{}{
-				[]interface{}{"img.__image-lead__", ".article-main-body"},
-				".article-main-body",
-			},
+		Selectors: []ContentSelectorGroup{
+			{"img.__image-lead__", ".article-main-body"},
+			{".article-main-body"},
 		},
 
 		// Transform functions for CNET-specific content

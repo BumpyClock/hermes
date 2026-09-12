@@ -9,26 +9,24 @@ func GetPoliticoExtractor() *CustomExtractor {
 		Domain: "www.politico.com",
 
 		Title: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:title"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:title"]`, Attribute: "value"},
 			},
 		},
 
 		Author: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`div[itemprop="author"] meta[itemprop="name"]`, "value"},
-				".story-meta__authors .vcard",
-				".story-main-content .byline .vcard",
+			Selectors: []SelectorEntry{
+				{Selector: `div[itemprop="author"] meta[itemprop="name"]`, Attribute: "value"},
+				{Selector: ".story-meta__authors .vcard"},
+				{Selector: ".story-main-content .byline .vcard"},
 			},
 		},
 
 		Content: &ContentExtractor{
-			FieldExtractor: &FieldExtractor{
-				Selectors: []interface{}{
-					".story-text",
-					".story-main-content",
-					".story-core",
-				},
+			Selectors: []ContentSelectorGroup{
+				{".story-text"},
+				{".story-main-content"},
+				{".story-core"},
 			},
 
 			Transforms: map[string]TransformFunction{
@@ -43,23 +41,23 @@ func GetPoliticoExtractor() *CustomExtractor {
 		},
 
 		DatePublished: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`time[itemprop="datePublished"]`, "datetime"},
-				[]string{`.story-meta__details time[datetime]`, "datetime"},
-				[]string{`.story-main-content .timestamp time[datetime]`, "datetime"},
+			Selectors: []SelectorEntry{
+				{Selector: `time[itemprop="datePublished"]`, Attribute: "datetime"},
+				{Selector: `.story-meta__details time[datetime]`, Attribute: "datetime"},
+				{Selector: `.story-main-content .timestamp time[datetime]`, Attribute: "datetime"},
 			},
 			// Note: timezone: 'America/New_York' is handled by date cleaner in Go version
 		},
 
 		LeadImageURL: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:image"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:image"]`, Attribute: "value"},
 			},
 		},
 
 		Dek: &FieldExtractor{
-			Selectors: []interface{}{
-				[]string{`meta[name="og:description"]`, "value"},
+			Selectors: []SelectorEntry{
+				{Selector: `meta[name="og:description"]`, Attribute: "value"},
 			},
 		},
 	}
