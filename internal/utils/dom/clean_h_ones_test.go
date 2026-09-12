@@ -243,6 +243,9 @@ func TestCleanHOnes_PreservesH1Attributes(t *testing.T) {
 
 	// Check third H2 has no attributes (as expected)
 	thirdH2 := h2Elements.Eq(2)
+	if thirdH2.Length() == 0 {
+		t.Fatal("Expected a third H2 element")
+	}
 	if len(thirdH2.Get(0).Attr) > 0 {
 		t.Errorf("Third H2 should have no attributes")
 	}
