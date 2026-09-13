@@ -1,0 +1,19 @@
+package parser
+
+import (
+	"context"
+	"strings"
+	"testing"
+)
+
+func TestExplicitDefinitionsNeverUseLegacyRegistry(t *testing.T) {
+	source := `<article><h1>BBC generic fallback</h1><p>A meaningful report provides enough factual text for generic extraction without any compiled site definition.</p></article>`
+	opts := &ParserOptions{DefinitionsConfigured: true, Fallback: true, ContentType: "html"}
+	r, err := New().ParseHTMLWithContext(context.Background(), source, "https://www.bbc.com/news/article", opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.HasPrefix(r.ExtractorUsed, "custom:") || !strings.Contains(r.Content, "meaningful report") {
+		t.Fatalf("legacy registry leaked: %+v", r)
+	}
+}

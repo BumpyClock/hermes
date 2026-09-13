@@ -41,9 +41,12 @@ func WithTimeout(timeout time.Duration) Option
 func WithUserAgent(userAgent string) Option
 func WithAllowPrivateNetworks(allow bool) Option
 func WithContentType(contentType string) Option // "html" | "markdown" | "text"
+func WithDefinitions(snapshot *Definitions) Option
 ```
 
 See [Configuration](configuration.md) for option behavior, defaults, and security precautions.
+See [Local definitions](definitions.md) for `LoadDefinitions`, immutable snapshots,
+schema/capability discovery, diagnostics and the CLI `--definitions` option.
 
 ## Parsing
 
@@ -53,6 +56,13 @@ func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, erro
 ```
 
 `Parse` fetches the URL and extracts content. `ParseHTML` extracts content from supplied HTML with the specified base URL.
+
+When extraction uses the last-resort DOM-text fallback, literal text is HTML-escaped
+for HTML output and punctuation is backslash-escaped for Markdown output. Plain-text
+output preserves literal characters with normalized whitespace. This applies to both
+explicit definition snapshots and the legacy parser; text resembling markup is not
+promoted into active HTML or Markdown. Plain-text results still require escaping
+before insertion into an HTML document.
 
 Examples:
 ```go

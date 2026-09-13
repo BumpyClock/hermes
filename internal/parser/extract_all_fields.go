@@ -103,6 +103,9 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	}
 
 	if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
+		if opts.DefinitionsConfigured {
+			content = security.SanitizeHTML(content)
+		}
 		setFormattedContent(result, content, opts.ContentType)
 
 		// Update image extraction with content context
@@ -146,7 +149,8 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 
 		for _, selector := range fallbackSelectors {
 			if basicContent := doc.Find(selector).First().Text(); basicContent != "" {
-				result.Content = strings.TrimSpace(basicContent)
+				// DOM text can contain literal markup from raw-text elements.
+				result.Content = formatPlainText(basicContent, opts.ContentType)
 				result.Excerpt = text.ExcerptContent(result.Content, 160)
 				result.WordCount = calculateWordCount(result.Content)
 				break
@@ -160,9 +164,18 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 // tryCustomExtractor attempts to use a custom extractor for the given domain.
 func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions, baseResult *Result, metaCache []string) *Result {
 	// Look for custom extractor for this domain using the proper lookup function
-	customExtractor, found := custom.GetCustomExtractorByDomain(parsedURL.Host)
+	var customExtractor *custom.CustomExtractor
+	var found bool
+	if opts.DefinitionsConfigured {
+		if opts.Definitions != nil {
+			customExtractor = opts.Definitions.Match(parsedURL.Hostname())
+			found = customExtractor != nil
+		}
+	} else {
+		customExtractor, found = custom.GetCustomExtractorByDomain(parsedURL.Host)
+	}
 
-	if !found {
+	if !found && !opts.DefinitionsConfigured {
 		// Try fallback - remove 'www.' prefix if present
 		if strings.HasPrefix(parsedURL.Host, "www.") {
 			baseDomain := strings.TrimPrefix(parsedURL.Host, "www.")
@@ -201,6 +214,16 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		result.Author = cleaners.CleanAuthor(author)
 	}
 
+	outputBaseURL := ""
+	if opts.DefinitionsConfigured {
+		outputBaseURL = targetURL
+		if baseHref := doc.Find("base[href]").First().AttrOr("href", ""); baseHref != "" {
+			if resolvedBase, err := parsedURL.Parse(baseHref); err == nil {
+				outputBaseURL = resolvedBase.String()
+			}
+		}
+	}
+
 	// Extract content using custom selectors
 	if customExtractor.Content != nil && len(customExtractor.Content.Selectors) > 0 {
 		for _, selector := range customExtractor.Content.Selectors {
@@ -211,8 +234,11 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 				continue
 			}
 
-			contentHTML, err := processCustomContent(contentElements, doc, customExtractor.Content, result.Title, targetURL)
+			contentHTML, err := processCustomContentWithBase(contentElements, doc, customExtractor.Content, result.Title, targetURL, outputBaseURL)
 			if err == nil && strings.TrimSpace(contentHTML) != "" {
+				if opts.DefinitionsConfigured {
+					contentHTML = security.SanitizeHTML(contentHTML)
+				}
 				setFormattedContent(result, contentHTML, opts.ContentType)
 			}
 			break
@@ -228,7 +254,11 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		}
 	}
 	if imageURL := firstCustomField(doc, customExtractor.LeadImageURL); imageURL != "" {
-		result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, targetURL)
+		imageBaseURL := targetURL
+		if opts.DefinitionsConfigured {
+			imageBaseURL = outputBaseURL
+		}
+		result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, imageBaseURL)
 	}
 
 	// Fall back to generic extractors for missing fields if fallback is enabled
@@ -247,6 +277,9 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		// Fallback content extraction if no content was found
 		if result.Content == "" {
 			if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
+				if opts.DefinitionsConfigured {
+					content = security.SanitizeHTML(content)
+				}
 				setFormattedContent(result, content, opts.ContentType)
 			}
 		}
@@ -273,6 +306,28 @@ func setFormattedContent(result *Result, content, contentType string) {
 		result.Excerpt = text.ExcerptContent(result.Content, 160)
 	}
 	result.WordCount = calculateWordCount(result.Content)
+}
+
+func formatPlainText(content, contentType string) string {
+	content = strings.TrimSpace(content)
+	switch strings.ToLower(strings.TrimSpace(contentType)) {
+	case "text", "text/plain", "txt":
+		return text.NormalizeSpaces(content)
+	case "markdown", "md", "text/markdown":
+		// Escape CommonMark punctuation directly: HTML conversion decodes entities
+		// and can turn literal text back into raw HTML or Markdown syntax.
+		var escaped strings.Builder
+		for _, char := range content {
+			if char >= '!' && char <= '/' || char >= ':' && char <= '@' ||
+				char >= '[' && char <= '`' || char >= '{' && char <= '~' {
+				escaped.WriteByte('\\')
+			}
+			escaped.WriteRune(char)
+		}
+		return escaped.String()
+	default:
+		return formatContent(html.EscapeString(content), contentType)
+	}
 }
 
 func extractVideoMetadata(doc *goquery.Document, targetURL string, metaCache []string, result *Result) {
@@ -348,6 +403,10 @@ func hasCustomContent(contentElements *goquery.Selection) bool {
 }
 
 func processCustomContent(contentElements *goquery.Selection, doc *goquery.Document, extractor *custom.ContentExtractor, title, targetURL string) (string, error) {
+	return processCustomContentWithBase(contentElements, doc, extractor, title, targetURL, "")
+}
+
+func processCustomContentWithBase(contentElements *goquery.Selection, doc *goquery.Document, extractor *custom.ContentExtractor, title, targetURL, outputBaseURL string) (string, error) {
 	var combinedContent strings.Builder
 	var processErr error
 
@@ -418,6 +477,11 @@ func processCustomContent(contentElements *goquery.Selection, doc *goquery.Docum
 
 		for _, selector := range extractor.Clean {
 			wrapper.Find(selector).Remove()
+		}
+		if outputBaseURL != "" {
+			// Rules see source attributes; only the output clone receives absolute URLs.
+			contentDoc.Find("base").Remove()
+			dom.MakeLinksAbsolute(contentDoc, outputBaseURL)
 		}
 
 		content := wrapper.Children().First()

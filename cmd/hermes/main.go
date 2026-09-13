@@ -15,11 +15,12 @@ import (
 )
 
 var (
-	outputFormat string
-	outputFile   string
-	timeout      time.Duration
-	concurrency  int
-	timing       bool
+	outputFormat         string
+	outputFile           string
+	timeout              time.Duration
+	concurrency          int
+	timing               bool
+	definitionsDirectory string
 )
 
 func main() {
@@ -41,6 +42,7 @@ func main() {
 	parseCmd.Flags().DurationVar(&timeout, "timeout", 30*time.Second, "Timeout per URL")
 	parseCmd.Flags().IntVar(&concurrency, "concurrency", 10, "Maximum concurrent requests")
 	parseCmd.Flags().BoolVar(&timing, "timing", false, "Show timing information for each URL")
+	parseCmd.Flags().StringVar(&definitionsDirectory, "definitions", "", "Local YAML definitions directory (loaded once before parsing)")
 
 	versionCmd := &cobra.Command{
 		Use:   "version",
@@ -68,10 +70,18 @@ func runParse(cmd *cobra.Command, args []string) error {
 		contentType = outputFormat
 	}
 
-	client := hermes.New(
+	options := []hermes.Option{
 		hermes.WithTimeout(timeout),
 		hermes.WithContentType(contentType),
-	)
+	}
+	if definitionsDirectory != "" || (cmd != nil && cmd.Flags().Changed("definitions")) {
+		snapshot, err := hermes.LoadDefinitions(definitionsDirectory)
+		if err != nil {
+			return err
+		}
+		options = append(options, hermes.WithDefinitions(snapshot))
+	}
+	client := hermes.New(options...)
 
 	// Use batch processing for concurrent parsing
 	results := batchParse(client, urls)

@@ -10,7 +10,9 @@ Use the public client methods in [Hermes API](hermes.md) to extract content. See
 - Generic extractors provide fallback rules.
 - Field cleaners normalize extracted values such as titles, authors, and dates.
 
-Hermes selects extractors without public configuration.
+Unconfigured clients retain legacy extractor selection during migration.
+Explicit [local YAML snapshots](definitions.md) isolate clients from the compiled
+registry and supply site rules with generic fallback.
 
 ## Extraction contracts
 
