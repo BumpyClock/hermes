@@ -9,11 +9,13 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
+	"github.com/JohannesKaufmann/html-to-markdown/escape"
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 
@@ -550,6 +552,11 @@ func parseDate(dateStr string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
 }
 
+var (
+	markdownTextSpaces   = regexp.MustCompile(`[\t ]+`)
+	markdownTextEntities = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
+)
+
 // convertToMarkdown converts HTML content to Markdown using html-to-markdown library.
 func convertToMarkdown(content string) string {
 	// Create converter with options similar to TurndownService
@@ -558,6 +565,19 @@ func convertToMarkdown(content string) string {
 	// Configure options to match TurndownService behavior
 	converter.Use(md.Plugin(func(c *md.Converter) []md.Rule {
 		return []md.Rule{
+			{
+				Filter: []string{"#text"},
+				Replacement: func(_ string, selection *goquery.Selection, _ *md.Options) *string {
+					value := selection.Text()
+					if !strings.ContainsAny(value, "<>&") {
+						return nil
+					}
+					// Encode literal HTML/entity syntax before Markdown escaping.
+					// Code rules read the original DOM instead of this serialized text.
+					value = markdownTextSpaces.ReplaceAllString(value, " ")
+					return md.String(escape.MarkdownCharacters(markdownTextEntities.Replace(value)))
+				},
+			},
 			// Handle images properly with template URL resolution
 			{
 				Filter: []string{"img"},

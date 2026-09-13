@@ -64,6 +64,14 @@ explicit definition snapshots and the legacy parser; text resembling markup is n
 promoted into active HTML or Markdown. Plain-text results still require escaping
 before insertion into an HTML document.
 
+Markdown conversion also preserves literal `<`, `>`, and `&` from ordinary HTML
+text nodes using character references, including in headings, emphasis, and link
+labels. This shared behavior applies to selected definitions, generic extraction,
+and the legacy parser. It prevents escaped examples and literal entity strings
+from becoming markup during Markdown interpretation. Authored HTML formatting
+still converts to Markdown; code spans and blocks retain their literal contents.
+HTML and plain-text conversion are unchanged.
+
 Examples:
 ```go
 // Parse a URL
