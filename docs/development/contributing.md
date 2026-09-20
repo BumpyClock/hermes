@@ -121,7 +121,8 @@ Choose checks that cover the affected behavior:
 | `go test ./internal/parser -run TestName -count=1` | Run a focused regression test. |
 | `make test-race` | Run the race and coverage checks from CI. |
 | `make test-release` | Run offline release-tool tests with Python 3.11 or later. |
-| `make verify` | Run lint, race tests with coverage, the CLI build, and release-tool tests. |
+| `make test-compatibility` | Test the released-version comparison and exact-difference acceptance rules. |
+| `make verify` | Run lint, race tests with coverage, the CLI build, and release/compatibility-tool tests. |
 | `make benchmark` | Run benchmarks with allocation metrics, without ordinary tests. |
 | `make build` | Build the CLI at `bin/hermes`. |
 
