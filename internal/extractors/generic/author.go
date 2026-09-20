@@ -1,20 +1,3 @@
-// ABOUTME: Port of extractors/generic/author/extractor.js to Go
-// This file provides 100% JavaScript-compatible author extraction with the
-// same three-tier strategy: meta tags, CSS selectors, and byline regex patterns.
-//
-// JavaScript Compatibility: Maintains exact extraction order and logic:
-// 1. extractFromMeta() with AUTHOR_META_TAGS priority
-// 2. extractFromSelectors() with AUTHOR_SELECTORS priority
-// 3. BYLINE_SELECTORS_RE with /^[\n\s]*By/i pattern matching
-// 4. cleanAuthor() with CLEAN_AUTHOR_RE for 'By' prefix removal
-//
-// Implementation: Uses existing DOM utilities (extractFromMeta, extractFromSelectors)
-// and text utilities (normalizeSpaces) to maintain consistency with other extractors.
-// All constants and patterns match JavaScript exactly for compatibility.
-//
-// Performance: Optimized Go implementation with efficient regex compilation
-// and string manipulation while preserving JavaScript behavior.
-
 package generic
 
 import (
@@ -85,6 +68,8 @@ var BYLINE_SELECTORS_RE = [][2]interface{}{
 // Matches /^\s*(posted |written )?by\s*:?\s*(.*)/i from JavaScript.
 var CLEAN_AUTHOR_RE = regexp.MustCompile(`(?i)^\s*(posted |written )?by\s*:?\s*(.*)`)
 
+var authorNavigationRE = regexp.MustCompile(`(?i)(^|[\s_-])(sidebar|navigation|nav|menu)($|[\s_-])`)
+
 // GenericAuthorExtractor provides author extraction functionality.
 type GenericAuthorExtractor struct{}
 
@@ -104,7 +89,7 @@ func (e *GenericAuthorExtractor) Extract(doc *goquery.Selection, metaCache []str
 	}
 
 	// Second, look through our selectors looking for potential authors.
-	authorPtr := dom.ExtractFromSelectors(doc, AUTHOR_SELECTORS, 2, true)
+	authorPtr := dom.ExtractFromSelectorsWithFilter(doc, AUTHOR_SELECTORS, 2, true, isArticleAuthorCandidate)
 	if authorPtr != nil {
 		author = *authorPtr
 		if len(author) < AUTHOR_MAX_LENGTH {
@@ -129,6 +114,19 @@ func (e *GenericAuthorExtractor) Extract(doc *goquery.Selection, metaCache []str
 	}
 
 	return nil
+}
+
+func isArticleAuthorCandidate(node *goquery.Selection) bool {
+	if !node.Is("a[rel=author]") || node.Closest("article, .byline, .author, .post-author, [itemprop=author]").Length() != 0 {
+		return true
+	}
+	for parent := node.Parent(); parent.Length() != 0; parent = parent.Parent() {
+		if parent.Is("aside, nav, [role=navigation], [role=complementary]") ||
+			authorNavigationRE.MatchString(parent.AttrOr("id", "")+" "+parent.AttrOr("class", "")) {
+			return false
+		}
+	}
+	return true
 }
 
 // cleanAuthor cleans author strings by removing prefixes like "By", "posted by", etc.

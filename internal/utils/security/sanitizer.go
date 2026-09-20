@@ -20,6 +20,7 @@ func createArticlePolicy() *bluemonday.Policy {
 	p.AllowElements("p", "br", "strong", "b", "em", "i", "u", "h1", "h2", "h3", "h4", "h5", "h6")
 	p.AllowElements("ul", "ol", "li", "blockquote", "pre", "code")
 	p.AllowElements("img", "a", "span", "div", "figure", "figcaption")
+	p.AllowElements("table", "thead", "tbody", "tfoot", "tr", "th", "td", "caption")
 
 	// Allow links with href
 	p.AllowAttrs("href").OnElements("a")

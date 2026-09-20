@@ -19,6 +19,7 @@ type ContentCleanOptions struct {
 	Title              string
 	URL                string
 	DefaultCleaner     *bool // Use pointer to distinguish between unset and explicitly false
+	Preserve           []string
 }
 
 // ExtractCleanNode cleans article content, returning a new, cleaned node
@@ -63,7 +64,7 @@ func ExtractCleanNode(article *goquery.Selection, doc *goquery.Document, opts Co
 	// Only do this if defaultCleaner is set to true;
 	// this can sometimes be too aggressive.
 	if defaultCleaner {
-		cleanImagesInSelection(article)
+		cleanImagesInSelection(article, opts.Preserve)
 	}
 
 	// 3. Make links absolute
@@ -83,21 +84,21 @@ func ExtractCleanNode(article *goquery.Selection, doc *goquery.Document, opts Co
 	// 6. H1 tags are typically the article title, which should be extracted
 	// by the title extractor instead. If there's less than 3 of them (<3),
 	// strip them. Otherwise, turn 'em into H2s.
-	cleanHOnesInSelection(article)
+	cleanHOnesInSelection(article, opts.Preserve)
 
 	// 7. Clean headers
-	cleanHeadersInSelection(article, opts.Title)
+	cleanHeadersInSelection(article, opts.Title, opts.Preserve)
 
 	// 8. We used to clean UL's and OL's here, but it was leading to
 	// too many in-article lists being removed. Consider a better
 	// way to detect menus particularly and remove them.
 	// Also optionally running, since it can be overly aggressive.
 	if defaultCleaner {
-		cleanTagsInSelection(article, opts.CleanConditionally)
+		cleanTagsInSelection(article, opts.CleanConditionally, opts.Preserve)
 	}
 
 	// 9. Remove empty paragraph nodes
-	removeEmptyInSelection(article)
+	removeEmptyInSelection(article, opts.Preserve)
 
 	// 10. Remove unnecessary attributes
 	cleanAttributesInSelection(article)
@@ -120,8 +121,11 @@ func rewriteTopLevelSelection(selection *goquery.Selection) *goquery.Selection {
 	return selection
 }
 
-func cleanImagesInSelection(selection *goquery.Selection) {
+func cleanImagesInSelection(selection *goquery.Selection, preserve []string) {
 	selection.Find("img").Each(func(i int, img *goquery.Selection) {
+		if preserved(img, preserve) {
+			return
+		}
 		// Remove spacer images (small or named spacer/blank)
 		src, _ := img.Attr("src")
 		width, _ := img.Attr("width")
@@ -256,12 +260,15 @@ func stripJunkTagsInSelection(selection *goquery.Selection) {
 	selection.Find(selector).Not(".hermes-parser-keep").Remove()
 }
 
-func cleanHOnesInSelection(selection *goquery.Selection) {
+func cleanHOnesInSelection(selection *goquery.Selection, preserve []string) {
 	h1s := selection.Find("h1")
 
 	if h1s.Length() < 3 {
-		// Remove all H1s if there are fewer than 3
-		h1s.Remove()
+		h1s.Each(func(_ int, h1 *goquery.Selection) {
+			if !preserved(h1, preserve) {
+				h1.Remove()
+			}
+		})
 	} else {
 		// Convert H1s to H2s if there are 3 or more
 		h1s.Each(func(i int, h1 *goquery.Selection) {
@@ -270,10 +277,13 @@ func cleanHOnesInSelection(selection *goquery.Selection) {
 	}
 }
 
-func cleanHeadersInSelection(selection *goquery.Selection, title string) {
+func cleanHeadersInSelection(selection *goquery.Selection, title string, preserve []string) {
 	headers := selection.Find("h1, h2, h3, h4, h5, h6")
 
 	headers.Each(func(i int, header *goquery.Selection) {
+		if preserved(header, preserve) {
+			return
+		}
 		headerText := strings.TrimSpace(header.Text())
 
 		// Remove headers that appear before all paragraphs
@@ -299,7 +309,7 @@ func cleanHeadersInSelection(selection *goquery.Selection, title string) {
 	})
 }
 
-func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool) {
+func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool, preserve []string) {
 	if !cleanConditionally {
 		return // Skip conditional cleaning
 	}
@@ -309,6 +319,9 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool)
 
 	for _, tag := range conditionalTags {
 		selection.Find(tag).Each(func(i int, elem *goquery.Selection) {
+			if preserved(elem, preserve) {
+				return
+			}
 			// Skip if marked to keep
 			if elem.HasClass("hermes-parser-keep") {
 				return
@@ -348,9 +361,12 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool)
 	}
 }
 
-func removeEmptyInSelection(selection *goquery.Selection) {
+func removeEmptyInSelection(selection *goquery.Selection, preserve []string) {
 	// Remove empty paragraphs and other elements
 	selection.Find("p, div, span").Each(func(i int, elem *goquery.Selection) {
+		if preserved(elem, preserve) {
+			return
+		}
 		text := strings.TrimSpace(elem.Text())
 		// Remove if empty or only whitespace/br tags
 		if text == "" {
@@ -362,6 +378,15 @@ func removeEmptyInSelection(selection *goquery.Selection) {
 			}
 		}
 	})
+}
+
+func preserved(selection *goquery.Selection, selectors []string) bool {
+	for _, selector := range selectors {
+		if selection.Closest(selector).Length() != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func cleanAttributesInSelection(selection *goquery.Selection) {

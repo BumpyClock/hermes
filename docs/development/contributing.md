@@ -48,6 +48,14 @@ Use this guide to prepare code, tests, and documentation for a pull request.
 4. Update the affected documentation and examples.
 5. Submit a pull request with the validation results.
 
+### External definition changes
+
+The engine is generic-only by default. Add or revise site behavior in a
+separately loaded external YAML snapshot and its deterministic fixture evidence,
+not in compiled Go site factories. Shared bounded operations or named
+exceptions require engine tests and capability documentation; snapshot loading
+remains a fallible startup step.
+
 ### Commit messages
 
 Use `type(scope): subject` for commit subjects. Use an imperative subject without a final period.
@@ -56,7 +64,7 @@ The types are `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, and `chore`.
 
 ```text
 feat(parser): add support for custom timeout configuration
-fix(extractors): handle malformed JSON in custom extractor definitions
+fix(definitions): handle malformed JSON in external definition rules
 docs(api): update parser configuration examples
 ```
 

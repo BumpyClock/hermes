@@ -8,7 +8,7 @@ Hermes separates its public client, resource access, extraction, and result conv
 | --- | --- |
 | `hermes.Client` | Provides the public API and HTTP client configuration. |
 | `internal/resource` | Fetches HTML, detects character encoding, and prepares the DOM. |
-| `internal/extractors` | Provides custom and generic field extractors. |
+| `internal/extractors` | Defines shared external-definition rule types; `internal/extractors/generic` provides default extraction. |
 | `internal/cleaners` | Cleans and normalizes extracted fields. |
 | `internal/parser` | Selects extractors, coordinates extraction, and assembles results. |
 | `internal/validation` | Validates URLs against scheme, host, and network rules. |
@@ -26,9 +26,9 @@ flowchart TD
     B --> C[internal/validation]
     B --> D[internal/resource]
     D --> E[HTML Document]
-    B --> F{Extractor Selection}
-    F -->|Custom| G[internal/extractors/custom]
-    F -->|Generic| H[internal/extractors/generic]
+    B --> F{Explicit definition match}
+    F -->|Matched| G[External YAML rule]
+    F -->|Unmatched or unconfigured| H[internal/extractors/generic]
     G --> I[internal/cleaners]
     H --> I[internal/cleaners]
     I --> J[internal/parser.Result]
@@ -69,8 +69,8 @@ Request headers override client headers, which override defaults; header names a
 The parser extracts metadata sequentially within each request. Separate requests can still execute concurrently through the public client.
 Direct internal parser calls without a supplied HTTP client lazily share one default client per parser instance.
 Supplied clients remain authoritative, and parsing supplied HTML does not initialize the default client.
-Custom and generic paths share content conversion, content metrics, author/date fallback, and video result assembly.
-Their distinct selector priority, fallback policy, and cleanup order remain explicit.
+Definition and generic paths share content conversion, content metrics, author/date fallback, and video result assembly.
+Unconfigured clients never select compiled site rules; snapshots are selected before client construction and remain immutable for the client's lifetime.
 
 The cleaner package owns title separator and domain-similarity algorithms. Generic title extraction retains its distinct tag-removal and whitespace order.
 The parser retains repeated title cleanup where that sequence affects results.

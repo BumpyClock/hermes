@@ -2,7 +2,8 @@
 // that transforms web pages into clean, structured data.
 //
 // Hermes extracts article content, titles, authors, dates, images, and more
-// from any URL using site-specific custom parsers and generic fallback extraction.
+// from any URL using generic extraction. Explicit external YAML snapshots can
+// supply site rules when an application opts in at startup.
 //
 // # Basic Usage
 //

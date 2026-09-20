@@ -57,17 +57,21 @@ func (c *Client) ParseHTML(ctx context.Context, html, url string) (*Result, erro
 
 `Parse` fetches the URL and extracts content. `ParseHTML` extracts content from supplied HTML with the specified base URL.
 
+Unconfigured clients use generic extraction only. Load an immutable external
+definition snapshot before constructing a client when site rules are required;
+parsing never reads definitions from disk or merges sources.
+
 When extraction uses the last-resort DOM-text fallback, literal text is HTML-escaped
 for HTML output and punctuation is backslash-escaped for Markdown output. Plain-text
 output preserves literal characters with normalized whitespace. This applies to both
-explicit definition snapshots and the legacy parser; text resembling markup is not
+explicit definition snapshots and generic extraction; text resembling markup is not
 promoted into active HTML or Markdown. Plain-text results still require escaping
 before insertion into an HTML document.
 
 Markdown conversion also preserves literal `<`, `>`, and `&` from ordinary HTML
 text nodes using character references, including in headings, emphasis, and link
-labels. This shared behavior applies to selected definitions, generic extraction,
-and the legacy parser. It prevents escaped examples and literal entity strings
+labels. This shared behavior applies to selected definitions and generic
+extraction. It prevents escaped examples and literal entity strings
 from becoming markup during Markdown interpretation. Authored HTML formatting
 still converts to Markdown; code spans and blocks retain their literal contents.
 HTML and plain-text conversion are unchanged.
@@ -109,6 +113,11 @@ See [Results](results.md) for all fields and helper methods.
 ## Errors
 
 `ParseError` identifies the operation, URL, error code, and underlying error:
+
+Genuine [YAML transform](definition-transforms.md) failures return `ErrExtract`
+without generic fallback. `DefinitionOperationError` in the error chain exposes
+the definition source, site, one-based step and underlying cause. Cancellation
+and timeout classifications remain unchanged.
 
 ```go
 type ErrorCode int

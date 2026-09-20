@@ -15,7 +15,7 @@ import (
 	"github.com/andybalholm/cascadia"
 	"gopkg.in/yaml.v3"
 
-	"github.com/BumpyClock/hermes/internal/extractors/custom"
+	"github.com/BumpyClock/hermes/internal/extractors"
 )
 
 const (
@@ -44,7 +44,7 @@ func (e *Error) Unwrap() error { return e.Err }
 
 type rule struct {
 	hosts                                        []string
-	extractor                                    custom.CustomExtractor
+	extractor                                    extractors.DefinitionExtractor
 	siteLine, siteColumn, hostsLine, hostsColumn int
 }
 
@@ -52,7 +52,7 @@ type rule struct {
 type Snapshot struct{ rules []rule }
 
 // Match returns a private copy for the extraction pipeline.
-func (s *Snapshot) Match(host string) *custom.CustomExtractor {
+func (s *Snapshot) Match(host string) *extractors.DefinitionExtractor {
 	host = strings.ToLower(strings.TrimSuffix(host, "."))
 	exact := strings.TrimPrefix(host, "www.")
 	best, length := -1, 0
@@ -76,13 +76,19 @@ func (s *Snapshot) Match(host string) *custom.CustomExtractor {
 	return nil
 }
 
-func clone(e custom.CustomExtractor) *custom.CustomExtractor {
-	copyField := func(f *custom.FieldExtractor) *custom.FieldExtractor {
+func clone(e extractors.DefinitionExtractor) *extractors.DefinitionExtractor {
+	copyField := func(f *extractors.FieldExtractor) *extractors.FieldExtractor {
 		if f == nil {
 			return nil
 		}
 		v := *f
-		v.Selectors = append([]custom.SelectorEntry(nil), f.Selectors...)
+		v.Selectors = append([]extractors.SelectorEntry(nil), f.Selectors...)
+		for i := range v.Selectors {
+			if v.Selectors[i].Capture != nil {
+				capture := *v.Selectors[i].Capture
+				v.Selectors[i].Capture = &capture
+			}
+		}
 		return &v
 	}
 	e.Title, e.Author = copyField(e.Title), copyField(e.Author)
@@ -90,9 +96,10 @@ func clone(e custom.CustomExtractor) *custom.CustomExtractor {
 	if e.Content != nil {
 		c := *e.Content
 		c.Clean = append([]string(nil), c.Clean...)
-		c.Selectors = make([]custom.ContentSelectorGroup, len(e.Content.Selectors))
+		c.Preserve = append([]string(nil), c.Preserve...)
+		c.Selectors = make([]extractors.ContentSelectorGroup, len(e.Content.Selectors))
 		for i, group := range e.Content.Selectors {
-			c.Selectors[i] = append(custom.ContentSelectorGroup(nil), group...)
+			c.Selectors[i] = append(extractors.ContentSelectorGroup(nil), group...)
 		}
 		e.Content = &c
 	}
@@ -348,7 +355,7 @@ func (p *validator) rule(n *yaml.Node) (rule, error) {
 			return r, err
 		}
 		for name, n := range fields {
-			var f *custom.FieldExtractor
+			var f *extractors.FieldExtractor
 			f, err = p.field(n, "metadata."+name)
 			if err != nil {
 				return r, err
@@ -368,25 +375,25 @@ func (p *validator) rule(n *yaml.Node) (rule, error) {
 	r.extractor.Content, err = p.content(m["content"])
 	return r, err
 }
-func (p *validator) field(n *yaml.Node, path string) (*custom.FieldExtractor, error) {
+func (p *validator) field(n *yaml.Node, path string) (*extractors.FieldExtractor, error) {
 	items, err := p.list(n, path)
 	if err != nil {
 		return nil, err
 	}
-	f := &custom.FieldExtractor{}
+	f := &extractors.FieldExtractor{}
 	for _, item := range items {
-		m, err := p.mapping(item, path, "text", "attribute")
+		m, err := p.mapping(item, path, "text", "attribute", "text_capture")
 		if err != nil {
 			return nil, err
 		}
 		if len(m) != 1 {
-			return nil, p.bad(item, path, "expected exactly one text or attribute alternative")
+			return nil, p.bad(item, path, "expected exactly one text, attribute, or text_capture alternative")
 		}
-		entry := custom.SelectorEntry{}
+		entry := extractors.SelectorEntry{}
 		if text := m["text"]; text != nil {
 			entry.Selector, err = p.selector(text, path+".text")
-		} else {
-			a, e := p.mapping(m["attribute"], path+".attribute", "selector", "name")
+		} else if attribute := m["attribute"]; attribute != nil {
+			a, e := p.mapping(attribute, path+".attribute", "selector", "name")
 			if e != nil {
 				return nil, e
 			}
@@ -398,6 +405,8 @@ func (p *validator) field(n *yaml.Node, path string) (*custom.FieldExtractor, er
 			if err == nil && !attributePattern.MatchString(entry.Attribute) {
 				err = p.bad(a["name"], path+".attribute.name", "invalid attribute name")
 			}
+		} else {
+			entry, err = p.textCapture(m["text_capture"], path+".text_capture")
 		}
 		if err != nil {
 			return nil, err
@@ -406,11 +415,52 @@ func (p *validator) field(n *yaml.Node, path string) (*custom.FieldExtractor, er
 	}
 	return f, nil
 }
-func (p *validator) content(n *yaml.Node) (*custom.ContentExtractor, error) {
+
+func (p *validator) textCapture(n *yaml.Node, path string) (extractors.SelectorEntry, error) {
+	a := p.arguments(n, path, "selector", "pattern", "group")
+	entry := extractors.SelectorEntry{Selector: a.string("selector", false)}
+	if a.err != nil {
+		return entry, a.err
+	}
+	if _, err := cascadia.Compile(entry.Selector); err != nil {
+		return entry, p.error(a.fields["selector"], path+".selector", err)
+	}
+	pattern := a.string("pattern", false)
+	if len(pattern) > MaxPatternBytes {
+		a.reject("pattern", "pattern byte limit exceeded")
+	}
+	if a.err != nil {
+		return entry, a.err
+	}
+	compiled, err := regexp.Compile(pattern)
+	if err != nil {
+		return entry, p.error(a.fields["pattern"], path+".pattern", err)
+	}
+	if compiled.NumSubexp() > MaxCaptureGroups {
+		return entry, p.bad(a.fields["pattern"], path+".pattern", "capture group limit exceeded")
+	}
+	group := a.fields["group"]
+	if group == nil || group.Tag != "!!int" {
+		node := group
+		if node == nil {
+			node = n
+		}
+		return entry, p.bad(node, path+".group", "expected integer capture group")
+	}
+	index, err := strconv.Atoi(group.Value)
+	if err != nil || index < 1 || index > compiled.NumSubexp() {
+		return entry, p.bad(group, path+".group", "capture group must exist and be at least 1")
+	}
+	entry.Capture = &extractors.TextCapture{
+		Pattern: compiled, Group: index, MaxBytes: MaxValueBytes, MaxNodes: MaxContentNodes, MaxDepth: MaxContentDepth,
+	}
+	return entry, nil
+}
+func (p *validator) content(n *yaml.Node) (*extractors.ContentExtractor, error) {
 	if n == nil {
 		return nil, p.bad(nil, "content", "required field")
 	}
-	m, err := p.mapping(n, "content", "groups", "remove", "default_cleaner")
+	m, err := p.mapping(n, "content", "groups", "remove", "preserve", "default_cleaner", "transforms")
 	if err != nil {
 		return nil, err
 	}
@@ -418,33 +468,46 @@ func (p *validator) content(n *yaml.Node) (*custom.ContentExtractor, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &custom.ContentExtractor{}
+	c := &extractors.ContentExtractor{}
 	for _, group := range groups {
-		items, err := p.list(group, "content.groups")
-		if err != nil {
-			return nil, err
+		items, groupErr := p.list(group, "content.groups")
+		if groupErr != nil {
+			return nil, groupErr
 		}
-		var selectors custom.ContentSelectorGroup
+		var selectors extractors.ContentSelectorGroup
 		for _, item := range items {
-			s, err := p.selector(item, "content.groups")
-			if err != nil {
-				return nil, err
+			s, selectorErr := p.selector(item, "content.groups")
+			if selectorErr != nil {
+				return nil, selectorErr
 			}
 			selectors = append(selectors, s)
 		}
 		c.Selectors = append(c.Selectors, selectors)
 	}
 	if remove := m["remove"]; remove != nil {
-		items, err := p.list(remove, "content.remove")
-		if err != nil {
-			return nil, err
+		items, removeErr := p.list(remove, "content.remove")
+		if removeErr != nil {
+			return nil, removeErr
 		}
 		for _, item := range items {
-			s, err := p.selector(item, "content.remove")
-			if err != nil {
-				return nil, err
+			s, selectorErr := p.selector(item, "content.remove")
+			if selectorErr != nil {
+				return nil, selectorErr
 			}
 			c.Clean = append(c.Clean, s)
+		}
+	}
+	if preserve := m["preserve"]; preserve != nil {
+		items, preserveErr := p.list(preserve, "content.preserve")
+		if preserveErr != nil {
+			return nil, preserveErr
+		}
+		for _, item := range items {
+			s, selectorErr := p.selector(item, "content.preserve")
+			if selectorErr != nil {
+				return nil, selectorErr
+			}
+			c.Preserve = append(c.Preserve, s)
 		}
 	}
 	if enabled := m["default_cleaner"]; enabled != nil {
@@ -452,6 +515,12 @@ func (p *validator) content(n *yaml.Node) (*custom.ContentExtractor, error) {
 			return nil, p.bad(enabled, "content.default_cleaner", "expected true or false")
 		}
 		c.DisableDefaultCleaner = enabled.Value == "false"
+	}
+	if transforms := m["transforms"]; transforms != nil {
+		c.OrderedTransforms, err = p.transforms(transforms)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return c, nil
 }

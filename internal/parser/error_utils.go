@@ -9,6 +9,9 @@ import (
 	"net"
 	"net/url"
 	"strings"
+
+	"github.com/BumpyClock/hermes/internal/definitions"
+	"github.com/BumpyClock/hermes/internal/extractors"
 )
 
 // These constants mirror the public ErrorCode values
@@ -38,6 +41,19 @@ func ClassifyErrorCode(err error, ctx context.Context, op string) int {
 		if errors.Is(ctx.Err(), context.Canceled) {
 			return errTimeout // Treat cancellation as timeout for external API
 		}
+	}
+
+	var operationError *definitions.OperationError
+	if errors.As(err, &operationError) {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return errTimeout
+		}
+		return errExtract
+	}
+
+	var metadataCaptureError *extractors.MetadataCaptureError
+	if errors.As(err, &metadataCaptureError) {
+		return errExtract
 	}
 
 	// Check for URL parsing errors

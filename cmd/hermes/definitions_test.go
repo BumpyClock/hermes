@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -62,4 +63,23 @@ func TestDefinitionsCLIEntrypoint(t *testing.T) {
 	}
 	os.Args = []string{os.Args[0], "parse", "--definitions", "", "https://example.com"}
 	main()
+}
+
+func TestGenericCLIStartsWithoutDefinitionLoading(t *testing.T) {
+	oldDirectory, oldManaged, oldAutomatic, oldCache, oldOutput, oldFormat, oldLoader, oldConcurrency := definitionsDirectory, managedDefinitionsVersion, managedDefinitionsAuto, definitionsCacheDirectory, outputFile, outputFormat, loadManagedDefinitions, concurrency
+	t.Cleanup(func() {
+		definitionsDirectory, managedDefinitionsVersion, managedDefinitionsAuto, definitionsCacheDirectory = oldDirectory, oldManaged, oldAutomatic, oldCache
+		outputFile, outputFormat, loadManagedDefinitions, concurrency = oldOutput, oldFormat, oldLoader, oldConcurrency
+	})
+	definitionsDirectory, managedDefinitionsVersion, definitionsCacheDirectory = "", "", ""
+	managedDefinitionsAuto = false
+	outputFormat, outputFile = "json", filepath.Join(t.TempDir(), "result.json")
+	concurrency = 1
+	loadManagedDefinitions = func(context.Context, hermes.ManagedDefinitionsOptions) (*hermes.ManagedDefinitions, error) {
+		t.Fatal("generic CLI invoked managed definition loading")
+		return nil, nil
+	}
+	if err := runParse(&cobra.Command{}, []string{""}); err == nil {
+		t.Fatal("expected invalid generic article URL")
+	}
 }

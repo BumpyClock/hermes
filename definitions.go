@@ -5,6 +5,12 @@ import "github.com/BumpyClock/hermes/internal/definitions"
 // DefinitionError reports invalid local configuration, including its original cause.
 type DefinitionError = definitions.Error
 
+// DefinitionOperationError describes a failed article transform and preserves its cause.
+type DefinitionOperationError = definitions.OperationError
+
+// ErrDefinitionTransformLimit identifies an exceeded transform resource budget.
+var ErrDefinitionTransformLimit = definitions.ErrTransformLimit
+
 // Definitions is an immutable snapshot loaded before client construction.
 // Its zero value is an empty, generic-only snapshot.
 type Definitions struct{ snapshot *definitions.Snapshot }
@@ -24,10 +30,16 @@ func LoadDefinitions(directory string) (*Definitions, error) {
 func DefinitionCapabilities() DefinitionSupport {
 	return DefinitionSupport{
 		Schema:       definitions.SchemaVersion,
-		Capabilities: []string{"metadata.text", "metadata.attribute", "content.groups", "content.remove", "content.default_cleaner", "hosts.exact-www", "hosts.wildcard"},
+		Capabilities: append([]string{"metadata.text", "metadata.attribute", "metadata.text_capture", "content.groups", "content.remove", "content.preserve", "content.default_cleaner", "hosts.exact-www", "hosts.wildcard"}, definitions.TransformCapabilities()...),
+		Algorithms:   definitions.AlgorithmCapabilities(),
 		MaxFiles:     definitions.MaxFiles, MaxFileBytes: definitions.MaxFileBytes,
 		MaxTotalBytes: definitions.MaxTotalBytes, MaxNodes: definitions.MaxNodes,
 		MaxDepth: definitions.MaxDepth, MaxListItems: definitions.MaxListItems, MaxStringBytes: definitions.MaxStringBytes,
+		MaxTransformSteps: definitions.MaxTransformSteps, MaxConditions: definitions.MaxConditions,
+		MaxPatternBytes: definitions.MaxPatternBytes, MaxCaptureGroups: definitions.MaxCaptureGroups,
+		MaxValueBytes: definitions.MaxValueBytes, MaxContentNodes: definitions.MaxContentNodes,
+		MaxContentDepth: definitions.MaxContentDepth, MaxTransformWork: definitions.MaxTransformWork,
+		MaxJSONDepth: definitions.MaxJSONDepth, MaxJSONTraversal: definitions.MaxJSONTraversal,
 	}
 }
 
@@ -35,10 +47,14 @@ func DefinitionCapabilities() DefinitionSupport {
 type DefinitionSupport struct {
 	Schema                                                                                  int
 	Capabilities                                                                            []string
+	Algorithms                                                                              []string
 	MaxFiles, MaxFileBytes, MaxTotalBytes, MaxNodes, MaxDepth, MaxListItems, MaxStringBytes int
+	MaxTransformSteps, MaxConditions, MaxPatternBytes, MaxCaptureGroups, MaxValueBytes      int
+	MaxContentNodes, MaxContentDepth, MaxTransformWork                                      int
+	MaxJSONDepth, MaxJSONTraversal                                                          int
 }
 
-// WithDefinitions isolates a client from the legacy compiled site registry.
+// WithDefinitions selects one immutable external definition snapshot.
 // A nil or zero snapshot explicitly selects generic-only parsing.
 func WithDefinitions(snapshot *Definitions) Option {
 	return func(c *Client) {

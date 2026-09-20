@@ -34,6 +34,11 @@ func isGoodNode(node *goquery.Selection, maxChildren int) bool {
 // Returns:
 // - *string: The extracted content, or nil if nothing suitable found.
 func ExtractFromSelectors(doc *goquery.Selection, selectors []string, maxChildren int, textOnly bool) *string {
+	return ExtractFromSelectorsWithFilter(doc, selectors, maxChildren, textOnly, nil)
+}
+
+// ExtractFromSelectorsWithFilter additionally rejects candidates outside the caller's metadata scope.
+func ExtractFromSelectorsWithFilter(doc *goquery.Selection, selectors []string, maxChildren int, textOnly bool, accept func(*goquery.Selection) bool) *string {
 	// eslint-disable-next-line no-restricted-syntax
 	for _, selector := range selectors {
 		nodes := doc.Find(selector)
@@ -45,6 +50,9 @@ func ExtractFromSelectors(doc *goquery.Selection, selectors []string, maxChildre
 		}
 		node := nodes.First()
 		if !isGoodNode(node, maxChildren) {
+			continue
+		}
+		if accept != nil && !accept(node) {
 			continue
 		}
 

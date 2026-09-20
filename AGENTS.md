@@ -6,8 +6,7 @@ Hermes extracts structured article data from HTML and URLs. The public Go module
 
 - `client.go`, `options.go`, `result.go`, and `errors.go` define the public API. The public result type is `Result`.
 - Root `parser.go` defines the public `Parser` interface. `internal/parser/` coordinates extraction.
-- `internal/extractors/custom/` contains site-specific extractors and the registry in `index.go`.
-- `internal/extractors/generic/`, `internal/cleaners/`, and `internal/utils/` contain fallback extraction and content transforms.
+- `internal/extractors/` contains shared external-definition rule types; `internal/extractors/generic/`, `internal/cleaners/`, and `internal/utils/` implement generic extraction and transforms.
 - `cmd/hermes/` owns the CLI. `examples/` contains API consumers.
 - `internal/fixtures/` contains local HTML inputs. `benchmark/` contains the separate JavaScript comparison tool.
 
@@ -42,12 +41,12 @@ Report exact checks, failures, and omitted checks.
 ## Contracts and documentation
 
 Read [API documentation](docs/api/hermes.md) for public API changes.
-Read [extractor documentation](docs/api/extractors.md) for custom extractor changes.
+Read [extractor documentation](docs/api/extractors.md) for generic or external-definition extraction changes.
 Read [contributor guidance](docs/development/contributing.md) for test and contribution conventions.
 Update the affected documentation when behavior or public API contracts change.
 
-Register new custom extractors in `buildAllExtractors` in `internal/extractors/custom/index.go`.
-Test site selectors and transforms against local fixtures.
+Site-specific behavior belongs in an explicitly loaded external YAML snapshot, not compiled factories or registries.
+Test selectors and transforms against local synthetic fixtures or revision-pinned canonical local definitions.
 Preserve SSRF denial behavior and context propagation across HTTP requests.
 The public `Result` does not expose the internal pagination URL.
 

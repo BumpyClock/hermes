@@ -6,21 +6,24 @@ Use the public client methods in [Hermes API](hermes.md) to extract content. See
 
 ## Summary
 
-- Custom extractors apply site-specific rules.
-- Generic extractors provide fallback rules.
+- Generic extractors provide the default rules.
+- External YAML snapshots provide optional site-specific rules.
 - Field cleaners normalize extracted values such as titles, authors, and dates.
 
-Unconfigured clients retain legacy extractor selection during migration.
-Explicit [local YAML snapshots](definitions.md) isolate clients from the compiled
-registry and supply site rules with generic fallback.
+Unconfigured clients use generic extraction only. Explicit [local YAML
+snapshots](definitions.md) supply site rules with generic fallback; no compiled
+site registry, aliases, or cached factories participate in selection.
+The retired Wikipedia transform and YouTube placeholder behavior were not
+carried into the external corpus because their prior outputs lacked fixture
+evidence; they are not generic fallbacks.
 
 ## Extraction contracts
 
-Custom metadata selectors use `SelectorEntry` values with a CSS selector and an optional attribute name.
+Definition metadata selectors use `SelectorEntry` values with a CSS selector and an optional attribute name.
 Each selector reads only the first matched element. Title, author, and image fields stop at the first nonempty raw value.
 Date selectors continue until a value passes date conversion.
 
-Custom content selectors use ordered `ContentSelectorGroup` values. Each group combines its selectors in source order and excludes duplicate elements.
+Definition content selectors use ordered `ContentSelectorGroup` values. Each group combines its selectors in source order and excludes duplicate elements.
 The first group with nonempty raw content controls extraction, even if cleanup removes that content.
 
 
@@ -39,9 +42,9 @@ The parser does not treat that choice as empty options.
 
 ```mermaid
 flowchart TD
-    A[HTML Document] --> B{Extractor Selection}
-    B -->|Custom available| C[Custom Extractor]
-    B -->|Fallback| D[Generic Extractor]
+    A[HTML Document] --> B{Explicit snapshot match}
+    B -->|Matched| C[Definition rule]
+    B -->|Unmatched or unconfigured| D[Generic Extractor]
     C --> E[Cleaners]
     D --> E[Cleaners]
     E --> F[Result]

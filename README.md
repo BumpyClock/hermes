@@ -1,11 +1,14 @@
 # Hermes
 
-Hermes is a Go library and CLI that extracts article content and metadata from web pages. It uses site-specific extractors with a generic fallback, based on the [Postlight Parser](https://github.com/postlight/parser).
+Hermes is a Go library and CLI that extracts article content and metadata from web pages with generic extraction, based on the [Postlight Parser](https://github.com/postlight/parser). Applications can opt into immutable external YAML definition snapshots at startup.
 
 ## Features
 
+Upgrading from compiled site rules? Read the
+[external YAML migration guide](docs/guides/yaml-migration.md) before deploying.
+
 - Extract article text, titles, authors, dates, and images.
-- Use site-specific rules for supported sites and generic extraction for other pages.
+- Use generic extraction by default or explicitly loaded external YAML rules.
 - Return content as HTML, Markdown, or plain text. The CLI also supports JSON output.
 - Parse one URL or a batch with the CLI.
 
@@ -266,13 +269,11 @@ The public client calls the internal parser. The parser fetches HTML, selects an
 
 See the [architecture overview](docs/architecture/overview.md) for package responsibilities.
 
-## Custom extractors
+## External definitions
 
-The [custom extractor registry](internal/extractors/custom/index.go) includes rules for these sites and others:
-
-- News: NY Times, Washington Post, CNN, The Guardian
-- Tech: Ars Technica, The Verge, Wired
-- Business: Bloomberg, Reuters
+Site-specific rules are supplied by explicit local or managed YAML snapshots.
+See [local definitions](docs/api/definitions.md) and [managed definitions](docs/api/managed-definitions.md).
+Without a snapshot, Hermes uses generic extraction only.
 
 ## Performance
 
@@ -298,4 +299,4 @@ Hermes uses the [MIT License](LICENSE).
 
 - Original [Postlight Parser](https://github.com/postlight/parser) team
 - [goquery](https://github.com/PuerkitoBio/goquery) for jQuery-like DOM manipulation
-- All contributors to the custom extractors
+- Contributors to the external definition corpus and generic extraction runtime

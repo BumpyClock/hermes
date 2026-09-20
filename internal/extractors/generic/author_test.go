@@ -115,6 +115,31 @@ func TestGenericAuthorExtractor_ExtractFromSelectors(t *testing.T) {
 			expected: "John Smith",
 		},
 		{
+			name: "Ignore sidebar profile navigation without an article byline",
+			html: `<html><body><article><p>A report without a byline.</p></article>
+				<div id="sidebar_top"><div class="widget Profile"><a rel="author" href="/profile">Visit profile</a></div></div>
+				</body></html>`,
+			expected: "",
+		},
+		{
+			name: "Ignore complementary navigation while continuing to a byline",
+			html: `<html><body><div role="complementary"><a rel="author" href="/profile">Visit profile</a></div>
+				<div class="byline">By Jane Doe</div><article><p>Article body.</p></article></body></html>`,
+			expected: "Jane Doe",
+		},
+		{
+			name: "Preserve an article-local author link",
+			html: `<html><body><article><aside><a rel="author" href="/profile">John Smith</a></aside>
+				<p>Article body.</p></article></body></html>`,
+			expected: "John Smith",
+		},
+		{
+			name: "Preserve explicit author markup outside the article",
+			html: `<html><body><aside><div class="author vcard"><span class="fn">Jane Doe</span></div></aside>
+				<article><p>Article body.</p></article></body></html>`,
+			expected: "Jane Doe",
+		},
+		{
 			name: "Priority order - .entry .entry-author over .author",
 			html: `<html><body>
 				<div class="author">Second Author</div>

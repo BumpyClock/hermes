@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -142,6 +143,7 @@ func localDefinitions(t *testing.T, source string) (*Definitions, string) {
 	t.Helper()
 	dir := t.TempDir()
 	path := filepath.Join(dir, "site.yaml")
+	//nolint:gosec // Only t.TempDir and a fixed filename form this test output path.
 	if err := os.WriteFile(path, []byte(source), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -348,8 +350,13 @@ func TestCanonicalDefinitionsBBC(t *testing.T) {
 
 func TestDefinitionCapabilitiesIndependent(t *testing.T) {
 	support := DefinitionCapabilities()
-	if support.Schema != 1 || support.MaxFileBytes != 262144 || len(support.Capabilities) != 7 {
+	if support.Schema != 1 || support.MaxFileBytes != 262144 {
 		t.Fatalf("unexpected capabilities: %+v", support)
+	}
+	for _, capability := range []string{"metadata.text", "metadata.attribute", "content.groups", "content.remove", "content.default_cleaner", "hosts.exact-www", "hosts.wildcard"} {
+		if !slices.Contains(support.Capabilities, capability) {
+			t.Fatalf("missing existing capability %q", capability)
+		}
 	}
 	support.Capabilities[0] = "unsupported"
 	if DefinitionCapabilities().Capabilities[0] == "unsupported" {

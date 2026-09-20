@@ -16,8 +16,7 @@ new clients. A failed load returns no snapshot, even if other files are valid.
 
 An explicitly configured client uses only its snapshot and generic fallback.
 `WithDefinitions(nil)` and a zero-value `Definitions` select generic-only parsing.
-Unconfigured clients temporarily retain the legacy Go registry during the
-unreleased migration; they do not supply fallback site rules to YAML clients.
+Unconfigured clients are generic-only and perform no definition I/O.
 
 ## Local source and CLI
 
@@ -59,18 +58,21 @@ content:
 ```
 
 Required fields are `schema`, `site`, `hosts` and `content.groups`. `metadata`,
-its four fields, `content.remove`, and `content.default_cleaner` are optional.
+its four fields, `content.remove`, `content.transforms`, and `content.default_cleaner` are optional.
 All supplied sequences must be nonempty. Site identifiers are unique nonempty
 strings. No inheritance, merging, aliases, anchors, duplicate keys, unknown
 fields, coercion of strings to booleans/numbers, or additional YAML documents are
-accepted. Unsupported operations and legacy options (including transforms,
-`allowMultiple`, date formats/timezones, JSON/named algorithms and arbitrary
-expressions) are rejected rather than partially executed.
+accepted. Unsupported operations and legacy options (including map-based transforms,
+`allowMultiple`, date formats/timezones, and arbitrary expressions) are rejected
+rather than partially executed. Bounded JSON sources and explicitly named
+algorithms are documented in [ordered transforms](definition-transforms.md).
 
 Metadata alternatives are explicitly either `{text: CSS}` or
 `{attribute: {selector: CSS, name: ATTRIBUTE}}`. They read the first matching
 element. Title, author and image alternatives stop at the first nonempty raw
-value; date alternatives stop at the first successfully parsed date. Existing
+value; date alternatives stop at the first successfully parsed date. Captured
+dates accept ISO forms and unambiguous English month-first or day-first forms,
+such as `September 17, 2026` and `17 September 2026`. Existing
 field cleaners apply. Selectors run against Hermes's prepared document, where
 meta `property` and `content` attributes become `name` and `value`. Attribute
 names must match `[a-zA-Z_][a-zA-Z0-9_.:-]*`.
@@ -80,7 +82,9 @@ selectors form a union in document order, with node deduplication. Selecting a
 parent and its descendant includes the descendant only through the parent.
 The first group with nonempty raw content wins, even when cleanup empties it;
 missing extracted content can then use generic fallback, not a later group.
-Removal selectors run on selected content before default cleaning.
+Ordered transforms run on selected content copies, followed by removal selectors
+and then default cleaning. See [ordered transforms](definition-transforms.md)
+for the typed operations, predicates, required-input policy and execution limits.
 `default_cleaner` defaults to true. False skips heuristic/default cleanup but
 does not bypass output sanitization (including Markdown/text conversion),
 absolute URL resolution, URL validation, context cancellation or SSRF checks.
@@ -91,6 +95,12 @@ Metadata, content and removal selectors therefore see the source's relative
 attributes; generic fallback retains the same unmodified source.
 Generic fallback supplies missing title/author/date/content;
 remaining site metadata retains existing generic behavior.
+Generic author fallback ignores site-wide sidebar or navigation profile links
+that lack article/byline context. Explicit author metadata and article-local
+author markup retain their existing priority.
+Plain-text article output separates block elements, line breaks, list items and
+table cells with whitespace while retaining inline text adjacency. This does not
+change flat metadata tag stripping.
 
 ## Host matching
 
@@ -125,6 +135,9 @@ implemented capabilities and these enforced limits:
 | UTF-8 bytes per scalar, including keys | 2,048 |
 
 Comments count toward byte limits. Validation happens before activation.
+Transform capabilities and their additional limits are documented in
+[ordered transforms](definition-transforms.md). Capability IDs are stable strings;
+consumers should compare membership, not depend on slice ordering.
 These capabilities are the local runtime contract, not a promise of remote
-bundle, cache or updater support. Canonical BBC YAML and synthetic provenance
+bundle, cache or updater support. Canonical BBC and NYTimes YAML and synthetic provenance
 live in `BumpyClock/hermes-definitions`; production site rules are not embedded.

@@ -37,6 +37,15 @@ func removeComments(node *html.Node) {
 // Removes non-content elements (script, style, noscript, head, meta, link) and HTML comments
 // If the result is empty, returns the original text (JavaScript behavior).
 func StripTags(text string) string {
+	return stripTags(text, false)
+}
+
+// StripTagsWithBlockBoundaries preserves visible separation between article blocks.
+func StripTagsWithBlockBoundaries(text string) string {
+	return stripTags(text, true)
+}
+
+func stripTags(text string, blockBoundaries bool) string {
 	if text == "" {
 		return text
 	}
@@ -59,11 +68,22 @@ func StripTags(text string) string {
 	// Remove non-content elements before extracting text
 	// These elements don't contribute to visible content
 	doc.Find("script, style, noscript, head, meta, link").Remove()
+	if blockBoundaries {
+		doc.Find("template").Remove()
+	}
 
 	// Remove HTML comments at all levels using recursive traversal
 	// Start from the document root to catch top-level comments
 	if len(doc.Nodes) > 0 {
 		removeComments(doc.Nodes[0])
+	}
+
+	if blockBoundaries {
+		var output strings.Builder
+		for _, node := range doc.Nodes {
+			appendArticleText(&output, node)
+		}
+		return output.String()
 	}
 
 	cleanText := doc.Text()
@@ -73,6 +93,32 @@ func StripTags(text string) string {
 	}
 
 	return cleanText
+}
+
+func appendArticleText(output *strings.Builder, node *html.Node) {
+	block := false
+	if node.Type == html.ElementNode {
+		switch node.Data {
+		case "address", "article", "aside", "blockquote", "br", "caption", "dd", "div",
+			"dl", "dt", "fieldset", "figcaption", "figure", "footer", "form",
+			"h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "li",
+			"main", "nav", "ol", "p", "pre", "section", "table", "tbody", "td",
+			"tfoot", "th", "thead", "tr", "ul":
+			block = true
+		}
+	}
+	if block {
+		output.WriteByte(' ')
+	}
+	if node.Type == html.TextNode {
+		output.WriteString(node.Data)
+	}
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		appendArticleText(output, child)
+	}
+	if block {
+		output.WriteByte(' ')
+	}
 }
 
 // ExtractFromMeta extracts content from HTML meta tags

@@ -33,3 +33,15 @@ func TestSanitizeHTMLRemovesUnsafeURLsAndSrcset(t *testing.T) {
 		t.Fatalf("sanitized content removed safe text while stripping URLs: %q", content)
 	}
 }
+
+func TestSanitizeHTMLPreservesArticleTables(t *testing.T) {
+	content := SanitizeHTML(`<table><caption>Results</caption><thead><tr><th>Heading</th></tr></thead><tbody><tr><td>Value<script>alert(1)</script></td></tr></tbody></table>`)
+	for _, expected := range []string{"<table>", "<caption>Results</caption>", "<thead>", "<tbody>", "<th>Heading</th>", "<td>Value</td>"} {
+		if !strings.Contains(content, expected) {
+			t.Errorf("sanitized table missing %q: %q", expected, content)
+		}
+	}
+	if strings.Contains(content, "<script") {
+		t.Fatalf("sanitized table preserved executable content: %q", content)
+	}
+}

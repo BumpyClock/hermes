@@ -10,9 +10,9 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/JohannesKaufmann/html-to-markdown/escape"
@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/html"
 
 	"github.com/BumpyClock/hermes/internal/cleaners"
-	"github.com/BumpyClock/hermes/internal/extractors/custom"
+	"github.com/BumpyClock/hermes/internal/extractors"
 	"github.com/BumpyClock/hermes/internal/extractors/generic"
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/security"
@@ -71,9 +71,13 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	default:
 	}
 
-	// Try to use custom extractor, passing the result with site metadata
-	if customResult := h.tryCustomExtractor(doc, targetURL, parsedURL, opts, result, metaCache); customResult != nil {
-		return customResult, nil
+	// Try an explicitly configured definition rule, preserving site metadata.
+	definitionResult, err := h.tryDefinitionExtractor(ctx, doc, targetURL, parsedURL, opts, result, metaCache)
+	if err != nil {
+		return nil, err
+	}
+	if definitionResult != nil {
+		return definitionResult, nil
 	}
 
 	if title := generic.GenericTitleExtractor.Extract(doc.Selection, targetURL, metaCache); title != "" {
@@ -163,42 +167,21 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	return result, nil
 }
 
-// tryCustomExtractor attempts to use a custom extractor for the given domain.
-func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions, baseResult *Result, metaCache []string) *Result {
-	// Look for custom extractor for this domain using the proper lookup function
-	var customExtractor *custom.CustomExtractor
-	var found bool
-	if opts.DefinitionsConfigured {
-		if opts.Definitions != nil {
-			customExtractor = opts.Definitions.Match(parsedURL.Hostname())
-			found = customExtractor != nil
-		}
-	} else {
-		customExtractor, found = custom.GetCustomExtractorByDomain(parsedURL.Host)
+// tryDefinitionExtractor applies an explicitly configured external definition snapshot.
+func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions, baseResult *Result, metaCache []string) (*Result, error) {
+	if !opts.DefinitionsConfigured || opts.Definitions == nil {
+		return nil, nil
+	}
+	definitionExtractor := opts.Definitions.Match(parsedURL.Hostname())
+	if definitionExtractor == nil {
+		return nil, nil
 	}
 
-	if !found && !opts.DefinitionsConfigured {
-		// Try fallback - remove 'www.' prefix if present
-		if strings.HasPrefix(parsedURL.Host, "www.") {
-			baseDomain := strings.TrimPrefix(parsedURL.Host, "www.")
-			customExtractor, found = custom.GetCustomExtractorByDomain(baseDomain)
-		} else {
-			// Try adding 'www.' prefix
-			wwwDomain := "www." + parsedURL.Host
-			customExtractor, found = custom.GetCustomExtractorByDomain(wwwDomain)
-		}
-	}
-
-	if !found || customExtractor == nil {
-		// No custom extractor found
-		return nil // No custom extractor found
-	}
-
-	// Create result with custom extractor info, preserving site metadata from base result
+	// Create result with definition-rule metadata, preserving generic site metadata.
 	result := &Result{
 		URL:           targetURL,
 		Domain:        parsedURL.Host,
-		ExtractorUsed: "custom:" + customExtractor.Domain,
+		ExtractorUsed: "definition:" + definitionExtractor.Domain,
 		// Preserve site metadata
 		SiteName:    baseResult.SiteName,
 		SiteTitle:   baseResult.SiteTitle,
@@ -209,10 +192,14 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		ThemeColor:  baseResult.ThemeColor,
 	}
 
-	if title := firstCustomField(doc, customExtractor.Title); title != "" {
+	if title, fieldErr := firstDefinitionField(ctx, doc, definitionExtractor.Title); fieldErr != nil {
+		return nil, fieldErr
+	} else if title != "" {
 		result.Title = cleaners.CleanTitle(title, targetURL, doc)
 	}
-	if author := firstCustomField(doc, customExtractor.Author); author != "" {
+	if author, fieldErr := firstDefinitionField(ctx, doc, definitionExtractor.Author); fieldErr != nil {
+		return nil, fieldErr
+	} else if author != "" {
 		result.Author = cleaners.CleanAuthor(author)
 	}
 
@@ -227,8 +214,8 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 	}
 
 	// Extract content using custom selectors
-	if customExtractor.Content != nil && len(customExtractor.Content.Selectors) > 0 {
-		for _, selector := range customExtractor.Content.Selectors {
+	if definitionExtractor.Content != nil && len(definitionExtractor.Content.Selectors) > 0 {
+		for _, selector := range definitionExtractor.Content.Selectors {
 			contentElements := contentElementsForSelector(doc, selector)
 
 			// Process the first selector with non-empty raw content, preserving fallback order.
@@ -236,7 +223,16 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 				continue
 			}
 
-			contentHTML, err := processCustomContentWithBase(contentElements, doc, customExtractor.Content, result.Title, targetURL, outputBaseURL)
+			var contentHTML string
+			var err error
+			if definitionExtractor.Content.OrderedTransforms != nil {
+				contentHTML, err = processOrderedContent(ctx, contentElements, doc, definitionExtractor.Content, result.Title, targetURL, outputBaseURL)
+			} else {
+				contentHTML, err = processDefinitionContentWithBase(contentElements, doc, definitionExtractor.Content, result.Title, targetURL, outputBaseURL)
+			}
+			if err != nil && opts.DefinitionsConfigured {
+				return nil, fmt.Errorf("extract definition site %q content: %w", definitionExtractor.Domain, err)
+			}
 			if err == nil && strings.TrimSpace(contentHTML) != "" {
 				if opts.DefinitionsConfigured {
 					contentHTML = security.SanitizeHTML(contentHTML)
@@ -247,15 +243,21 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 		}
 	}
 
-	if customExtractor.DatePublished != nil {
-		for _, selector := range customExtractor.DatePublished.Selectors {
-			if date, err := parseDate(customFieldValue(doc, selector)); err == nil {
+	if definitionExtractor.DatePublished != nil {
+		for _, selector := range definitionExtractor.DatePublished.Selectors {
+			value, fieldErr := definitionFieldValue(ctx, doc, selector)
+			if fieldErr != nil {
+				return nil, fieldErr
+			}
+			if date, err := parseDate(value); err == nil {
 				result.DatePublished = &date
 				break
 			}
 		}
 	}
-	if imageURL := firstCustomField(doc, customExtractor.LeadImageURL); imageURL != "" {
+	if imageURL, fieldErr := firstDefinitionField(ctx, doc, definitionExtractor.LeadImageURL); fieldErr != nil {
+		return nil, fieldErr
+	} else if imageURL != "" {
 		imageBaseURL := targetURL
 		if opts.DefinitionsConfigured {
 			imageBaseURL = outputBaseURL
@@ -289,7 +291,7 @@ func (h *Hermes) tryCustomExtractor(doc *goquery.Document, targetURL string, par
 
 	extractVideoMetadata(doc, targetURL, metaCache, result)
 
-	return result
+	return result, nil
 }
 
 func extractGenericContent(doc *goquery.Document, title, targetURL string) string {
@@ -351,23 +353,69 @@ func extractVideoMetadata(doc *goquery.Document, targetURL string, metaCache []s
 
 }
 
-func customFieldValue(doc *goquery.Document, selector custom.SelectorEntry) string {
+func definitionFieldValue(ctx context.Context, doc *goquery.Document, selector extractors.SelectorEntry) (string, error) {
 	element := doc.Find(selector.Selector).First()
-	if selector.Attribute != "" {
-		return strings.TrimSpace(element.AttrOr(selector.Attribute, ""))
+	if element.Length() == 0 {
+		return "", nil
 	}
-	return strings.TrimSpace(element.Text())
+	if selector.Attribute != "" {
+		return strings.TrimSpace(element.AttrOr(selector.Attribute, "")), nil
+	}
+	if selector.Capture == nil {
+		return strings.TrimSpace(element.Text()), nil
+	}
+	return capturedFieldText(ctx, element.Get(0), selector.Selector, selector.Capture)
 }
 
-func firstCustomField(doc *goquery.Document, extractor *custom.FieldExtractor) string {
+func firstDefinitionField(ctx context.Context, doc *goquery.Document, extractor *extractors.FieldExtractor) (string, error) {
 	if extractor != nil {
 		for _, selector := range extractor.Selectors {
-			if value := customFieldValue(doc, selector); value != "" {
-				return value
+			value, err := definitionFieldValue(ctx, doc, selector)
+			if err != nil {
+				return "", err
+			}
+			if value != "" {
+				return value, nil
 			}
 		}
 	}
-	return ""
+	return "", nil
+}
+
+func capturedFieldText(ctx context.Context, root *html.Node, selector string, capture *extractors.TextCapture) (string, error) {
+	type nodeDepth struct {
+		node  *html.Node
+		depth int
+	}
+	stack := []nodeDepth{{node: root}}
+	var text strings.Builder
+	nodes := 0
+	for len(stack) > 0 {
+		if err := ctx.Err(); err != nil {
+			return "", err
+		}
+		last := len(stack) - 1
+		current := stack[last]
+		stack = stack[:last]
+		nodes++
+		if nodes > capture.MaxNodes || current.depth > capture.MaxDepth {
+			return "", &extractors.MetadataCaptureError{Selector: selector, Err: fmt.Errorf("%w: exceeds %d nodes or depth %d", extractors.ErrMetadataCaptureLimit, capture.MaxNodes, capture.MaxDepth)}
+		}
+		if current.node.Type == html.TextNode {
+			if text.Len()+len(current.node.Data) > capture.MaxBytes {
+				return "", &extractors.MetadataCaptureError{Selector: selector, Err: fmt.Errorf("%w: exceeds %d bytes", extractors.ErrMetadataCaptureLimit, capture.MaxBytes)}
+			}
+			text.WriteString(current.node.Data)
+		}
+		for child := current.node.LastChild; child != nil; child = child.PrevSibling {
+			stack = append(stack, nodeDepth{node: child, depth: current.depth + 1})
+		}
+	}
+	match := capture.Pattern.FindStringSubmatchIndex(text.String())
+	if match == nil || match[capture.Group*2] < 0 {
+		return "", nil
+	}
+	return strings.TrimSpace(text.String()[match[capture.Group*2]:match[capture.Group*2+1]]), nil
 }
 
 func extractGenericAuthorAndDate(doc *goquery.Document, targetURL string, metaCache []string, result *Result) {
@@ -385,7 +433,7 @@ func extractGenericAuthorAndDate(doc *goquery.Document, targetURL string, metaCa
 	}
 }
 
-func contentElementsForSelector(doc *goquery.Document, selectors custom.ContentSelectorGroup) *goquery.Selection {
+func contentElementsForSelector(doc *goquery.Document, selectors extractors.ContentSelectorGroup) *goquery.Selection {
 	if len(selectors) == 0 {
 		return nil
 	}
@@ -404,11 +452,11 @@ func hasCustomContent(contentElements *goquery.Selection) bool {
 	return false
 }
 
-func processCustomContent(contentElements *goquery.Selection, doc *goquery.Document, extractor *custom.ContentExtractor, title, targetURL string) (string, error) {
-	return processCustomContentWithBase(contentElements, doc, extractor, title, targetURL, "")
+func processDefinitionContent(contentElements *goquery.Selection, doc *goquery.Document, extractor *extractors.ContentExtractor, title, targetURL string) (string, error) {
+	return processDefinitionContentWithBase(contentElements, doc, extractor, title, targetURL, "")
 }
 
-func processCustomContentWithBase(contentElements *goquery.Selection, doc *goquery.Document, extractor *custom.ContentExtractor, title, targetURL, outputBaseURL string) (string, error) {
+func processDefinitionContentWithBase(contentElements *goquery.Selection, doc *goquery.Document, extractor *extractors.ContentExtractor, title, targetURL, outputBaseURL string) (string, error) {
 	var combinedContent strings.Builder
 	var processErr error
 
@@ -421,61 +469,6 @@ func processCustomContentWithBase(contentElements *goquery.Selection, doc *goque
 		}
 		wrapper := contentDoc.Find("div").First()
 		wrapper.AppendSelection(element.Clone())
-
-		type transformMatch struct {
-			selector  string
-			transform custom.TransformFunction
-			match     *goquery.Selection
-			depth     int
-			index     int
-		}
-
-		selectors := make([]string, 0, len(extractor.Transforms))
-		for selector := range extractor.Transforms {
-			selectors = append(selectors, selector)
-		}
-		sort.Strings(selectors)
-
-		matches := make([]transformMatch, 0)
-		seen := make(map[*html.Node]struct{})
-		for _, selector := range selectors {
-			transform := extractor.Transforms[selector]
-			wrapper.Find(selector).Each(func(index int, match *goquery.Selection) {
-				node := match.Get(0)
-				if _, ok := seen[node]; ok {
-					return
-				}
-				seen[node] = struct{}{}
-
-				depth := 0
-				for ancestor := node; ancestor != nil; ancestor = ancestor.Parent {
-					depth++
-				}
-				matches = append(matches, transformMatch{
-					selector:  selector,
-					transform: transform,
-					match:     match,
-					depth:     depth,
-					index:     index,
-				})
-			})
-		}
-		sort.Slice(matches, func(i, j int) bool {
-			if matches[i].depth != matches[j].depth {
-				return matches[i].depth > matches[j].depth
-			}
-			if matches[i].selector != matches[j].selector {
-				return matches[i].selector < matches[j].selector
-			}
-			return matches[i].index < matches[j].index
-		})
-
-		for _, match := range matches {
-			if transformErr := match.transform.Transform(match.match); transformErr != nil {
-				processErr = fmt.Errorf("transform custom content selector %q: %w", match.selector, transformErr)
-				return false
-			}
-		}
 
 		for _, selector := range extractor.Clean {
 			wrapper.Find(selector).Remove()
@@ -492,6 +485,7 @@ func processCustomContentWithBase(contentElements *goquery.Selection, doc *goque
 				CleanConditionally: true,
 				Title:              title,
 				URL:                targetURL,
+				Preserve:           extractor.Preserve,
 			})
 		}
 
@@ -536,10 +530,15 @@ func parseDate(dateStr string) (time.Time, error) {
 		time.RFC3339,
 		"2006-01-02T15:04:05Z",
 		"2006-01-02 15:04:05",
+		"2006-01-02 15:04:05 UTC",
 		"2006-01-02",
 		"January 2, 2006",
 		"Jan 2, 2006",
+		"2 January 2006",
+		"2 Jan 2006",
 		"2006/01/02",
+		"2006/1/2",
+		"2006年1月2日",
 		"01/02/2006",
 	}
 
@@ -569,13 +568,72 @@ func convertToMarkdown(content string) string {
 				Filter: []string{"#text"},
 				Replacement: func(_ string, selection *goquery.Selection, _ *md.Options) *string {
 					value := selection.Text()
-					if !strings.ContainsAny(value, "<>&") {
+					if strings.ContainsAny(value, "<>&") {
+						// Encode literal HTML/entity syntax before Markdown escaping.
+						// Code rules read the original DOM instead of this serialized text.
+						value = markdownTextSpaces.ReplaceAllString(value, " ")
+						return md.String(escape.MarkdownCharacters(markdownTextEntities.Replace(value)))
+					}
+					if !preservesInlineWhitespace(selection, value) {
 						return nil
 					}
-					// Encode literal HTML/entity syntax before Markdown escaping.
-					// Code rules read the original DOM instead of this serialized text.
-					value = markdownTextSpaces.ReplaceAllString(value, " ")
-					return md.String(escape.MarkdownCharacters(markdownTextEntities.Replace(value)))
+					value = strings.NewReplacer("\t", " ", "\r", " ", "\n", " ").Replace(value)
+					return md.String(escape.MarkdownCharacters(markdownTextSpaces.ReplaceAllString(value, " ")))
+				},
+			},
+			{
+				Filter: []string{"strong", "b"},
+				Replacement: func(content string, selection *goquery.Selection, _ *md.Options) *string {
+					if wrapped := renderInlineWrapperWhitespace(content, selection, "**"); wrapped != nil {
+						return wrapped
+					}
+					if rendered := renderFlankedStrong(selection, content); rendered != nil {
+						return rendered
+					}
+					return nil
+				},
+			},
+			{
+				Filter: []string{"i", "em"},
+				Replacement: func(content string, selection *goquery.Selection, _ *md.Options) *string {
+					if wrapped := renderInlineWrapperWhitespace(content, selection, "_"); wrapped != nil {
+						return wrapped
+					}
+					if !canRenderAdjacentEmphasis(selection, content) {
+						return nil
+					}
+					// Asterisks preserve valid adjacent emphasis without source-absent padding.
+					return md.String("*" + content + "*")
+				},
+			},
+			{
+				Filter: []string{"caption", "figcaption"},
+				Replacement: func(content string, _ *goquery.Selection, _ *md.Options) *string {
+					content = markdownBlockContent(content)
+					if content == "" {
+						return md.String("")
+					}
+					return md.String("\n\n" + content + "\n\n")
+				},
+			},
+			{
+				Filter: []string{"tr"},
+				Replacement: func(content string, _ *goquery.Selection, _ *md.Options) *string {
+					content = markdownBlockContent(content)
+					if content == "" {
+						return md.String("")
+					}
+					return md.String("\n\n" + content + "\n\n")
+				},
+			},
+			{
+				Filter: []string{"th", "td"},
+				Replacement: func(content string, _ *goquery.Selection, _ *md.Options) *string {
+					content = markdownBlockContent(content)
+					if content == "" {
+						return md.String("")
+					}
+					return md.String(content + "\n")
 				},
 			},
 			// Handle images properly with template URL resolution
@@ -595,16 +653,11 @@ func convertToMarkdown(content string) string {
 					return &result
 				},
 			},
-			// Handle links properly
 			{
 				Filter: []string{"a"},
-				Replacement: func(content string, selec *goquery.Selection, opt *md.Options) *string {
-					href := selec.AttrOr("href", "")
-					if href == "" {
-						return md.String(content)
-					}
-					result := fmt.Sprintf("[%s](%s)", content, href)
-					return &result
+				Replacement: func(content string, selec *goquery.Selection, _ *md.Options) *string {
+					// Preserve source spacing; the upstream link rule can add a separator absent from the DOM.
+					return markdownLink(content, selec)
 				},
 			},
 		}
@@ -620,6 +673,278 @@ func convertToMarkdown(content string) string {
 	return markdown
 }
 
+func markdownBlockContent(content string) string {
+	return preserveMarkdownUnicodeEdges(strings.TrimFunc(content, isHTMLWhitespace))
+}
+
+func preserveMarkdownUnicodeEdges(content string) string {
+	characters := []rune(content)
+	start, end := 0, len(characters)
+	for start < end && unicode.IsSpace(characters[start]) {
+		start++
+	}
+	for end > start && unicode.IsSpace(characters[end-1]) {
+		end--
+	}
+	if start == 0 && end == len(characters) {
+		return content
+	}
+	// The converter trims Unicode space at its outer boundary; references retain visible source spacing.
+	var output strings.Builder
+	writeBoundary := func(characters []rune) {
+		for _, character := range characters {
+			if isHTMLWhitespace(character) {
+				output.WriteRune(character)
+			} else {
+				fmt.Fprintf(&output, "&#%d;", character)
+			}
+		}
+	}
+	writeBoundary(characters[:start])
+	output.WriteString(string(characters[start:end]))
+	writeBoundary(characters[end:])
+	return output.String()
+}
+
+func markdownLink(content string, selection *goquery.Selection) *string {
+	href := selection.AttrOr("href", "")
+	if href == "" {
+		return md.String(content)
+	}
+	leadingWhitespace, content, trailingWhitespace := splitHTMLWhitespace(content)
+	if content == "" {
+		if leadingWhitespace != "" || trailingWhitespace != "" {
+			return md.String(" ")
+		}
+		content = selection.AttrOr("title", selection.AttrOr("aria-label", ""))
+	}
+	if content == "" {
+		return md.String("")
+	}
+	content = escapeMarkdownLinkLabel(content)
+
+	title := ""
+	if value, ok := selection.Attr("title"); ok {
+		title = ` "` + escapeMarkdownLinkTitle(value) + `"`
+	}
+	result := fmt.Sprintf("[%s](%s%s)", content, href, title)
+	if leadingWhitespace != "" {
+		result = leadingWhitespace + result
+	}
+	if trailingWhitespace != "" {
+		result += trailingWhitespace
+	}
+	return &result
+}
+
+func splitHTMLWhitespace(value string) (leading string, content string, trailing string) {
+	runes := []rune(value)
+	start := 0
+	for start < len(runes) && isHTMLWhitespace(runes[start]) {
+		start++
+	}
+	end := len(runes)
+	for end > start && isHTMLWhitespace(runes[end-1]) {
+		end--
+	}
+	if start > 0 {
+		leading = " "
+	}
+	if end < len(runes) {
+		trailing = " "
+	}
+	return leading, string(runes[start:end]), trailing
+}
+
+func isHTMLWhitespace(character rune) bool {
+	switch character {
+	case '\t', '\n', '\f', '\r', ' ':
+		return true
+	default:
+		return false
+	}
+}
+
+func escapeMarkdownLinkLabel(value string) string {
+	value = strings.NewReplacer("\r\n", "\n", "\r", "\n").Replace(value)
+	return strings.ReplaceAll(value, "\n", "\\\n")
+}
+
+func escapeMarkdownLinkTitle(value string) string {
+	value = strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ").Replace(value)
+	value = strings.ReplaceAll(value, `\`, `\\`)
+	return strings.ReplaceAll(value, `"`, `\"`)
+}
+
+func preservesInlineWhitespace(selection *goquery.Selection, value string) bool {
+	node := selection.Get(0)
+	if node == nil {
+		return false
+	}
+	for parent := node.Parent; parent != nil; parent = parent.Parent {
+		if parent.Type == html.ElementNode && md.IsInlineElement(parent.Data) {
+			return true
+		}
+	}
+	if strings.TrimSpace(value) != "" || node.PrevSibling == nil || node.NextSibling == nil {
+		return false
+	}
+	return isInlineOrText(node.PrevSibling) && isInlineOrText(node.NextSibling)
+}
+
+func isInlineOrText(node *html.Node) bool {
+	return node.Type == html.TextNode && strings.TrimSpace(node.Data) != "" ||
+		node.Type == html.ElementNode && md.IsInlineElement(node.Data)
+}
+
+func renderInlineWrapperWhitespace(content string, selection *goquery.Selection, delimiter string) *string {
+	if strings.ContainsAny(content, "\r\n") || selection.Find("strong,b,em,i,code").Length() != 0 {
+		return nil
+	}
+	leading, inner, trailing := splitInlineWrapperWhitespace(content)
+	if leading == "" && trailing == "" {
+		return nil
+	}
+	if inner == "" {
+		return md.String(preserveMarkdownUnicodeEdges(leading + trailing))
+	}
+	return md.String(preserveMarkdownUnicodeEdges(leading + delimiter + inner + delimiter + trailing))
+}
+
+func splitInlineWrapperWhitespace(value string) (leading, inner, trailing string) {
+	runes := []rune(value)
+	start := 0
+	for start < len(runes) && unicode.IsSpace(runes[start]) {
+		start++
+	}
+	end := len(runes)
+	for end > start && unicode.IsSpace(runes[end-1]) {
+		end--
+	}
+	return normalizeInlineWrapperWhitespace(runes[:start]), string(runes[start:end]), normalizeInlineWrapperWhitespace(runes[end:])
+}
+
+func normalizeInlineWrapperWhitespace(value []rune) string {
+	var output strings.Builder
+	previousASCIIWhitespace := false
+	for _, character := range value {
+		if isHTMLWhitespace(character) {
+			if !previousASCIIWhitespace {
+				output.WriteByte(' ')
+			}
+			previousASCIIWhitespace = true
+			continue
+		}
+		output.WriteRune(character)
+		previousASCIIWhitespace = false
+	}
+	return output.String()
+}
+
+func canRenderAdjacentEmphasis(selection *goquery.Selection, content string) bool {
+	if parent := selection.Parent(); parent.Is("i,em") {
+		return false
+	}
+	return canRenderAdjacentAsterisk(selection, content, "strong,b,em,i,code")
+}
+
+func canRenderAdjacentAsterisk(selection *goquery.Selection, content, nestedSelector string) bool {
+	node := selection.Get(0)
+	if node == nil || content == "" || content != strings.TrimSpace(content) ||
+		strings.ContainsAny(content, "\r\n") || selection.Find(nestedSelector).Length() != 0 {
+		return false
+	}
+
+	if parent := selection.Parent(); parent.Is("strong,b") {
+		return false
+	}
+	before, hasBefore := lastTextRune(node.PrevSibling)
+	after, hasAfter := firstTextRune(node.NextSibling)
+	if node.PrevSibling == nil {
+		before, hasBefore = ' ', true
+	}
+	if node.NextSibling == nil {
+		after, hasAfter = ' ', true
+	}
+	if !hasBefore || !hasAfter {
+		return false
+	}
+	if unicode.IsSpace(before) && unicode.IsSpace(after) {
+		return false
+	}
+	characters := []rune(content)
+	return leftFlankingAsterisk(before, characters[0]) &&
+		rightFlankingAsterisk(characters[len(characters)-1], after)
+}
+
+func renderFlankedStrong(selection *goquery.Selection, content string) *string {
+	node := selection.Get(0)
+	if node == nil || content == "" || content != strings.TrimSpace(content) ||
+		strings.ContainsAny(content, "\r\n") || selection.Find("strong,b,em,i,code").Length() != 0 {
+		return nil
+	}
+	if parent := selection.Parent(); parent.Is("strong,b") {
+		return nil
+	}
+	before, hasBefore := lastTextRune(node.PrevSibling)
+	after, hasAfter := firstTextRune(node.NextSibling)
+	if node.PrevSibling == nil {
+		before, hasBefore = ' ', true
+	}
+	if node.NextSibling == nil {
+		after, hasAfter = ' ', true
+	}
+	if !hasBefore || !hasAfter {
+		return nil
+	}
+	characters := []rune(content)
+	original := []rune(selection.Text())
+	if len(original) == 0 || isCommonMarkSymbol(original[0]) || isCommonMarkSymbol(original[len(original)-1]) {
+		return nil
+	}
+	leading, trailing := "", ""
+	if !leftFlankingAsterisk(before, characters[0]) {
+		leading = " "
+	}
+	if !rightFlankingAsterisk(characters[len(characters)-1], after) {
+		trailing = " "
+	}
+	return md.String(leading + "**" + content + "**" + trailing)
+}
+
+func leftFlankingAsterisk(before, after rune) bool {
+	return !unicode.IsSpace(after) &&
+		(!isCommonMarkPunctuation(after) || unicode.IsSpace(before) || isCommonMarkPunctuation(before))
+}
+
+func rightFlankingAsterisk(before, after rune) bool {
+	return !unicode.IsSpace(before) &&
+		(!isCommonMarkPunctuation(before) || unicode.IsSpace(after) || isCommonMarkPunctuation(after))
+}
+
+func isCommonMarkPunctuation(character rune) bool {
+	return unicode.IsPunct(character) || isCommonMarkSymbol(character)
+}
+
+func isCommonMarkSymbol(character rune) bool {
+	return strings.ContainsRune("$+<=>^`|~", character)
+}
+
+func lastTextRune(node *html.Node) (rune, bool) {
+	if node == nil || node.Type != html.TextNode || node.Data == "" {
+		return 0, false
+	}
+	characters := []rune(node.Data)
+	return characters[len(characters)-1], true
+}
+
+func firstTextRune(node *html.Node) (rune, bool) {
+	if node == nil || node.Type != html.TextNode || node.Data == "" {
+		return 0, false
+	}
+	return []rune(node.Data)[0], true
+}
+
 // formatContent applies the specified content type transformation and security sanitization
 // Trims inputs, supports common content type aliases, and returns sanitized output.
 func formatContent(content string, contentType string) string {
@@ -633,7 +958,7 @@ func formatContent(content string, contentType string) string {
 	// Map aliases to canonical types
 	switch normalized {
 	case "text", "text/plain", "txt":
-		return text.NormalizeSpaces(dom.StripTags(content))
+		return text.NormalizeSpaces(dom.StripTagsWithBlockBoundaries(content))
 	case "markdown", "md", "text/markdown":
 		return convertToMarkdown(content)
 	case "html", "text/html", "":

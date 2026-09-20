@@ -39,6 +39,9 @@ hermes parse https://example.com/1 https://example.com/2
 ```
 
 See [CLI usage](cli-usage.md) for flags and output rules.
+Unconfigured runs use generic extraction only. See the
+[YAML migration guide](yaml-migration.md) to retain site-specific behavior with
+an explicit local or managed snapshot.
 
 ## Library
 
