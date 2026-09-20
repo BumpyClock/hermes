@@ -20,6 +20,9 @@ go install github.com/BumpyClock/hermes/cmd/hermes@latest
 - `--timeout <duration>`: Timeout per URL. The default is `30s`.
 - `--concurrency <n>`: Maximum concurrent requests. The default is `10`. Use a positive integer.
 - `--timing`: Print timing information to stderr
+- `--definitions <directory>`: Load one local YAML snapshot before parsing.
+- `--managed-definitions <tag>` or `--managed-definitions-auto`: Opt into one managed snapshot at startup.
+- `--definitions-cache <directory>`: Select the managed snapshot cache; requires a managed source.
 
 For one URL, `json` returns the full result with HTML content. Other formats return only the content in the selected format.
 
@@ -28,6 +31,15 @@ The format flag controls `result.content` in that array. The CLI omits failed UR
 
 Without `--timing`, the CLI does not report individual URL errors. A partial failure still returns exit code `0` if the output succeeds.
 Use `--timing` to report individual URL errors on stderr.
+
+## External definitions
+
+Without a definition flag, the CLI is generic-only and performs no definition
+file or managed-source I/O. `--definitions` loads one fallible local snapshot
+before workers start. Managed flags load one immutable managed snapshot before
+workers start; they never hot-reload an active process. Local and managed sources
+cannot be combined. Loading failures occur before article requests and leave
+JSON stdout untouched.
 
 ## Examples
 

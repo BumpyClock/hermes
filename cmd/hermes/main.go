@@ -15,13 +15,18 @@ import (
 )
 
 var (
-	outputFormat         string
-	outputFile           string
-	timeout              time.Duration
-	concurrency          int
-	timing               bool
-	definitionsDirectory string
+	outputFormat              string
+	outputFile                string
+	timeout                   time.Duration
+	concurrency               int
+	timing                    bool
+	definitionsDirectory      string
+	managedDefinitionsVersion string
+	managedDefinitionsAuto    bool
+	definitionsCacheDirectory string
 )
+
+var loadManagedDefinitions = hermes.LoadManagedDefinitions
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -43,6 +48,9 @@ func main() {
 	parseCmd.Flags().IntVar(&concurrency, "concurrency", 10, "Maximum concurrent requests")
 	parseCmd.Flags().BoolVar(&timing, "timing", false, "Show timing information for each URL")
 	parseCmd.Flags().StringVar(&definitionsDirectory, "definitions", "", "Local YAML definitions directory (loaded once before parsing)")
+	parseCmd.Flags().StringVar(&managedDefinitionsVersion, "managed-definitions", "", "Exact managed hermes-definitions release tag (loaded once before parsing)")
+	parseCmd.Flags().BoolVar(&managedDefinitionsAuto, "managed-definitions-auto", false, "Follow the newest compatible managed definitions release at startup")
+	parseCmd.Flags().StringVar(&definitionsCacheDirectory, "definitions-cache", "", "Updater-owned managed definitions cache directory")
 
 	versionCmd := &cobra.Command{
 		Use:   "version",
@@ -74,12 +82,43 @@ func runParse(cmd *cobra.Command, args []string) error {
 		hermes.WithTimeout(timeout),
 		hermes.WithContentType(contentType),
 	}
-	if definitionsDirectory != "" || (cmd != nil && cmd.Flags().Changed("definitions")) {
+	localDefinitions := definitionsDirectory != "" || flagChanged(cmd, "definitions")
+	managedDefinitions := managedDefinitionsVersion != "" || managedDefinitionsAuto || flagChanged(cmd, "managed-definitions") || flagChanged(cmd, "managed-definitions-auto")
+	cacheDirectory := definitionsCacheDirectory != "" || flagChanged(cmd, "definitions-cache")
+	if localDefinitions && managedDefinitions {
+		return fmt.Errorf("--definitions and --managed-definitions cannot be used together")
+	}
+	if managedDefinitionsVersion != "" && managedDefinitionsAuto {
+		return fmt.Errorf("--managed-definitions and --managed-definitions-auto cannot be used together")
+	}
+	if cacheDirectory && !managedDefinitions {
+		return fmt.Errorf("--definitions-cache requires --managed-definitions")
+	}
+	if localDefinitions {
 		snapshot, err := hermes.LoadDefinitions(definitionsDirectory)
 		if err != nil {
 			return err
 		}
 		options = append(options, hermes.WithDefinitions(snapshot))
+	}
+	if managedDefinitions {
+		if managedDefinitionsVersion == "" && !managedDefinitionsAuto {
+			return fmt.Errorf("--managed-definitions requires an exact release tag")
+		}
+		loadContext := context.Background()
+		if cmd != nil && cmd.Context() != nil {
+			loadContext = cmd.Context()
+		}
+		managed, err := loadManagedDefinitions(loadContext, hermes.ManagedDefinitionsOptions{
+			Version: managedDefinitionsVersion, Automatic: managedDefinitionsAuto, CacheDirectory: definitionsCacheDirectory,
+		})
+		if err != nil {
+			return err
+		}
+		if managed.Warning != nil {
+			fmt.Fprintf(os.Stderr, "Warning: %v\n", managed.Warning)
+		}
+		options = append(options, hermes.WithDefinitions(managed.Snapshot))
 	}
 	client := hermes.New(options...)
 
@@ -123,6 +162,10 @@ func runParse(cmd *cobra.Command, args []string) error {
 
 	// Format output
 	return formatOutput(successfulResults, len(urls) == 1)
+}
+
+func flagChanged(cmd *cobra.Command, name string) bool {
+	return cmd != nil && cmd.Flags().Lookup(name) != nil && cmd.Flags().Changed(name)
 }
 
 // ParseResult holds the result of parsing a single URL.
