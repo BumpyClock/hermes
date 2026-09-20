@@ -34,11 +34,11 @@ func TestMarkdownLiteralTextSerialization(t *testing.T) {
 
 func TestLiteralTextOtherFormatsUnchanged(t *testing.T) {
 	const source = `<p>Meaningful &lt;img src=x onerror=alert(1)&gt; &amp;copy; A &amp; B</p>`
-	if got := formatContent(source, "html"); got != source {
+	if got := formatContent(source, "html", false); got != source {
 		t.Errorf("HTML = %q, want %q", got, source)
 	}
 	const wantText = `Meaningful <img src=x onerror=alert(1)> &copy; A & B`
-	if got := formatContent(source, "text"); got != wantText {
+	if got := formatContent(source, "text", false); got != wantText {
 		t.Errorf("text = %q, want %q", got, wantText)
 	}
 }

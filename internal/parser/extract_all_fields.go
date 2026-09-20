@@ -109,10 +109,7 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	}
 
 	if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
-		if opts.DefinitionsConfigured {
-			content = security.SanitizeHTML(content)
-		}
-		setFormattedContent(result, content, opts.ContentType)
+		setFormattedContent(result, content, opts.ContentType, opts.DefinitionsConfigured)
 
 		// Update image extraction with content context
 		imageParams.Content = result.Content
@@ -234,10 +231,7 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 				return nil, fmt.Errorf("extract definition site %q content: %w", definitionExtractor.Domain, err)
 			}
 			if err == nil && strings.TrimSpace(contentHTML) != "" {
-				if opts.DefinitionsConfigured {
-					contentHTML = security.SanitizeHTML(contentHTML)
-				}
-				setFormattedContent(result, contentHTML, opts.ContentType)
+				setFormattedContent(result, contentHTML, opts.ContentType, true)
 			}
 			break
 		}
@@ -281,10 +275,7 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 		// Fallback content extraction if no content was found
 		if result.Content == "" {
 			if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
-				if opts.DefinitionsConfigured {
-					content = security.SanitizeHTML(content)
-				}
-				setFormattedContent(result, content, opts.ContentType)
+				setFormattedContent(result, content, opts.ContentType, true)
 			}
 		}
 	}
@@ -304,8 +295,8 @@ func extractGenericContent(doc *goquery.Document, title, targetURL string) strin
 	})
 }
 
-func setFormattedContent(result *Result, content, contentType string) {
-	result.Content = formatContent(content, contentType)
+func setFormattedContent(result *Result, content, contentType string, sanitizeBeforeConversion bool) {
+	result.Content = formatContent(content, contentType, sanitizeBeforeConversion)
 	if result.Content != "" {
 		result.Excerpt = text.ExcerptContent(result.Content, 160)
 	}
@@ -330,7 +321,7 @@ func formatPlainText(content, contentType string) string {
 		}
 		return escaped.String()
 	default:
-		return formatContent(html.EscapeString(content), contentType)
+		return formatContent(html.EscapeString(content), contentType, false)
 	}
 }
 
@@ -947,7 +938,7 @@ func firstTextRune(node *html.Node) (rune, bool) {
 
 // formatContent applies the specified content type transformation and security sanitization
 // Trims inputs, supports common content type aliases, and returns sanitized output.
-func formatContent(content string, contentType string) string {
+func formatContent(content string, contentType string, sanitizeBeforeConversion bool) string {
 	// Trim both inputs
 	content = strings.TrimSpace(content)
 	contentType = strings.TrimSpace(contentType)
@@ -958,8 +949,14 @@ func formatContent(content string, contentType string) string {
 	// Map aliases to canonical types
 	switch normalized {
 	case "text", "text/plain", "txt":
+		if sanitizeBeforeConversion {
+			content = security.SanitizeHTML(content)
+		}
 		return text.NormalizeSpaces(dom.StripTagsWithBlockBoundaries(content))
 	case "markdown", "md", "text/markdown":
+		if sanitizeBeforeConversion {
+			content = security.SanitizeHTML(content)
+		}
 		return convertToMarkdown(content)
 	case "html", "text/html", "":
 		// Empty string defaults to HTML (expected behavior)
