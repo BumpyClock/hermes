@@ -1,6 +1,9 @@
 # Configuration API reference
 
-Pass functional options to `hermes.New(...)` to configure the client. The library has no public `ParserOptions` type, environment-variable loader, or YAML/JSON configuration reader.
+Pass functional options to `hermes.New(...)` to configure the client. The library
+has no public `ParserOptions` type, environment-variable loader, or general client
+configuration file reader. Site rules are a separate, explicitly loaded
+[YAML definition snapshot](definitions.md).
 
 ## Contents
 
@@ -19,6 +22,7 @@ func WithTimeout(timeout time.Duration) Option
 func WithUserAgent(userAgent string) Option
 func WithAllowPrivateNetworks(allow bool) Option
 func WithContentType(contentType string) Option // "html" | "markdown" | "text"
+func WithDefinitions(snapshot *Definitions) Option
 ```
 
 | Option | Behavior |
@@ -29,6 +33,13 @@ func WithContentType(contentType string) Option // "html" | "markdown" | "text"
 | `WithUserAgent` | Sets the `User-Agent` header. The default is `hermes.DefaultUserAgent`. |
 | `WithAllowPrivateNetworks` | Permits private network and localhost URLs. The default is `false`. |
 | `WithContentType` | Sets the format of `Result.Content`. The default is `"html"`. |
+| `WithDefinitions` | Uses one immutable external snapshot loaded before client construction. Nil, zero-value, and unconfigured snapshots use generic extraction only. |
+
+`LoadDefinitions` reads a local directory; `LoadManagedDefinitions` acquires or
+revalidates a managed snapshot at startup. Both return errors separately from
+`New`. Neither parsing nor client construction downloads or reloads definitions.
+See [managed definitions](managed-definitions.md) for pinning, automatic selection,
+cache warnings, and rollback.
 
 ## Content type
 

@@ -1,5 +1,8 @@
 # Independent definition candidate conformance
 
+The [full cutover qualification](yaml-cutover-qualification.md) records the
+immutable 125-definition candidate, consumer-mode checks, and evidence limits.
+
 `cmd/definition-conformance` is an **offline development test runner**, not a
 production Hermes binary or a release asset. It validates a caller-selected
 manifest and archive with `internal/definitionbundle`, invokes the real
