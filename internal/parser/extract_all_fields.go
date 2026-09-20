@@ -960,14 +960,18 @@ func formatContent(content string, contentType string, sanitizeBeforeConversion 
 		return convertToMarkdown(content)
 	case "html", "text/html", "":
 		// Empty string defaults to HTML (expected behavior)
-		return security.SanitizeHTML(content)
 	default:
 		// Log unexpected content type only when debug is enabled
 		if parserDebugEnabled {
 			log.Printf("WARNING: Unexpected contentType '%s', defaulting to HTML sanitization", contentType)
 		}
-		return security.SanitizeHTML(content)
 	}
+	content = security.SanitizeHTML(content)
+	if sanitizeBeforeConversion {
+		// Removing a disallowed outer wrapper can expose boundary whitespace.
+		content = strings.TrimSpace(content)
+	}
+	return content
 }
 
 // resolveImageTemplateURL resolves template placeholders in responsive image URLs.

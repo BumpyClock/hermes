@@ -8,10 +8,10 @@ import (
 )
 
 func TestContentSanitizationBeforeConversion(t *testing.T) {
-	const source = `<p>Retain &lt;literal&gt; and <strong>article words</strong>.</p>` +
+	const source = "<article>\n" + `<p>Retain &lt;literal&gt; and <strong>article words</strong>.</p>` +
 		`<script>unsafe-script-marker</script><p onclick="unsafe-event-marker">` +
 		`<a href="javascript:unsafe-url-marker">link label</a>` +
-		`<img src="https://example.com/image.jpg" onerror="unsafe-image-marker"></p>`
+		`<img src="https://example.com/image.jpg" onerror="unsafe-image-marker"></p>` + "\n\n\n</article>"
 	clean := security.SanitizeHTML(source)
 	for _, format := range []string{"html", "text/html", "", "unknown", "markdown", "md", "text/markdown", "text", "txt", "text/plain", " HTML ", " Text "} {
 		t.Run(format, func(t *testing.T) {
