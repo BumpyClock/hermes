@@ -218,3 +218,88 @@ differences, not a promise of byte-for-byte legacy output.
 
 No release, tag, push, deployment, module-major migration, or complete-production
 approval is implied by this local qualification.
+
+## Follow-up extraction optimizations
+
+The behavior-preserving optimization comparison uses `acf278d0abc1795a4c872b6cdcd77d204e071f13`
+as its baseline, not v1.1.1. The candidate is an explicitly captured, uncommitted
+seven-production-file overlay with SHA-256
+`fc52bd499770e6e5c2db779c63c3a360cbf78c9cbe70f9707bb61d20652b144f`.
+The earlier release/cutover evidence above remains pinned to its original
+revisions. Both configured versions load the same `fb626db` definitions outside
+the timers.
+
+Changes were applied and checked in sequence:
+
+1. Bound excerpt scanning by the requested word count, preserving the original
+   RE2 whitespace behavior, including Unicode and vertical-tab distinctions.
+2. Compile reusable cleaner selectors and definition matchers once. Preserve
+   selection order and snapshot isolation; metadata stops at its first match.
+3. Collect article text in one DOM walk, skipping excluded subtrees and comments
+   without repeated mutation/traversal. Flat metadata extraction is unchanged.
+4. Reuse an immutable whitespace replacer and exclusively pooled Markdown
+   converters. Each conversion retains its own DOM and options; converters are
+   never concurrently shared.
+
+Focused race tests passed after each stage. Differential fuzzing exercised
+131,594 excerpt inputs and 100,403 article-text inputs without differences.
+Full `make verify` and pinned canonical/managed-snapshot tests passed.
+
+### Paired measurements
+
+Six alternating one-second samples per version were collected for all 15
+workloads on Go 1.27.1, macOS/arm64, Apple M5 Max, with `GOMAXPROCS=1`.
+These are extraction measurements with no real DNS or HTTP requests.
+
+| Configured workload | Baseline median | Optimized median | Latency change | Bytes/op change | Allocations/op change |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| NYTimes HTML | 1.828 ms | 1.408 ms | -23.00% | -22.40% | -27.17% |
+| NYTimes Markdown | 2.724 ms | 2.376 ms | -12.80% | -15.95% | -17.68% |
+| NYTimes text | 1.893 ms | 1.530 ms | -19.21% | -20.52% | -26.58% |
+| Ars HTML | 1.152 ms | 0.955 ms | -17.16% | -17.38% | -26.81% |
+| Ars Markdown | 1.665 ms | 1.471 ms | -11.68% | -12.91% | -21.23% |
+| Ars text | 1.210 ms | 1.026 ms | -15.20% | -16.11% | -26.52% |
+
+All configured latency ranges are separated in favor of the optimized
+candidate. Every generic workload also allocates fewer bytes and objects,
+but its timing ranges overlap. Initial generic medians range from about 2.6%
+faster to 6.9% slower; no uniform generic speedup is established.
+
+The small generic article was rechecked independently with eight alternating
+samples per version using the same retained source archives:
+
+| Format | Baseline median [range] | Optimized median [range] |
+| --- | --- | --- |
+| HTML | 3.385 ms [3.061-3.613] | 3.516 ms [3.133-3.683] |
+| Markdown | 3.331 ms [3.095-3.746] | 3.579 ms [3.201-3.745] |
+| Text | 3.342 ms [3.053-3.688] | 3.546 ms [3.124-3.655] |
+
+Those higher medians remain visible. Overlapping shared-machine ranges do not
+prove performance equivalence or rule out a small regression; its cause remains
+unresolved. No sanitizer, cleaner, or resource-limit policy was relaxed to
+improve timing.
+
+### Exact extraction equivalence
+
+All **687 complete public `Result` JSON objects**, not only their conformance
+assertions, match the baseline. Each version ran twice, for 2,748 case-format
+executions with no within-version differences. Report envelopes differ only in
+engine identity. The 810 host checks, 36 historical result objects, 38 public
+contracts, 30 generic observations, six configured observations, and all 32
+public API shapes also match. Four unchanged consumers compile.
+
+The full-result comparison digest is
+`154ad0d166a312f5235b8d7d4580f43a8471d8855d908bd667fc6443ceb4f640`.
+The instrumented comparison preserves the prepared runner's offline boundary;
+each pass records zero HTTP attempts and 1,374 in-memory DNS lookups.
+
+Reproduction commands are in the
+[compatibility runner guide](../../scripts/compatibility/README.md#comparing-behavior-preserving-optimizations).
+Raw paired measurements and source archives are retained under
+`.compatibility-runs/optimizations-acf278d-{generic,configured}-final/`;
+the aggregate report is `.compatibility-runs/optimization-final-report.json`.
+The narrower recheck is `.compatibility-runs/optimization-article-recheck/`.
+Definitions-side overlay, conformance, and complete-result evidence are under
+`hermes-definitions/bin/optimization-qualification-20260920/`.
+These generated artifacts are ignored by Git; their source/archive digests make
+the uncommitted candidate explicit rather than claiming a clean revision.
