@@ -175,8 +175,8 @@ content:
   preserve: [.media, script]
   default_cleaner: true
 `)
-	if rule := s.snapshot.Match("93.184.216.34"); rule == nil || !strings.EqualFold(strings.Join(rule.Content.Preserve, ","), ".media,script") {
-		t.Fatalf("preserve selectors were not loaded: %#v", rule.Content.Preserve)
+	if rule := s.snapshot.Match("93.184.216.34"); rule == nil || len(rule.Content.Preserve) != 2 {
+		t.Fatalf("preserve selectors were not loaded: %#v", rule)
 	}
 	r, err := New(WithDefinitions(s)).ParseHTML(context.Background(), `<article><p>Article context remains visible.</p><div class="media"><img src="/photo.jpg" width="1" height="1" alt="Article image"></div><script>alert(1)</script></article>`, "https://93.184.216.34/story")
 	if err != nil {

@@ -27,9 +27,9 @@ type FieldExtractor struct {
 
 // ContentExtractor defines selected content and its cleanup and transform program.
 type ContentExtractor struct {
-	Selectors             []ContentSelectorGroup
-	Clean                 []string
-	Preserve              []string
+	Selectors             []goquery.Matcher
+	Clean                 []goquery.Matcher
+	Preserve              []goquery.Matcher
 	DisableDefaultCleaner bool
 	OrderedTransforms     ContentTransformProgram
 }
@@ -39,12 +39,10 @@ type ContentTransformProgram interface {
 	CopyAndExecute(context.Context, *goquery.Selection, string) (*goquery.Selection, error)
 }
 
-// ContentSelectorGroup combines CSS selectors in source order without duplicate elements.
-type ContentSelectorGroup []string
-
 // SelectorEntry selects text or an attribute from the first matching element.
 type SelectorEntry struct {
 	Selector  string
+	Matcher   goquery.Matcher
 	Attribute string
 	Capture   *TextCapture
 }

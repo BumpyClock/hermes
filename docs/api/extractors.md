@@ -23,7 +23,7 @@ Definition metadata selectors use `SelectorEntry` values with a CSS selector and
 Each selector reads only the first matched element. Title, author, and image fields stop at the first nonempty raw value.
 Date selectors continue until a value passes date conversion.
 
-Definition content selectors use ordered `ContentSelectorGroup` values. Each group combines its selectors in source order and excludes duplicate elements.
+Definition content groups compile to reusable matchers at snapshot load time. Each group combines its selectors in source order and excludes duplicate elements.
 The first group with nonempty raw content controls extraction, even if cleanup removes that content.
 
 

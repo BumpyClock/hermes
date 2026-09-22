@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/andybalholm/cascadia"
 	"gopkg.in/yaml.v3"
 
@@ -95,12 +96,9 @@ func clone(e extractors.DefinitionExtractor) *extractors.DefinitionExtractor {
 	e.DatePublished, e.LeadImageURL = copyField(e.DatePublished), copyField(e.LeadImageURL)
 	if e.Content != nil {
 		c := *e.Content
-		c.Clean = append([]string(nil), c.Clean...)
-		c.Preserve = append([]string(nil), c.Preserve...)
-		c.Selectors = make([]extractors.ContentSelectorGroup, len(e.Content.Selectors))
-		for i, group := range e.Content.Selectors {
-			c.Selectors[i] = append(extractors.ContentSelectorGroup(nil), group...)
-		}
+		c.Clean = append([]goquery.Matcher(nil), c.Clean...)
+		c.Preserve = append([]goquery.Matcher(nil), c.Preserve...)
+		c.Selectors = append([]goquery.Matcher(nil), c.Selectors...)
 		e.Content = &c
 	}
 	return &e
@@ -300,15 +298,16 @@ func (p *validator) list(n *yaml.Node, field string) ([]*yaml.Node, error) {
 	}
 	return n.Content, nil
 }
-func (p *validator) selector(n *yaml.Node, field string) (string, error) {
+func (p *validator) selector(n *yaml.Node, field string) (string, goquery.Matcher, error) {
 	s, err := p.text(n, field)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	if _, err := cascadia.Compile(s); err != nil {
-		return "", p.error(n, field, err)
+	matcher, err := cascadia.Compile(s)
+	if err != nil {
+		return "", nil, p.error(n, field, err)
 	}
-	return s, nil
+	return s, matcher, nil
 }
 
 var hostPattern = regexp.MustCompile(`^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`)
@@ -391,13 +390,13 @@ func (p *validator) field(n *yaml.Node, path string) (*extractors.FieldExtractor
 		}
 		entry := extractors.SelectorEntry{}
 		if text := m["text"]; text != nil {
-			entry.Selector, err = p.selector(text, path+".text")
+			entry.Selector, entry.Matcher, err = p.selector(text, path+".text")
 		} else if attribute := m["attribute"]; attribute != nil {
 			a, e := p.mapping(attribute, path+".attribute", "selector", "name")
 			if e != nil {
 				return nil, e
 			}
-			entry.Selector, err = p.selector(a["selector"], path+".attribute.selector")
+			entry.Selector, entry.Matcher, err = p.selector(a["selector"], path+".attribute.selector")
 			if err != nil {
 				return nil, err
 			}
@@ -411,6 +410,7 @@ func (p *validator) field(n *yaml.Node, path string) (*extractors.FieldExtractor
 		if err != nil {
 			return nil, err
 		}
+		entry.Matcher = goquery.SingleMatcher(entry.Matcher)
 		f.Selectors = append(f.Selectors, entry)
 	}
 	return f, nil
@@ -422,9 +422,11 @@ func (p *validator) textCapture(n *yaml.Node, path string) (extractors.SelectorE
 	if a.err != nil {
 		return entry, a.err
 	}
-	if _, err := cascadia.Compile(entry.Selector); err != nil {
+	matcher, err := cascadia.Compile(entry.Selector)
+	if err != nil {
 		return entry, p.error(a.fields["selector"], path+".selector", err)
 	}
+	entry.Matcher = matcher
 	pattern := a.string("pattern", false)
 	if len(pattern) > MaxPatternBytes {
 		a.reject("pattern", "pattern byte limit exceeded")
@@ -474,15 +476,19 @@ func (p *validator) content(n *yaml.Node) (*extractors.ContentExtractor, error) 
 		if groupErr != nil {
 			return nil, groupErr
 		}
-		var selectors extractors.ContentSelectorGroup
+		var selectors []string
 		for _, item := range items {
-			s, selectorErr := p.selector(item, "content.groups")
+			s, _, selectorErr := p.selector(item, "content.groups")
 			if selectorErr != nil {
 				return nil, selectorErr
 			}
 			selectors = append(selectors, s)
 		}
-		c.Selectors = append(c.Selectors, selectors)
+		matcher, selectorErr := cascadia.Compile(strings.Join(selectors, ","))
+		if selectorErr != nil {
+			return nil, p.error(group, "content.groups", selectorErr)
+		}
+		c.Selectors = append(c.Selectors, matcher)
 	}
 	if remove := m["remove"]; remove != nil {
 		items, removeErr := p.list(remove, "content.remove")
@@ -490,11 +496,11 @@ func (p *validator) content(n *yaml.Node) (*extractors.ContentExtractor, error) 
 			return nil, removeErr
 		}
 		for _, item := range items {
-			s, selectorErr := p.selector(item, "content.remove")
+			_, matcher, selectorErr := p.selector(item, "content.remove")
 			if selectorErr != nil {
 				return nil, selectorErr
 			}
-			c.Clean = append(c.Clean, s)
+			c.Clean = append(c.Clean, matcher)
 		}
 	}
 	if preserve := m["preserve"]; preserve != nil {
@@ -503,11 +509,11 @@ func (p *validator) content(n *yaml.Node) (*extractors.ContentExtractor, error) 
 			return nil, preserveErr
 		}
 		for _, item := range items {
-			s, selectorErr := p.selector(item, "content.preserve")
+			_, matcher, selectorErr := p.selector(item, "content.preserve")
 			if selectorErr != nil {
 				return nil, selectorErr
 			}
-			c.Preserve = append(c.Preserve, s)
+			c.Preserve = append(c.Preserve, matcher)
 		}
 	}
 	if enabled := m["default_cleaner"]; enabled != nil {

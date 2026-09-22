@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -213,7 +214,7 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 	// Extract content using custom selectors
 	if definitionExtractor.Content != nil && len(definitionExtractor.Content.Selectors) > 0 {
 		for _, selector := range definitionExtractor.Content.Selectors {
-			contentElements := contentElementsForSelector(doc, selector)
+			contentElements := doc.FindMatcher(selector)
 
 			// Process the first selector with non-empty raw content, preserving fallback order.
 			if contentElements == nil || !hasCustomContent(contentElements) {
@@ -345,7 +346,7 @@ func extractVideoMetadata(doc *goquery.Document, targetURL string, metaCache []s
 }
 
 func definitionFieldValue(ctx context.Context, doc *goquery.Document, selector extractors.SelectorEntry) (string, error) {
-	element := doc.Find(selector.Selector).First()
+	element := doc.FindMatcher(selector.Matcher).First()
 	if element.Length() == 0 {
 		return "", nil
 	}
@@ -424,13 +425,6 @@ func extractGenericAuthorAndDate(doc *goquery.Document, targetURL string, metaCa
 	}
 }
 
-func contentElementsForSelector(doc *goquery.Document, selectors extractors.ContentSelectorGroup) *goquery.Selection {
-	if len(selectors) == 0 {
-		return nil
-	}
-	return doc.Find(strings.Join(selectors, ","))
-}
-
 func hasCustomContent(contentElements *goquery.Selection) bool {
 	for _, element := range contentElements.Nodes {
 		for child := element.FirstChild; child != nil; child = child.NextSibling {
@@ -462,7 +456,7 @@ func processDefinitionContentWithBase(contentElements *goquery.Selection, doc *g
 		wrapper.AppendSelection(element.Clone())
 
 		for _, selector := range extractor.Clean {
-			wrapper.Find(selector).Remove()
+			wrapper.FindMatcher(selector).Remove()
 		}
 		if outputBaseURL != "" {
 			// Rules see source attributes; only the output clone receives absolute URLs.
@@ -476,7 +470,7 @@ func processDefinitionContentWithBase(contentElements *goquery.Selection, doc *g
 				CleanConditionally: true,
 				Title:              title,
 				URL:                targetURL,
-				Preserve:           extractor.Preserve,
+				PreserveMatchers:   extractor.Preserve,
 			})
 		}
 
@@ -545,10 +539,11 @@ func parseDate(dateStr string) (time.Time, error) {
 var (
 	markdownTextSpaces   = regexp.MustCompile(`[\t ]+`)
 	markdownTextEntities = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
+	markdownInlineSpace  = strings.NewReplacer("\t", " ", "\r", " ", "\n", " ")
+	markdownConverters   = sync.Pool{New: func() any { return newMarkdownConverter() }}
 )
 
-// convertToMarkdown converts HTML content to Markdown using html-to-markdown library.
-func convertToMarkdown(content string) string {
+func newMarkdownConverter() *md.Converter {
 	// Create converter with options similar to TurndownService
 	converter := md.NewConverter("", true, nil)
 
@@ -568,7 +563,7 @@ func convertToMarkdown(content string) string {
 					if !preservesInlineWhitespace(selection, value) {
 						return nil
 					}
-					value = strings.NewReplacer("\t", " ", "\r", " ", "\n", " ").Replace(value)
+					value = markdownInlineSpace.Replace(value)
 					return md.String(escape.MarkdownCharacters(markdownTextSpaces.ReplaceAllString(value, " ")))
 				},
 			},
@@ -653,8 +648,14 @@ func convertToMarkdown(content string) string {
 			},
 		}
 	}))
+	return converter
+}
 
-	// Convert HTML to Markdown
+// Conversion uses a fresh DOM and options copy. Exclusive reuse avoids rebuilding
+// rules without sharing the converter's locks between concurrent articles.
+func convertToMarkdown(content string) string {
+	converter := markdownConverters.Get().(*md.Converter)
+	defer markdownConverters.Put(converter)
 	markdown, err := converter.ConvertString(content)
 	if err != nil {
 		// Fallback to text extraction if conversion fails

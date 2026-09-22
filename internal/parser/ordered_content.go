@@ -21,13 +21,13 @@ func processOrderedContent(ctx context.Context, elements *goquery.Selection, sou
 		if err = ctx.Err(); err != nil {
 			return "", err
 		}
-		wrapper.Find(selector).Remove()
+		wrapper.FindMatcher(selector).Remove()
 	}
 	output.Find("base").Remove()
 	dom.MakeLinksAbsolute(output, baseURL)
 	if !extractor.DisableDefaultCleaner {
 		wrapper = cleaners.ExtractCleanNode(wrapper, source, cleaners.ContentCleanOptions{
-			CleanConditionally: true, Title: title, URL: targetURL, Preserve: extractor.Preserve,
+			CleanConditionally: true, Title: title, URL: targetURL, PreserveMatchers: extractor.Preserve,
 		})
 	}
 	if err = ctx.Err(); err != nil {

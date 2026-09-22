@@ -169,8 +169,8 @@ func TestMatchingAndIsolation(t *testing.T) {
 		if got == nil || got.Domain != want {
 			t.Fatalf("%s: %v want %s", host, got, want)
 		}
-		got.Content.Selectors[0][0] = "changed"
-		if s.Match(host).Content.Selectors[0][0] != "article" {
+		got.Content.Selectors[0] = nil
+		if s.Match(host).Content.Selectors[0] == nil {
 			t.Fatal("snapshot mutated")
 		}
 	}

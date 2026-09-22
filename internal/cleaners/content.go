@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/andybalholm/cascadia"
 
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
@@ -20,7 +21,42 @@ type ContentCleanOptions struct {
 	URL                string
 	DefaultCleaner     *bool // Use pointer to distinguish between unset and explicitly false
 	Preserve           []string
+	PreserveMatchers   []goquery.Matcher
 }
+
+var (
+	contentImages       = cascadia.MustCompile("img")
+	contentImageSources = cascadia.MustCompile("img[src]")
+	contentLinks        = cascadia.MustCompile("a[href], link[href]")
+	contentAnchors      = cascadia.MustCompile("a")
+	contentKeep         = cascadia.MustCompile(".hermes-parser-keep")
+	contentJunk         = cascadia.MustCompile("script, style, link, meta, noscript, template, title, head, object, embed, applet")
+	contentHOnes        = cascadia.MustCompile("h1")
+	contentHeaders      = cascadia.MustCompile("h1, h2, h3, h4, h5, h6")
+	contentParagraphs   = cascadia.MustCompile("p")
+	contentMedia        = cascadia.MustCompile("iframe, video, audio, embed, object")
+	contentEmpty        = cascadia.MustCompile("p, div, span")
+	contentAll          = cascadia.MustCompile("*")
+	contentKeepMedia    = []goquery.Matcher{
+		cascadia.MustCompile("iframe[src*='youtube.com']"),
+		cascadia.MustCompile("iframe[src*='www.youtube.com']"),
+		cascadia.MustCompile("iframe[src*='youtu.be']"),
+		cascadia.MustCompile("iframe[src*='vimeo.com']"),
+		cascadia.MustCompile("iframe[src*='player.vimeo.com']"),
+		cascadia.MustCompile("object[data*='youtube.com']"),
+		cascadia.MustCompile("object[data*='vimeo.com']"),
+		cascadia.MustCompile("embed[src*='youtube.com']"),
+		cascadia.MustCompile("embed[src*='vimeo.com']"),
+	}
+	contentConditional = []goquery.Matcher{
+		cascadia.MustCompile("div"),
+		cascadia.MustCompile("section"),
+		cascadia.MustCompile("header"),
+		cascadia.MustCompile("footer"),
+		cascadia.MustCompile("aside"),
+		cascadia.MustCompile("nav"),
+	}
+)
 
 // ExtractCleanNode cleans article content, returning a new, cleaned node
 // Direct port of JavaScript extractCleanNode function with identical cleaning pipeline:
@@ -51,6 +87,14 @@ func ExtractCleanNode(article *goquery.Selection, doc *goquery.Document, opts Co
 	if opts.DefaultCleaner != nil {
 		defaultCleaner = *opts.DefaultCleaner
 	}
+	preserve := opts.PreserveMatchers
+	if len(opts.Preserve) != 0 {
+		preserve = append([]goquery.Matcher(nil), preserve...)
+		for _, selector := range opts.Preserve {
+			// Closest uses Match; Single retains goquery's invalid-selector behavior.
+			preserve = append(preserve, goquery.Single(selector))
+		}
+	}
 
 	// Apply cleaning functions in the exact same order as JavaScript:
 	// Unlike the document-level cleaning in the generic extractor,
@@ -64,7 +108,7 @@ func ExtractCleanNode(article *goquery.Selection, doc *goquery.Document, opts Co
 	// Only do this if defaultCleaner is set to true;
 	// this can sometimes be too aggressive.
 	if defaultCleaner {
-		cleanImagesInSelection(article, opts.Preserve)
+		cleanImagesInSelection(article, preserve)
 	}
 
 	// 3. Make links absolute
@@ -84,21 +128,21 @@ func ExtractCleanNode(article *goquery.Selection, doc *goquery.Document, opts Co
 	// 6. H1 tags are typically the article title, which should be extracted
 	// by the title extractor instead. If there's less than 3 of them (<3),
 	// strip them. Otherwise, turn 'em into H2s.
-	cleanHOnesInSelection(article, opts.Preserve)
+	cleanHOnesInSelection(article, preserve)
 
 	// 7. Clean headers
-	cleanHeadersInSelection(article, opts.Title, opts.Preserve)
+	cleanHeadersInSelection(article, opts.Title, preserve)
 
 	// 8. We used to clean UL's and OL's here, but it was leading to
 	// too many in-article lists being removed. Consider a better
 	// way to detect menus particularly and remove them.
 	// Also optionally running, since it can be overly aggressive.
 	if defaultCleaner {
-		cleanTagsInSelection(article, opts.CleanConditionally, opts.Preserve)
+		cleanTagsInSelection(article, opts.CleanConditionally, preserve)
 	}
 
 	// 9. Remove empty paragraph nodes
-	removeEmptyInSelection(article, opts.Preserve)
+	removeEmptyInSelection(article, preserve)
 
 	// 10. Remove unnecessary attributes
 	cleanAttributesInSelection(article)
@@ -121,8 +165,8 @@ func rewriteTopLevelSelection(selection *goquery.Selection) *goquery.Selection {
 	return selection
 }
 
-func cleanImagesInSelection(selection *goquery.Selection, preserve []string) {
-	selection.Find("img").Each(func(i int, img *goquery.Selection) {
+func cleanImagesInSelection(selection *goquery.Selection, preserve []goquery.Matcher) {
+	selection.FindMatcher(contentImages).Each(func(i int, img *goquery.Selection) {
 		if preserved(img, preserve) {
 			return
 		}
@@ -168,7 +212,7 @@ func makeLinksAbsoluteInSelection(selection *goquery.Selection, baseURL string) 
 		return
 	}
 
-	selection.Find("a[href], link[href]").Each(func(i int, link *goquery.Selection) {
+	selection.FindMatcher(contentLinks).Each(func(i int, link *goquery.Selection) {
 		href, exists := link.Attr("href")
 		if !exists {
 			return
@@ -180,7 +224,7 @@ func makeLinksAbsoluteInSelection(selection *goquery.Selection, baseURL string) 
 		}
 	})
 
-	selection.Find("img[src]").Each(func(i int, img *goquery.Selection) {
+	selection.FindMatcher(contentImageSources).Each(func(i int, img *goquery.Selection) {
 		src, exists := img.Attr("src")
 		if !exists {
 			return
@@ -218,20 +262,8 @@ func makeLinksAbsoluteInSelection(selection *goquery.Selection, baseURL string) 
 }
 
 func markToKeepInSelection(selection *goquery.Selection, baseURL string) {
-	keepSelectors := []string{
-		"iframe[src*='youtube.com']",
-		"iframe[src*='www.youtube.com']",
-		"iframe[src*='youtu.be']",
-		"iframe[src*='vimeo.com']",
-		"iframe[src*='player.vimeo.com']",
-		"object[data*='youtube.com']",
-		"object[data*='vimeo.com']",
-		"embed[src*='youtube.com']",
-		"embed[src*='vimeo.com']",
-	}
-
-	for _, selector := range keepSelectors {
-		selection.Find(selector).AddClass("hermes-parser-keep")
+	for _, matcher := range contentKeepMedia {
+		selection.FindMatcher(matcher).AddClass("hermes-parser-keep")
 	}
 
 	// If we have a base URL, also mark iframes from the same domain
@@ -250,18 +282,11 @@ func markToKeepInSelection(selection *goquery.Selection, baseURL string) {
 }
 
 func stripJunkTagsInSelection(selection *goquery.Selection) {
-	// Tags to remove (from STRIP_OUTPUT_TAGS in constants)
-	junkTags := []string{
-		"script", "style", "link", "meta", "noscript", "template",
-		"title", "head", "object", "embed", "applet",
-	}
-
-	selector := strings.Join(junkTags, ", ")
-	selection.Find(selector).Not(".hermes-parser-keep").Remove()
+	selection.FindMatcher(contentJunk).NotMatcher(contentKeep).Remove()
 }
 
-func cleanHOnesInSelection(selection *goquery.Selection, preserve []string) {
-	h1s := selection.Find("h1")
+func cleanHOnesInSelection(selection *goquery.Selection, preserve []goquery.Matcher) {
+	h1s := selection.FindMatcher(contentHOnes)
 
 	if h1s.Length() < 3 {
 		h1s.Each(func(_ int, h1 *goquery.Selection) {
@@ -277,8 +302,8 @@ func cleanHOnesInSelection(selection *goquery.Selection, preserve []string) {
 	}
 }
 
-func cleanHeadersInSelection(selection *goquery.Selection, title string, preserve []string) {
-	headers := selection.Find("h1, h2, h3, h4, h5, h6")
+func cleanHeadersInSelection(selection *goquery.Selection, title string, preserve []goquery.Matcher) {
+	headers := selection.FindMatcher(contentHeaders)
 
 	headers.Each(func(i int, header *goquery.Selection) {
 		if preserved(header, preserve) {
@@ -287,9 +312,9 @@ func cleanHeadersInSelection(selection *goquery.Selection, title string, preserv
 		headerText := strings.TrimSpace(header.Text())
 
 		// Remove headers that appear before all paragraphs
-		allParagraphs := selection.Find("p")
+		allParagraphs := selection.FindMatcher(contentParagraphs)
 		if allParagraphs.Length() > 0 {
-			prevParagraphs := header.PrevAll().Filter("p")
+			prevParagraphs := header.PrevAll().FilterMatcher(contentParagraphs)
 			if prevParagraphs.Length() == 0 {
 				header.Remove()
 				return
@@ -309,16 +334,13 @@ func cleanHeadersInSelection(selection *goquery.Selection, title string, preserv
 	})
 }
 
-func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool, preserve []string) {
+func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool, preserve []goquery.Matcher) {
 	if !cleanConditionally {
 		return // Skip conditional cleaning
 	}
 
-	// Tags that might be cleaned conditionally
-	conditionalTags := []string{"div", "section", "header", "footer", "aside", "nav"}
-
-	for _, tag := range conditionalTags {
-		selection.Find(tag).Each(func(i int, elem *goquery.Selection) {
+	for _, matcher := range contentConditional {
+		selection.FindMatcher(matcher).Each(func(i int, elem *goquery.Selection) {
 			if preserved(elem, preserve) {
 				return
 			}
@@ -328,7 +350,7 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool,
 			}
 
 			// Skip if it contains elements marked to keep
-			if elem.Find(".hermes-parser-keep").Length() > 0 {
+			if elem.FindMatcher(contentKeep).Length() > 0 {
 				return
 			}
 
@@ -338,14 +360,14 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool,
 			// Don't remove empty elements that contain important media (iframe, video, etc.)
 			if len(text) == 0 {
 				// Check if it contains media elements that should be preserved
-				if elem.Find("iframe, video, audio, embed, object").Length() > 0 {
+				if elem.FindMatcher(contentMedia).Length() > 0 {
 					return // Preserve containers with media
 				}
 				elem.Remove()
 				return
 			}
 
-			links := elem.Find("a")
+			links := elem.FindMatcher(contentAnchors)
 			var linkTextBuilder strings.Builder
 			links.Each(func(j int, link *goquery.Selection) {
 				linkTextBuilder.WriteString(strings.TrimSpace(link.Text()))
@@ -361,9 +383,9 @@ func cleanTagsInSelection(selection *goquery.Selection, cleanConditionally bool,
 	}
 }
 
-func removeEmptyInSelection(selection *goquery.Selection, preserve []string) {
+func removeEmptyInSelection(selection *goquery.Selection, preserve []goquery.Matcher) {
 	// Remove empty paragraphs and other elements
-	selection.Find("p, div, span").Each(func(i int, elem *goquery.Selection) {
+	selection.FindMatcher(contentEmpty).Each(func(i int, elem *goquery.Selection) {
 		if preserved(elem, preserve) {
 			return
 		}
@@ -380,9 +402,9 @@ func removeEmptyInSelection(selection *goquery.Selection, preserve []string) {
 	})
 }
 
-func preserved(selection *goquery.Selection, selectors []string) bool {
-	for _, selector := range selectors {
-		if selection.Closest(selector).Length() != 0 {
+func preserved(selection *goquery.Selection, matchers []goquery.Matcher) bool {
+	for _, matcher := range matchers {
+		if selection.ClosestMatcher(matcher).Length() != 0 {
 			return true
 		}
 	}
@@ -390,7 +412,7 @@ func preserved(selection *goquery.Selection, selectors []string) bool {
 }
 
 func cleanAttributesInSelection(selection *goquery.Selection) {
-	selection.Find("*").Each(func(i int, elem *goquery.Selection) {
+	selection.FindMatcher(contentAll).Each(func(i int, elem *goquery.Selection) {
 		// Get all current attributes
 		node := elem.Get(0)
 		if node == nil {
