@@ -89,3 +89,38 @@ performance equivalence. Review meaningful differences before accepting a
 candidate, and retain earlier reports when investigating an optimization.
 Pass `--reference .compatibility-runs/PRIOR-CONFIGURED-CAPTURE` to require exact
 equality to the prior candidate's complete configured result objects as well.
+
+## Comparing behavior-preserving optimizations
+
+Use pairwise mode when both sides must produce exactly the same results. This
+does not reuse or expand the released-version intentional-change allowlist.
+For an uncommitted candidate:
+
+```sh
+BASE=acf278d0abc1795a4c872b6cdcd77d204e071f13
+
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/compatibility/run.py \
+  --baseline "$BASE" --candidate-worktree --comparison-mode pairwise \
+  --output .compatibility-runs/optimization-generic \
+  --samples 6 --benchtime 1s
+
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/compatibility/run_configured.py \
+  --baseline "$BASE" --candidate-worktree \
+  --baseline-mode definitions --require-equivalent \
+  --definitions /absolute/path/to/definitions-fb626db \
+  --definitions-source fb626db414b875dcddad110174303d1e1bd34e84 \
+  --output .compatibility-runs/optimization-configured \
+  --samples 6 --benchtime 1s
+```
+
+Both configured versions load the same snapshot outside the timers. Add
+`--functional-only` for an intermediate correctness check without timings.
+Pairwise comparison checks the full result objects, API shapes, workload
+identities, and repeated observations, not just selected content substrings.
+
+The worktree option captures tracked and unignored regular files into an
+explicit source archive. It verifies copied bytes and concurrent edits before
+acceptance, then checks runtime source drift throughout execution. A drift
+failure stops the run; it never silently recaptures a different candidate.
+Preserve `candidate.tar` (or a losslessly compressed copy) and its recorded
+digest: a commit ID alone cannot reproduce uncommitted source.

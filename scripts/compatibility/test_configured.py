@@ -1,7 +1,8 @@
+import copy
 import unittest
 from unittest.mock import Mock
 
-from run_configured import observations, validate_samples
+from run_configured import EXPECTED_IDS, compare_observations, observations, validate_samples
 
 
 class ConfiguredCompatibilityTests(unittest.TestCase):
@@ -27,6 +28,25 @@ class ConfiguredCompatibilityTests(unittest.TestCase):
     def test_missing_benchmark_workload_fails(self):
         with self.assertRaisesRegex(ValueError, "six paired"):
             validate_samples({"baseline": {}, "candidate": {}}, 6)
+
+    def test_pairwise_configured_observations_compare_complete_results(self):
+        before = {key: {"id": key, "result": {"content": "same", "extractor_used": "definition:site"}}
+                  for key in EXPECTED_IDS}
+        after = copy.deepcopy(before)
+        self.assertEqual(compare_observations(before, after), [])
+        after["nytimes.html/html"]["result"]["content"] = "changed"
+        self.assertEqual(compare_observations(before, after)[0]["path"], "/nytimes.html/html/result/content")
+
+    def test_configured_wrong_six_ids_do_not_pass(self):
+        wrong = {str(key): {"id": str(key)} for key in range(6)}
+        with self.assertRaisesRegex(ValueError, "expected workloads"):
+            compare_observations(wrong, wrong)
+
+    def test_configured_key_and_row_id_must_match(self):
+        records = {key: {"id": key} for key in EXPECTED_IDS}
+        records["nytimes.html/html"]["id"] = "arstechnica.html/html"
+        with self.assertRaisesRegex(ValueError, "IDs"):
+            compare_observations(records, records)
 
 
 if __name__ == "__main__":

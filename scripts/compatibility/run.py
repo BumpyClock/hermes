@@ -2,6 +2,7 @@
 """Offline released-versus-source-snapshot compatibility evidence; never changes Git state."""
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -32,6 +33,105 @@ def archive_source(revision, destination, archive):
         source.extractall(destination, filter="data")
 
 
+def file_manifest(root):
+    return {str(path.relative_to(root)): digest(path)
+            for path in sorted(root.rglob("*")) if path.is_file() and not path.is_symlink()}
+
+
+def worktree_manifest(root=ROOT):
+    paths = command(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"], cwd=root).split("\0")
+    result = {}
+    for name in sorted(set(paths)):
+        if not name or name.startswith(".compatibility-runs/"):
+            continue
+        path = root / name
+        if path.is_file():
+            if path.is_symlink():
+                raise RuntimeError(f"worktree source is a file symlink: {name}")
+            result[name] = digest(path)
+    return result
+
+
+def runtime_manifest(manifest):
+    return {name: value for name, value in manifest.items()
+            if name in ("go.mod", "go.sum") or
+            (name.endswith(".go") and not name.startswith(("scripts/", "examples/")))}
+
+
+def manifest_changes(before, after):
+    return sorted(name for name in before.keys() | after.keys() if before.get(name) != after.get(name))
+
+
+def capture_worktree(destination, root=ROOT):
+    before = worktree_manifest(root)
+    write_json(destination.parent / "candidate-capture-start.json", before)
+    destination.mkdir()
+    for name in before:
+        target = destination / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / name, target)
+    after, captured = worktree_manifest(root), file_manifest(destination)
+    changed = sorted(set(manifest_changes(before, after) + manifest_changes(before, captured)))
+    write_json(destination.parent / "candidate-capture.json", {
+        "before": before, "after": after, "captured": captured,
+        "changed": changed, "passed": not changed,
+        "scope": "tracked and unignored regular files; directory symlinks not traversed",
+    })
+    if changed:
+        raise RuntimeError(f"worktree changed during capture; no recapture attempted: {changed}")
+    with tarfile.open(destination.parent / "candidate.tar", "w") as archive:
+        archive.add(destination, arcname=".")
+    return runtime_manifest(captured)
+
+
+def source_guard(source, output, label, live=None):
+    manifest = file_manifest(source)
+    write_json(output / (label + "-files.json"), manifest)
+    return {"source": source, "runtime": runtime_manifest(manifest), "live": live}
+
+
+def check_sources(guards, output, stage, root=ROOT):
+    changes = {}
+    for label, guard in guards.items():
+        changed = manifest_changes(guard["runtime"], runtime_manifest(file_manifest(guard["source"])))
+        if changed:
+            changes[label + "_snapshot"] = changed
+        if guard["live"] is not None:
+            changed = manifest_changes(guard["live"], runtime_manifest(worktree_manifest(root)))
+            if changed:
+                changes[label + "_worktree"] = changed
+    path = output / "source-checks.json"
+    checks = json.loads(path.read_text()) if path.exists() else []
+    checks.append({"stage": stage, "time": datetime.now(timezone.utc).isoformat(),
+                   "passed": not changes, "changes": changes})
+    write_json(path, checks)
+    if changes:
+        raise RuntimeError(f"runtime source drift at {stage}; no recapture attempted: {changes}")
+
+
+def record_provenance(output, metadata, guards, tooling):
+    metadata["source_manifest_sha256"] = {
+        label: digest(output / (label + "-files.json")) for label in guards}
+    metadata["runtime_manifest_sha256"] = {
+        label: observation_digest(guard["runtime"]) for label, guard in guards.items()}
+    metadata["source_archive_sha256"] = {
+        label: digest(output / (label + ".tar")) for label in guards
+        if (output / (label + ".tar")).exists()}
+    metadata["tooling_sha256"] = tooling
+    write_json(output / "environment.json", metadata)
+
+
+def source_capture_failures(output, metadata):
+    if "source_manifest_sha256" not in metadata:
+        return []
+    path = output / "source-checks.json"
+    checks = json.loads(path.read_text()) if path.exists() else []
+    if (not any(check["stage"] == "functional-complete" for check in checks)
+            or any(not check["passed"] for check in checks)):
+        return ["source capture is incomplete or recorded runtime drift"]
+    return []
+
+
 def write_json(path, data):
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
 
@@ -57,7 +157,8 @@ def differences(before, after, path=""):
             else:
                 result.extend(differences(before[key], after[key], child))
         return result
-    return [] if before == after else [{"path": path, "before": before, "after": after}]
+    return [] if observation_digest(before) == observation_digest(after) else [
+        {"path": path, "before": before, "after": after}]
 
 
 def rows(path):
@@ -77,7 +178,7 @@ def observation_digest(value):
 def classify_observations(before, after, allowed):
     accepted, unexpected = [], []
     for key in sorted(before.keys() | after.keys()):
-        if key in before and key in after and before[key] == after[key]:
+        if key in before and key in after and observation_digest(before[key]) == observation_digest(after[key]):
             continue
         pair = [observation_digest(before.get(key)), observation_digest(after.get(key))]
         (accepted if allowed.get(key) == pair else unexpected).append(key)
@@ -85,7 +186,38 @@ def classify_observations(before, after, allowed):
             "stale_allowances": sorted(allowed.keys() - set(accepted))}
 
 
-def acceptance(output, report, baseline_sha):
+def exact_observations(before, after, expected_ids=None):
+    for records in (before, after):
+        if not records or any(not isinstance(row, dict) or row.get("id") != key for key, row in records.items()):
+            raise ValueError("observation keys must match nonempty records' IDs")
+        if expected_ids is not None and records.keys() != set(expected_ids):
+            raise ValueError("observation IDs differ from the expected workloads")
+    return differences(before, after)
+
+
+def pairwise_acceptance(output):
+    failures = []
+    for kind in ("contracts", "fixtures"):
+        before = rows(output / "baseline-evidence" / f"{kind}.jsonl")
+        after = rows(output / "candidate-evidence" / f"{kind}.jsonl")
+        if exact_observations(before, after):
+            failures.append(f"pairwise {kind} observations differ")
+        for label, captured in (("baseline", before), ("candidate", after)):
+            repeated = rows(output / (label + "-evidence") / f"{kind}-repeat.jsonl")
+            if exact_observations(captured, repeated):
+                failures.append(f"{label} {kind} observations are nondeterministic")
+    before = json.loads((output / "baseline-evidence" / "api.json").read_text())
+    after = json.loads((output / "candidate-evidence" / "api.json").read_text())
+    if not before or differences(before, after):
+        failures.append("pairwise exported API differs or is empty")
+    return {"mode": "pairwise", "passed": not failures, "failures": failures}
+
+
+def acceptance(output, report, baseline_sha, mode="release"):
+    if mode == "pairwise":
+        return pairwise_acceptance(output)
+    if mode != "release":
+        raise ValueError(f"unknown comparison mode: {mode}")
     allowed = json.loads((TOOLS / "intentional-changes.json").read_text())
     result = classify_observations(
         rows(output / "baseline-evidence" / "fixtures.jsonl"),
@@ -134,7 +266,12 @@ def bench_summary(output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", default="v1.1.1")
-    parser.add_argument("--candidate-ref", help="archive this immutable commit instead of the dirty worktree")
+    candidate_selection = parser.add_mutually_exclusive_group()
+    candidate_selection.add_argument("--candidate-ref", help="archive this immutable commit instead of the dirty worktree")
+    candidate_selection.add_argument("--candidate-worktree", action="store_true",
+                                     help="explicitly capture dirty tracked/unignored source (the default)")
+    parser.add_argument("--comparison-mode", choices=("release", "pairwise"),
+                        help="release allowlist (default), or require identical pairwise API/results")
     parser.add_argument("--output", required=True, help="new directory under .compatibility-runs/")
     parser.add_argument("--samples", type=int, default=6)
     parser.add_argument("--benchtime", default="1s")
@@ -151,15 +288,17 @@ def main():
     if args.verify_only:
         report = json.loads((output / "comparison.json").read_text())
         metadata = json.loads((output / "environment.json").read_text())
-        result = acceptance(output, report, metadata["baseline_sha"])
+        recorded_mode = metadata.get("comparison_mode", "release")
+        if args.comparison_mode and args.comparison_mode != recorded_mode:
+            parser.error("verify-only cannot change the capture's comparison mode")
+        result = acceptance(output, report, metadata["baseline_sha"], recorded_mode)
+        result["failures"].extend(source_capture_failures(output, metadata))
+        result["passed"] = not result["failures"]
         write_json(output / "acceptance.json", result)
         print(json.dumps(result, indent=2))
         raise SystemExit(not result["passed"])
     if output.exists():
         parser.error("output must be a new directory under .compatibility-runs/")
-    source_paths = command(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"]).split("\0")
-    source_paths = sorted({p for p in source_paths if p and not p.startswith(".compatibility-runs/")
-                           and (ROOT / p).is_file()})
     output.mkdir(parents=True)
     build_dir = output / "build-work"
     build_dir.mkdir()
@@ -177,26 +316,24 @@ def main():
         "environment": {key: env[key] for key in ("GOPROXY", "GOSUMDB", "GOTOOLCHAIN", "GOFLAGS", "GOMAXPROCS", "TZ")},
         "samples": args.samples, "benchtime": args.benchtime,
         "functional_only": args.functional_only,
+        "comparison_mode": args.comparison_mode or "release",
         "benchmark_order": "alternating baseline/candidate; reversed on odd samples",
     }
     write_json(output / "environment.json", metadata)
     baseline, candidate = output / "baseline", output / "candidate"
     archive_source(metadata["baseline_sha"], baseline, output / "baseline.tar")
+    live = None
     if args.candidate_ref:
         archive_source(metadata["candidate_head"], candidate, output / "candidate.tar")
     else:
-        candidate.mkdir()
-        for relative in source_paths:
-            destination = candidate / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(ROOT / relative, destination)
-    write_json(output / "candidate-files.json",
-               {str(path.relative_to(candidate)): digest(path)
-                for path in sorted(candidate.rglob("*")) if path.is_file()})
-    write_json(output / "tooling-files.json",
-               {str(path.relative_to(ROOT)): digest(path)
-                for path in sorted(TOOLS.rglob("*")) if path.is_file()}
-               | {"scripts/contract-snapshot/main.go": digest(ROOT / "scripts" / "contract-snapshot" / "main.go")})
+        live = capture_worktree(candidate)
+    guards = {"baseline": source_guard(baseline, output, "baseline"),
+              "candidate": source_guard(candidate, output, "candidate", live)}
+    tooling = {str(path.relative_to(ROOT)): digest(path)
+               for path in sorted(TOOLS.rglob("*")) if path.is_file() and path.suffix != ".pyc"}
+    tooling["scripts/contract-snapshot/main.go"] = digest(ROOT / "scripts" / "contract-snapshot" / "main.go")
+    write_json(output / "tooling-files.json", tooling)
+    record_provenance(output, metadata, guards, tooling)
     fixtures = output / "fixtures"
     shutil.copytree(TOOLS / "fixtures", fixtures)
     for name, original in (("nytimes.html", "www.nytimes.com.html"), ("arstechnica.html", "arstechnica.com.html")):
@@ -257,7 +394,8 @@ def main():
     report["api"] = {"baseline_count": len(old), "candidate_count": len(new),
                      "removed": sorted(old.keys() - new.keys()), "added": sorted(new.keys() - old.keys()),
                      "changed": differences(old, {key: new[key] for key in old if key in new})}
-    report["acceptance"] = acceptance(output, report, metadata["baseline_sha"])
+    report["acceptance"] = acceptance(output, report, metadata["baseline_sha"], metadata["comparison_mode"])
+    check_sources(guards, output, "functional-complete")
     write_json(output / "comparison.json", report)
     write_json(output / "commands.json", COMMANDS)
     if args.functional_only:
@@ -266,9 +404,12 @@ def main():
                           "fixture_differences": len(report["fixtures"]["differences"]),
                           "acceptance": report["acceptance"]}, indent=2))
         raise SystemExit(not report["acceptance"]["passed"])
+    if not report["acceptance"]["passed"]:
+        raise RuntimeError("functional acceptance failed; benchmark phase not started")
     print("Functional/API comparison recorded; running alternating benchmarks", flush=True)
     for sample in range(args.samples):
         for label, source in snapshots if sample % 2 == 0 else reversed(snapshots):
+            check_sources(guards, output, f"benchmark-{sample}-{label}")
             evidence = output / (label + "-evidence")
             command([str(output / (label + "-bench")), "-test.run=^$", "-test.bench=BenchmarkGeneric",
                      "-test.benchmem", "-test.cpu=1", "-test.count=1", "-test.benchtime=" + args.benchtime],
@@ -278,12 +419,18 @@ def main():
         combined = evidence / "benchmarks.log"
         combined.write_text("".join((evidence / f"benchmark-{i}.log").read_text() for i in range(args.samples)))
         report.setdefault("benchmarks", {})[label] = bench_summary(combined)
+    measured = report["benchmarks"]
+    if len(measured["baseline"]) != 9 or measured["baseline"].keys() != measured["candidate"].keys():
+        raise RuntimeError("expected nine paired generic benchmark workloads")
+    if any(row["samples"] != args.samples for version in measured.values() for row in version.values()):
+        raise RuntimeError("generic benchmark sample count differs from requested count")
     report["benchmark_percent_changes"] = {
         name: {metric: (values[metric]["median"] / report["benchmarks"]["baseline"][name][metric]["median"] - 1) * 100
                for metric in ("ns/op", "B/op", "allocs/op")}
         for name, values in report["benchmarks"]["candidate"].items()
     }
     write_json(output / "comparison.json", report)
+    check_sources(guards, output, "benchmark-complete")
     write_json(output / "commands.json", COMMANDS)
     print(json.dumps({"output": str(output), "api": report["api"],
                       "contract_differences": len(report["contracts"]["differences"]),
