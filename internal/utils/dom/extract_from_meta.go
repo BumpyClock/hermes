@@ -59,31 +59,26 @@ func stripTags(text string, blockBoundaries bool) string {
 	// Previously, content was wrapped in a <span> tag to prevent parsing errors,
 	// but this is unnecessary as goquery handles text fragments correctly.
 	// If parsing fails, we return the original text as a fallback.
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(text))
+	root, err := html.Parse(strings.NewReader(text))
 	if err != nil {
 		// If parsing fails, return original text
 		return text
 	}
+	if blockBoundaries {
+		var output strings.Builder
+		appendArticleText(&output, root)
+		return output.String()
+	}
+	doc := goquery.NewDocumentFromNode(root)
 
 	// Remove non-content elements before extracting text
 	// These elements don't contribute to visible content
 	doc.Find("script, style, noscript, head, meta, link").Remove()
-	if blockBoundaries {
-		doc.Find("template").Remove()
-	}
 
 	// Remove HTML comments at all levels using recursive traversal
 	// Start from the document root to catch top-level comments
 	if len(doc.Nodes) > 0 {
 		removeComments(doc.Nodes[0])
-	}
-
-	if blockBoundaries {
-		var output strings.Builder
-		for _, node := range doc.Nodes {
-			appendArticleText(&output, node)
-		}
-		return output.String()
 	}
 
 	cleanText := doc.Text()
@@ -96,9 +91,14 @@ func stripTags(text string, blockBoundaries bool) string {
 }
 
 func appendArticleText(output *strings.Builder, node *html.Node) {
+	if node.Type == html.CommentNode {
+		return
+	}
 	block := false
 	if node.Type == html.ElementNode {
 		switch node.Data {
+		case "script", "style", "noscript", "head", "meta", "link", "template":
+			return
 		case "address", "article", "aside", "blockquote", "br", "caption", "dd", "div",
 			"dl", "dt", "fieldset", "figcaption", "figure", "footer", "form",
 			"h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "li",

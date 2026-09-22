@@ -1,11 +1,8 @@
 package text
 
 import (
-	"regexp"
 	"strings"
 )
-
-var whitespaceRegex = regexp.MustCompile(`\s+`)
 
 func ExcerptContent(content string, words ...int) string {
 	wordCount := 10
@@ -18,18 +15,32 @@ func ExcerptContent(content string, words ...int) string {
 		return ""
 	}
 
-	wordSlice := whitespaceRegex.Split(trimmed, -1)
-
-	var filteredWords []string
-	for _, word := range wordSlice {
-		if word != "" {
-			filteredWords = append(filteredWords, word)
+	var excerpt strings.Builder
+	for start := 0; start < len(trimmed); {
+		end := start
+		for end < len(trimmed) && !excerptWhitespace(trimmed[end]) {
+			end++
+		}
+		if start == 0 && end == len(trimmed) {
+			return trimmed
+		}
+		if excerpt.Len() != 0 {
+			excerpt.WriteByte(' ')
+		}
+		excerpt.WriteString(trimmed[start:end])
+		wordCount--
+		if wordCount == 0 {
+			break
+		}
+		start = end
+		for start < len(trimmed) && excerptWhitespace(trimmed[start]) {
+			start++
 		}
 	}
+	return excerpt.String()
+}
 
-	if wordCount > len(filteredWords) {
-		wordCount = len(filteredWords)
-	}
-
-	return strings.Join(filteredWords[:wordCount], " ")
+func excerptWhitespace(char byte) bool {
+	// Match RE2 \s, not Unicode whitespace or vertical tabs.
+	return char == ' ' || char == '\t' || char == '\n' || char == '\f' || char == '\r'
 }
