@@ -82,6 +82,11 @@ selectors form a union in document order, with node deduplication. Selecting a
 parent and its descendant includes the descendant only through the parent.
 The first group with nonempty raw content wins, even when cleanup empties it;
 missing extracted content can then use generic fallback, not a later group.
+Without transforms, each selected element is cleaned on its own and contributes
+only its inner HTML, so its own tag and attributes are dropped. Select
+containers rather than individual paragraphs to keep paragraph markup.
+With transforms, the selected elements are copied into one container, cleaned
+together, and contribute their outer HTML.
 Ordered transforms run on selected content copies, followed by removal selectors
 and then default cleaning. See [ordered transforms](definition-transforms.md)
 for the typed operations, predicates, required-input policy and execution limits.
