@@ -149,7 +149,7 @@ func TestSourcesAndConflicts(t *testing.T) {
 	}
 }
 
-func TestMatchingAndIsolation(t *testing.T) {
+func TestMatching(t *testing.T) {
 	dir := t.TempDir()
 	for name, hosts := range map[string]string{"exact": "[example.com]", "wild": "['*.example.com']", "deep": "['*.news.example.com']", "specific": "[a.news.example.com]"} {
 		write(t, dir, name+".yaml", strings.Replace(strings.Replace(valid, "site: test", "site: "+name, 1), "[example.com]", hosts, 1))
@@ -169,9 +169,20 @@ func TestMatchingAndIsolation(t *testing.T) {
 		if got == nil || got.Domain != want {
 			t.Fatalf("%s: %v want %s", host, got, want)
 		}
-		got.Content.Selectors[0] = nil
-		if s.Match(host).Content.Selectors[0] == nil {
-			t.Fatal("snapshot mutated")
+	}
+}
+
+func TestMetadataErrorOrder(t *testing.T) {
+	for want, fields := range map[string]string{
+		"metadata.title":  "  lead_image_url: x\n  author: x\n  title: x\n",
+		"metadata.author": "  lead_image_url: x\n  author: x\n",
+	} {
+		dir := t.TempDir()
+		write(t, dir, "site.yaml", "schema: 1\nsite: test\nhosts: [example.com]\nmetadata:\n"+fields+"content:\n  groups: [[article]]\n")
+		_, err := LoadDirectory(dir)
+		var e *Error
+		if !errors.As(err, &e) || e.Field != want {
+			t.Fatalf("want %s error: %v", want, err)
 		}
 	}
 }

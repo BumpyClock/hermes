@@ -49,10 +49,10 @@ type rule struct {
 	siteLine, siteColumn, hostsLine, hostsColumn int
 }
 
-// Snapshot owns validated rules; none of its storage is exported.
+// Snapshot owns validated rules; Match returns read-only pointers into them.
 type Snapshot struct{ rules []rule }
 
-// Match returns a private copy for the extraction pipeline.
+// Match returns the matching rule. The rule is shared with the snapshot and must be treated as read-only.
 func (s *Snapshot) Match(host string) *extractors.DefinitionExtractor {
 	host = strings.ToLower(strings.TrimSuffix(host, "."))
 	exact := strings.TrimPrefix(host, "www.")
@@ -61,7 +61,7 @@ func (s *Snapshot) Match(host string) *extractors.DefinitionExtractor {
 		for _, pattern := range r.hosts {
 			if !strings.HasPrefix(pattern, "*.") {
 				if exact == strings.TrimPrefix(pattern, "www.") {
-					return clone(r.extractor)
+					return &s.rules[i].extractor
 				}
 			} else {
 				suffix := pattern[1:]
@@ -72,36 +72,9 @@ func (s *Snapshot) Match(host string) *extractors.DefinitionExtractor {
 		}
 	}
 	if best >= 0 {
-		return clone(s.rules[best].extractor)
+		return &s.rules[best].extractor
 	}
 	return nil
-}
-
-func clone(e extractors.DefinitionExtractor) *extractors.DefinitionExtractor {
-	copyField := func(f *extractors.FieldExtractor) *extractors.FieldExtractor {
-		if f == nil {
-			return nil
-		}
-		v := *f
-		v.Selectors = append([]extractors.SelectorEntry(nil), f.Selectors...)
-		for i := range v.Selectors {
-			if v.Selectors[i].Capture != nil {
-				capture := *v.Selectors[i].Capture
-				v.Selectors[i].Capture = &capture
-			}
-		}
-		return &v
-	}
-	e.Title, e.Author = copyField(e.Title), copyField(e.Author)
-	e.DatePublished, e.LeadImageURL = copyField(e.DatePublished), copyField(e.LeadImageURL)
-	if e.Content != nil {
-		c := *e.Content
-		c.Clean = append([]goquery.Matcher(nil), c.Clean...)
-		c.Preserve = append([]goquery.Matcher(nil), c.Preserve...)
-		c.Selectors = append([]goquery.Matcher(nil), c.Selectors...)
-		e.Content = &c
-	}
-	return &e
 }
 
 // LoadDirectory reads only immediate .yaml/.yml regular files. Acceptance is atomic.
@@ -353,7 +326,11 @@ func (p *validator) rule(n *yaml.Node) (rule, error) {
 		if err != nil {
 			return r, err
 		}
-		for name, n := range fields {
+		for _, name := range []string{"title", "author", "date_published", "lead_image_url"} {
+			n := fields[name]
+			if n == nil {
+				continue
+			}
 			var f *extractors.FieldExtractor
 			f, err = p.field(n, "metadata."+name)
 			if err != nil {
@@ -427,31 +404,9 @@ func (p *validator) textCapture(n *yaml.Node, path string) (extractors.SelectorE
 		return entry, p.error(a.fields["selector"], path+".selector", err)
 	}
 	entry.Matcher = matcher
-	pattern := a.string("pattern", false)
-	if len(pattern) > MaxPatternBytes {
-		a.reject("pattern", "pattern byte limit exceeded")
-	}
+	compiled, index := a.capturePattern()
 	if a.err != nil {
 		return entry, a.err
-	}
-	compiled, err := regexp.Compile(pattern)
-	if err != nil {
-		return entry, p.error(a.fields["pattern"], path+".pattern", err)
-	}
-	if compiled.NumSubexp() > MaxCaptureGroups {
-		return entry, p.bad(a.fields["pattern"], path+".pattern", "capture group limit exceeded")
-	}
-	group := a.fields["group"]
-	if group == nil || group.Tag != "!!int" {
-		node := group
-		if node == nil {
-			node = n
-		}
-		return entry, p.bad(node, path+".group", "expected integer capture group")
-	}
-	index, err := strconv.Atoi(group.Value)
-	if err != nil || index < 1 || index > compiled.NumSubexp() {
-		return entry, p.bad(group, path+".group", "capture group must exist and be at least 1")
 	}
 	entry.Capture = &extractors.TextCapture{
 		Pattern: compiled, Group: index, MaxBytes: MaxValueBytes, MaxNodes: MaxContentNodes, MaxDepth: MaxContentDepth,

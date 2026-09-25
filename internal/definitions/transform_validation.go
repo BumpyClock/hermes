@@ -192,6 +192,49 @@ func (a *arguments) input(name string) attributeInput {
 	return attributeInput{name: a.attribute(name), required: a.boolean("required", false)}
 }
 
+func (a *arguments) target() selectorTarget {
+	return selectorTarget{selector: a.selector("selector"), mode: a.optionalChoice("select", "all", "first", "last", "all")}
+}
+
+func (a *arguments) require(names ...string) error {
+	for _, name := range names {
+		if a.fields[name] == nil {
+			return a.p.bad(a.node, a.path+"."+name, "required field")
+		}
+	}
+	return nil
+}
+
+func (a *arguments) capturePattern() (*regexp.Regexp, int) {
+	pattern := a.string("pattern", false)
+	if len(pattern) > MaxPatternBytes {
+		a.reject("pattern", "pattern byte limit exceeded")
+	}
+	if a.err != nil {
+		return nil, 0
+	}
+	compiled, err := regexp.Compile(pattern)
+	if err != nil {
+		a.err = a.p.error(a.fields["pattern"], a.path+".pattern", err)
+		return nil, 0
+	}
+	if compiled.NumSubexp() > MaxCaptureGroups {
+		a.reject("pattern", "capture group limit exceeded")
+		return nil, 0
+	}
+	group := a.fields["group"]
+	if group == nil || group.Tag != "!!int" {
+		a.reject("group", "expected integer capture group")
+		return nil, 0
+	}
+	index, err := strconv.Atoi(group.Value)
+	if err != nil || index < 1 || index > compiled.NumSubexp() {
+		a.reject("group", "capture group must exist and be at least 1")
+		return nil, 0
+	}
+	return compiled, index
+}
+
 func (p *validator) operation(n *yaml.Node, path, name string) (operation, error) {
 	switch name {
 	case "attribute.copy":
@@ -281,29 +324,20 @@ func (p *validator) selectorTarget(n *yaml.Node, path string, allowSelf bool) (s
 		}
 		return selectorTarget{self: true}, a.err
 	}
-	target := selectorTarget{
-		selector: a.selector("selector"),
-		mode:     a.optionalChoice("select", "all", "first", "last", "all"),
-	}
+	target := a.target()
 	return target, a.err
 }
 
 func (p *validator) retain(n *yaml.Node, path string) (operation, error) {
 	a := p.arguments(n, path, "selector", "select", "required")
-	o := elementRetain{
-		selection: selectorTarget{selector: a.selector("selector"), mode: a.optionalChoice("select", "all", "first", "last", "all")},
-		required:  a.boolean("required", false),
-	}
+	o := elementRetain{selection: a.target(), required: a.boolean("required", false)}
 	return o, a.err
 }
 
 func (p *validator) move(n *yaml.Node, path string) (operation, error) {
 	a := p.arguments(n, path, "source", "target", "position", "required")
-	if a.fields["source"] == nil || a.fields["target"] == nil {
-		if a.fields["source"] == nil {
-			return nil, p.bad(n, path+".source", "required field")
-		}
-		return nil, p.bad(n, path+".target", "required field")
+	if err := a.require("source", "target"); err != nil {
+		return nil, err
 	}
 	source, err := p.selectorTarget(a.fields["source"], path+".source", false)
 	if err != nil {
@@ -324,11 +358,8 @@ func (p *validator) move(n *yaml.Node, path string) (operation, error) {
 
 func (p *validator) create(n *yaml.Node, path string) (operation, error) {
 	a := p.arguments(n, path, "target", "position", "node")
-	if a.fields["target"] == nil || a.fields["node"] == nil {
-		if a.fields["target"] == nil {
-			return nil, p.bad(n, path+".target", "required field")
-		}
-		return nil, p.bad(n, path+".node", "required field")
+	if err := a.require("target", "node"); err != nil {
+		return nil, err
 	}
 	target, err := p.selectorTarget(a.fields["target"], path+".target", true)
 	if err != nil {
@@ -347,11 +378,8 @@ func (p *validator) create(n *yaml.Node, path string) (operation, error) {
 
 func (p *validator) recoverNoscript(n *yaml.Node, path string) (operation, error) {
 	a := p.arguments(n, path, "source", "target", "position", "required")
-	if a.fields["source"] == nil || a.fields["target"] == nil {
-		if a.fields["source"] == nil {
-			return nil, p.bad(n, path+".source", "required field")
-		}
-		return nil, p.bad(n, path+".target", "required field")
+	if err := a.require("source", "target"); err != nil {
+		return nil, err
 	}
 	source, err := p.selectorTarget(a.fields["source"], path+".source", true)
 	if err != nil {
@@ -381,8 +409,8 @@ func (p *validator) recoverNoscript(n *yaml.Node, path string) (operation, error
 
 func (p *validator) setFrom(n *yaml.Node, path string) (operation, error) {
 	a := p.arguments(n, path, "name", "value")
-	if a.fields["value"] == nil {
-		return nil, p.bad(n, path+".value", "required field")
+	if err := a.require("value"); err != nil {
+		return nil, err
 	}
 	value, err := p.scalarSource(a.fields["value"], path+".value")
 	if err != nil {
@@ -459,31 +487,11 @@ func (p *validator) constructedAttributes(n *yaml.Node, path string) ([]construc
 func (p *validator) capture(n *yaml.Node, path string) (operation, error) {
 	a := p.arguments(n, path, "attribute", "pattern", "group", "required")
 	o := regexCapture{input: a.input("attribute")}
-	pattern := a.string("pattern", false)
-	if len(pattern) > MaxPatternBytes {
-		a.reject("pattern", "pattern byte limit exceeded")
-	}
+	o.pattern, o.group = a.capturePattern()
 	if a.err != nil {
 		return nil, a.err
 	}
-	compiled, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, p.error(a.fields["pattern"], path+".pattern", err)
-	}
-	if compiled.NumSubexp() > MaxCaptureGroups {
-		a.reject("pattern", "capture group limit exceeded")
-	}
-	group := a.fields["group"]
-	if group == nil || group.Tag != "!!int" {
-		a.reject("group", "expected integer capture group")
-	} else {
-		o.group, err = strconv.Atoi(group.Value)
-		if err != nil || o.group < 1 || o.group > compiled.NumSubexp() {
-			a.reject("group", "capture group must exist and be at least 1")
-		}
-	}
-	o.pattern = compiled
-	return o, a.err
+	return o, nil
 }
 
 func (p *validator) scalarSource(n *yaml.Node, path string) (scalarSource, error) {
@@ -530,8 +538,8 @@ func (p *validator) descendantAttributeSource(n *yaml.Node, path string) (scalar
 
 func (p *validator) jsonSource(n *yaml.Node, path string) (scalarSource, error) {
 	a := p.arguments(n, path, "attribute", "path", "required")
-	if a.fields["path"] == nil {
-		return nil, p.bad(n, path+".path", "required field")
+	if err := a.require("path"); err != nil {
+		return nil, err
 	}
 	items, err := p.list(a.fields["path"], path+".path")
 	if err != nil {
