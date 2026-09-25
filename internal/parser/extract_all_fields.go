@@ -218,13 +218,7 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 				continue
 			}
 
-			var contentHTML string
-			var err error
-			if definitionExtractor.Content.OrderedTransforms != nil {
-				contentHTML, err = processOrderedContent(ctx, contentElements, doc, definitionExtractor.Content, result.Title, targetURL, outputBaseURL)
-			} else {
-				contentHTML, err = processDefinitionContentWithBase(contentElements, doc, definitionExtractor.Content, result.Title, targetURL, outputBaseURL)
-			}
+			contentHTML, err := processDefinitionContent(ctx, contentElements, doc, definitionExtractor.Content, result.Title, targetURL, outputBaseURL)
 			if err != nil {
 				return nil, fmt.Errorf("extract definition site %q content: %w", definitionExtractor.Domain, err)
 			}
@@ -428,73 +422,6 @@ func hasCustomContent(contentElements *goquery.Selection) bool {
 		}
 	}
 	return false
-}
-
-func processDefinitionContentWithBase(contentElements *goquery.Selection, doc *goquery.Document, extractor *extractors.ContentExtractor, title, targetURL, outputBaseURL string) (string, error) {
-	var combinedContent strings.Builder
-	var processErr error
-
-	contentElements = outermostContentElements(contentElements)
-	contentElements.EachWithBreak(func(_ int, element *goquery.Selection) bool {
-		contentDoc, err := goquery.NewDocumentFromReader(strings.NewReader("<div></div>"))
-		if err != nil {
-			processErr = fmt.Errorf("create custom content wrapper: %w", err)
-			return false
-		}
-		wrapper := contentDoc.Find("div").First()
-		wrapper.AppendSelection(element.Clone())
-
-		for _, selector := range extractor.Clean {
-			wrapper.FindMatcher(selector).Remove()
-		}
-		if outputBaseURL != "" {
-			// Rules see source attributes; only the output clone receives absolute URLs.
-			contentDoc.Find("base").Remove()
-			dom.MakeLinksAbsolute(contentDoc, outputBaseURL)
-		}
-
-		content := wrapper.Children().First()
-		if !extractor.DisableDefaultCleaner {
-			content = cleaners.ExtractCleanNode(content, doc, cleaners.ContentCleanOptions{
-				CleanConditionally: true,
-				Title:              title,
-				URL:                targetURL,
-				PreserveMatchers:   extractor.Preserve,
-			})
-		}
-
-		html, err := content.Html()
-		if err != nil {
-			processErr = fmt.Errorf("serialize custom content: %w", err)
-			return false
-		}
-		if strings.TrimSpace(html) != "" {
-			combinedContent.WriteString(html)
-			combinedContent.WriteByte('\n')
-		}
-		return true
-	})
-
-	if processErr != nil {
-		return "", processErr
-	}
-	return strings.TrimSpace(combinedContent.String()), nil
-}
-
-func outermostContentElements(contentElements *goquery.Selection) *goquery.Selection {
-	selected := make(map[*html.Node]struct{}, contentElements.Length())
-	for _, node := range contentElements.Nodes {
-		selected[node] = struct{}{}
-	}
-
-	return contentElements.FilterFunction(func(_ int, element *goquery.Selection) bool {
-		for ancestor := element.Get(0).Parent; ancestor != nil; ancestor = ancestor.Parent {
-			if _, ok := selected[ancestor]; ok {
-				return false
-			}
-		}
-		return true
-	})
 }
 
 // parseDate parses a date string into a time.Time.
