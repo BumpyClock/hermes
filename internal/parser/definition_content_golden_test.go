@@ -45,9 +45,10 @@ func TestCanonicalDefinitionOutputMatchesGolden(t *testing.T) {
 	sort.Strings(definitionFiles)
 	sort.Strings(caseFiles)
 	hashFile := func(path string) []byte {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
+		//nolint:gosec // The operator selects this external synthetic-fixture repository.
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			t.Fatal(readErr)
 		}
 		rel, _ := filepath.Rel(root, path)
 		sum := sha256.Sum256(data)
@@ -63,37 +64,27 @@ func TestCanonicalDefinitionOutputMatchesGolden(t *testing.T) {
 		var fixture struct {
 			Cases []struct{ File, URL string }
 		}
-		if err := json.Unmarshal(hashFile(caseFile), &fixture); err != nil {
+		if err = json.Unmarshal(hashFile(caseFile), &fixture); err != nil {
 			t.Fatal(err)
 		}
 		for _, c := range fixture.Cases {
 			page := hashFile(filepath.Join(filepath.Dir(caseFile), c.File))
-			parsedURL, err := url.Parse(c.URL)
-			if err != nil {
-				t.Fatal(err)
+			parsedURL, parseErr := url.Parse(c.URL)
+			if parseErr != nil {
+				t.Fatal(parseErr)
 			}
 			rule := snapshot.Match(parsedURL.Hostname())
 			if rule == nil {
 				t.Fatalf("%s: no definition matches %s", caseFile, c.URL)
 			}
 			for _, contentType := range []string{"html", "markdown", "text"} {
-				// ParseHTMLWithContext minus DNS validation, which would need the network.
-				doc, err := resource.CreateDocument(context.Background(), c.URL, string(page), parsedURL, nil, nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				result, err := New().extractAllFieldsWithContext(context.Background(), doc, c.URL, parsedURL, ParserOptions{
-					Definitions: snapshot, DefinitionsConfigured: true, Fallback: true, ContentType: contentType,
-				})
-				if err != nil {
-					t.Fatalf("%s %s: %v", c.File, contentType, err)
-				}
+				result := parseCanonicalFixture(t, snapshot, string(page), c.URL, parsedURL, contentType)
 				if result.ExtractorUsed != "definition:"+rule.Domain {
 					t.Fatalf("%s %s: extractor %q, want definition:%s", c.File, contentType, result.ExtractorUsed, rule.Domain)
 				}
-				encoded, err := json.Marshal(result)
-				if err != nil {
-					t.Fatal(err)
+				encoded, encodeErr := json.Marshal(result)
+				if encodeErr != nil {
+					t.Fatal(encodeErr)
 				}
 				sum := sha256.Sum256(encoded)
 				rel, _ := filepath.Rel(root, filepath.Join(filepath.Dir(caseFile), c.File))
@@ -104,11 +95,12 @@ func TestCanonicalDefinitionOutputMatchesGolden(t *testing.T) {
 	got.InputsSHA256 = hex.EncodeToString(inputs.Sum(nil))
 
 	if os.Getenv("HERMES_UPDATE_DEFINITION_GOLDEN") != "" {
-		encoded, err := json.MarshalIndent(got, "", "  ")
-		if err != nil {
-			t.Fatal(err)
+		encoded, encodeErr := json.MarshalIndent(got, "", "  ")
+		if encodeErr != nil {
+			t.Fatal(encodeErr)
 		}
-		if err := os.WriteFile(definitionGoldenPath, append(encoded, '\n'), 0o644); err != nil {
+		//nolint:gosec // The golden is a checked-in test fixture.
+		if err = os.WriteFile(definitionGoldenPath, append(encoded, '\n'), 0o644); err != nil {
 			t.Fatal(err)
 		}
 		return
@@ -133,4 +125,21 @@ func TestCanonicalDefinitionOutputMatchesGolden(t *testing.T) {
 	if len(got.Results) != len(want.Results) {
 		t.Errorf("%d results, golden has %d", len(got.Results), len(want.Results))
 	}
+}
+
+// parseCanonicalFixture runs ParseHTMLWithContext minus DNS validation, which
+// would need the network.
+func parseCanonicalFixture(t *testing.T, snapshot *definitions.Snapshot, page, targetURL string, parsedURL *url.URL, contentType string) *Result {
+	t.Helper()
+	doc, err := resource.CreateDocument(context.Background(), targetURL, page, parsedURL, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := New().extractAllFieldsWithContext(context.Background(), doc, targetURL, parsedURL, ParserOptions{
+		Definitions: snapshot, DefinitionsConfigured: true, Fallback: true, ContentType: contentType,
+	})
+	if err != nil {
+		t.Fatalf("%s %s: %v", targetURL, contentType, err)
+	}
+	return result
 }
