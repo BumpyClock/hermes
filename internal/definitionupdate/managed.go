@@ -637,13 +637,18 @@ func validateFiles(manifest *definitionbundle.Manifest, files map[string][]byte,
 	}
 	defer func() { _ = os.RemoveAll(stage) }()
 	directory := filepath.Join(stage, "definitions")
-	if err := definitionbundle.WriteDefinitions(files, directory); err != nil {
+	if err = definitionbundle.WriteDefinitions(files, directory); err != nil {
 		return nil, err
 	}
-	if err := manifest.AuditRequirements(files, suite, directory); err != nil {
+	// Loader errors keep the prefix they had when the audit performed its own load.
+	snapshot, err := definitions.LoadDirectory(directory)
+	if err == nil {
+		err = manifest.AuditRequirements(suite, snapshot)
+	}
+	if err != nil {
 		return nil, fmt.Errorf("release requirements: %w", err)
 	}
-	return definitions.LoadDirectory(directory)
+	return snapshot, nil
 }
 
 func snapshotDirectory(root, version, digest string) string {

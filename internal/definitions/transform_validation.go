@@ -87,6 +87,7 @@ func (p *validator) transforms(n *yaml.Node) (*program, error) {
 					return nil, err
 				}
 				step.name = name
+				p.use("transform." + name)
 			}
 		}
 		if step.operation == nil {
@@ -262,9 +263,11 @@ func (p *validator) operation(n *yaml.Node, path, name string) (operation, error
 		a := p.arguments(n, path, "attribute", "to", "base", "required")
 		o := urlResolve{input: a.input("attribute"), to: a.attribute("attribute")}
 		if a.fields["to"] != nil {
+			p.use("transform.url.resolve.to")
 			o.to = a.attribute("to")
 		}
 		if a.fields["base"] != nil {
+			p.use("transform.url.resolve.base")
 			var err error
 			o.base, err = p.scalarSource(a.fields["base"], path+".base")
 			if err != nil {
@@ -365,6 +368,9 @@ func (p *validator) create(n *yaml.Node, path string) (operation, error) {
 	if err != nil {
 		return nil, err
 	}
+	if target.self {
+		p.use("element.create.self_target")
+	}
 	node, err := p.constructNode(a.fields["node"], path+".node")
 	if err != nil {
 		return nil, err
@@ -399,6 +405,9 @@ func (p *validator) recoverNoscript(n *yaml.Node, path string) (operation, error
 	if source.self && position != "replace" {
 		return nil, p.bad(a.fields["position"], path+".position", "noscript self recovery requires replace")
 	}
+	if source.self {
+		p.use("transform.noscript.recover.self")
+	}
 	return noscriptRecover{
 		source:   source,
 		target:   target,
@@ -422,6 +431,7 @@ func (p *validator) setFrom(n *yaml.Node, path string) (operation, error) {
 func (p *validator) algorithm(n *yaml.Node, path string) (operation, error) {
 	a := p.arguments(n, path, "name")
 	name := a.choice("name", "abendblatt.deobfuscate")
+	p.algorithms[name] = true
 	return namedAlgorithm{name: name}, a.err
 }
 
@@ -474,6 +484,7 @@ func (p *validator) constructedAttributes(n *yaml.Node, path string) ([]construc
 		if value.Kind == yaml.ScalarNode && value.Tag == "!!str" {
 			source = literalSource(value.Value)
 		} else {
+			p.use("element.create.typed_attributes")
 			source, err = p.scalarSource(value, path+"."+key.Value)
 			if err != nil {
 				return nil, err
@@ -517,11 +528,13 @@ func (p *validator) scalarSource(n *yaml.Node, path string) (scalarSource, error
 		return s, a.err
 	}
 	if a.fields["descendant_attribute"] != nil {
+		p.use("value.descendant_attribute")
 		if a.fields["required"] != nil {
 			return nil, p.bad(a.fields["required"], path+".required", "required belongs inside descendant_attribute")
 		}
 		return p.descendantAttributeSource(a.fields["descendant_attribute"], path+".descendant_attribute")
 	}
+	p.use("value.json")
 	if a.fields["required"] != nil {
 		return nil, p.bad(a.fields["required"], path+".required", "required belongs inside json")
 	}
@@ -654,6 +667,7 @@ func (p *validator) conditions(n *yaml.Node, path string) ([]condition, error) {
 			return nil, p.bad(item, path, "expected exactly one condition")
 		}
 		for name, params := range m {
+			p.use("condition." + name)
 			c, err := p.condition(params, path+"."+name, name)
 			if err != nil {
 				return nil, err

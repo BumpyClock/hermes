@@ -36,10 +36,11 @@ content:
 	if err := bundle.WriteDefinitions(files, directory); err != nil {
 		t.Fatal(err)
 	}
+	snapshot := load(t, directory)
 	support := hermes.DefinitionCapabilities()
 	m.Engine.Operations = slices.Clone(support.Capabilities)
 	m.Engine.Algorithms = slices.Clone(support.Algorithms)
-	if err := m.AuditRequirements(files, suite, directory); err != nil {
+	if err := m.AuditRequirements(suite, snapshot); err != nil {
 		t.Fatal(err)
 	}
 	for _, capability := range []string{"metadata.text_capture", "transform.algorithm.apply"} {
@@ -49,13 +50,13 @@ content:
 				return name == capability
 			})
 			defer func() { m.Engine.Operations = original }()
-			if err := m.AuditRequirements(files, suite, directory); err == nil || !strings.Contains(err.Error(), capability) {
+			if err := m.AuditRequirements(suite, snapshot); err == nil || !strings.Contains(err.Error(), capability) {
 				t.Fatalf("undeclared metadata/algorithm operation accepted: %v", err)
 			}
 		})
 	}
 	m.Engine.Algorithms = []string{}
-	if err := m.AuditRequirements(files, suite, directory); err == nil || !strings.Contains(err.Error(), "abendblatt.deobfuscate") {
+	if err := m.AuditRequirements(suite, snapshot); err == nil || !strings.Contains(err.Error(), "abendblatt.deobfuscate") {
 		t.Fatalf("undeclared named algorithm accepted: %v", err)
 	}
 }
@@ -104,9 +105,10 @@ content:
 	if err := bundle.WriteDefinitions(files, directory); err != nil {
 		t.Fatal(err)
 	}
+	snapshot := load(t, directory)
 	support := hermes.DefinitionCapabilities()
 	m.Engine.Operations = slices.Clone(support.Capabilities)
-	if err := m.AuditRequirements(files, suite, directory); err != nil {
+	if err := m.AuditRequirements(suite, snapshot); err != nil {
 		t.Fatal(err)
 	}
 	for _, capability := range []string{
@@ -120,7 +122,7 @@ content:
 				return name == capability
 			})
 			defer func() { m.Engine.Operations = original }()
-			if err := m.AuditRequirements(files, suite, directory); err == nil || !strings.Contains(err.Error(), capability) {
+			if err := m.AuditRequirements(suite, snapshot); err == nil || !strings.Contains(err.Error(), capability) {
 				t.Fatalf("undeclared parameter extension accepted: %v", err)
 			}
 		})

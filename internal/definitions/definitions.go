@@ -47,6 +47,10 @@ type rule struct {
 	hosts                                        []string
 	extractor                                    extractors.DefinitionExtractor
 	siteLine, siteColumn, hostsLine, hostsColumn int
+	// source is the definition file's base name within the loaded directory.
+	source string
+	// capabilities and algorithms record the language features this rule's validation accepted.
+	capabilities, algorithms map[string]bool
 }
 
 // Snapshot owns validated rules; Match returns read-only pointers into them.
@@ -126,7 +130,7 @@ func LoadDirectory(dir string) (*Snapshot, error) {
 }
 
 func loadFile(source string, remaining int) (rule, int, error) {
-	p := validator{source: source}
+	p := validator{source: source, capabilities: map[string]bool{}, algorithms: map[string]bool{}}
 	info, err := os.Lstat(source)
 	if err != nil {
 		return rule{}, 0, p.error(nil, "", err)
@@ -176,13 +180,19 @@ func loadFile(source string, remaining int) (rule, int, error) {
 		return rule{}, 0, err
 	}
 	r, err := p.rule(root.Content[0])
+	r.source = filepath.Base(source)
+	r.capabilities, r.algorithms = p.capabilities, p.algorithms
 	return r, len(data), err
 }
 
 type validator struct {
 	source, site string
 	nodes        int
+	// capabilities and algorithms collect engine capability identifiers as validation accepts features.
+	capabilities, algorithms map[string]bool
 }
+
+func (p *validator) use(capability string) { p.capabilities[capability] = true }
 
 var yamlLine = regexp.MustCompile(`(?:^| )line ([0-9]+):`)
 
@@ -318,6 +328,11 @@ func (p *validator) rule(n *yaml.Node) (rule, error) {
 		if len(base) > 253 || !hostPattern.MatchString(base) {
 			return r, p.bad(n, "hosts", "expected DNS hostname or explicit *.hostname")
 		}
+		if base != host {
+			p.use("hosts.wildcard")
+		} else {
+			p.use("hosts.exact-www")
+		}
 		r.hosts = append(r.hosts, host)
 	}
 	if metadata := m["metadata"]; metadata != nil {
@@ -364,6 +379,9 @@ func (p *validator) field(n *yaml.Node, path string) (*extractors.FieldExtractor
 		}
 		if len(m) != 1 {
 			return nil, p.bad(item, path, "expected exactly one text, attribute, or text_capture alternative")
+		}
+		for kind := range m {
+			p.use("metadata." + kind)
 		}
 		entry := extractors.SelectorEntry{}
 		if text := m["text"]; text != nil {
@@ -425,6 +443,9 @@ func (p *validator) content(n *yaml.Node) (*extractors.ContentExtractor, error) 
 	if err != nil {
 		return nil, err
 	}
+	// Every rule relies on content groups and on the default cleaner setting, even when it is omitted.
+	p.use("content.groups")
+	p.use("content.default_cleaner")
 	c := &extractors.ContentExtractor{}
 	for _, group := range groups {
 		items, groupErr := p.list(group, "content.groups")
@@ -446,6 +467,7 @@ func (p *validator) content(n *yaml.Node) (*extractors.ContentExtractor, error) 
 		c.Selectors = append(c.Selectors, matcher)
 	}
 	if remove := m["remove"]; remove != nil {
+		p.use("content.remove")
 		items, removeErr := p.list(remove, "content.remove")
 		if removeErr != nil {
 			return nil, removeErr
@@ -459,6 +481,7 @@ func (p *validator) content(n *yaml.Node) (*extractors.ContentExtractor, error) 
 		}
 	}
 	if preserve := m["preserve"]; preserve != nil {
+		p.use("content.preserve")
 		items, preserveErr := p.list(preserve, "content.preserve")
 		if preserveErr != nil {
 			return nil, preserveErr

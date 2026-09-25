@@ -18,6 +18,7 @@ import (
 	hermes "github.com/BumpyClock/hermes"
 	"github.com/BumpyClock/hermes/internal/definitionbundle"
 	"github.com/BumpyClock/hermes/internal/definitionbundle/offline"
+	"github.com/BumpyClock/hermes/internal/definitions"
 )
 
 var (
@@ -203,7 +204,12 @@ func evaluate(result *report, manifestPath, archivePath, enginePin, buildPin, wo
 	if err != nil {
 		return fmt.Errorf("real engine loader: %w", err)
 	}
-	if err = manifest.AuditRequirements(files, suite, work); err != nil {
+	// The public snapshot hides its internal form, so the audit needs its own load of the same directory.
+	audited, err := definitions.LoadDirectory(work)
+	if err != nil {
+		return fmt.Errorf("real engine loader: %w", err)
+	}
+	if err = manifest.AuditRequirements(suite, audited); err != nil {
 		return err
 	}
 	return runCases(result, snapshot, files, suite)

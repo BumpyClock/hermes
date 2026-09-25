@@ -13,6 +13,7 @@ import (
 	"time"
 
 	bundle "github.com/BumpyClock/hermes/internal/definitionbundle"
+	"github.com/BumpyClock/hermes/internal/definitions"
 
 	hermes "github.com/BumpyClock/hermes"
 )
@@ -49,6 +50,15 @@ func pinned(t *testing.T) (*bundle.Manifest, map[string][]byte) {
 	return m, files
 }
 
+func load(t *testing.T, directory string) *definitions.Snapshot {
+	t.Helper()
+	snapshot, err := definitions.LoadDirectory(directory)
+	if err != nil {
+		t.Fatalf("real loader rejected definitions: %v", err)
+	}
+	return snapshot
+}
+
 func TestPreparedPinnedBundle(t *testing.T) {
 	m, files := pinned(t)
 	suite, err := bundle.ParseSuite(files)
@@ -59,14 +69,12 @@ func TestPreparedPinnedBundle(t *testing.T) {
 	if err := bundle.WriteDefinitions(files, dir); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := hermes.LoadDefinitions(dir); err != nil {
-		t.Fatalf("real loader rejected prepared bundle: %v", err)
-	}
+	snapshot := load(t, dir)
 	support := hermes.DefinitionCapabilities()
 	if err := m.CheckSupport(support.Schema, support.Capabilities, []string{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.AuditRequirements(files, suite, dir); err != nil {
+	if err := m.AuditRequirements(suite, snapshot); err != nil {
 		t.Fatal(err)
 	}
 	if err := m.CheckCoverage(files, suite, nil); err != nil {
@@ -217,8 +225,9 @@ func TestCapabilityAndCaseFailures(t *testing.T) {
 	if err := bundle.WriteDefinitions(files, dir); err != nil {
 		t.Fatal(err)
 	}
+	snapshot := load(t, dir)
 	m.Engine.Operations = slices.DeleteFunc(m.Engine.Operations, func(s string) bool { return s == "metadata.text" })
-	if err := m.AuditRequirements(files, suite, dir); err == nil || !strings.Contains(err.Error(), "metadata.text") {
+	if err := m.AuditRequirements(suite, snapshot); err == nil || !strings.Contains(err.Error(), "metadata.text") {
 		t.Fatalf("missing capability accepted: %v", err)
 	}
 	m.Engine.Operations = append(m.Engine.Operations, "unknown.operation")
@@ -231,7 +240,7 @@ func TestCapabilityAndCaseFailures(t *testing.T) {
 	}
 	m.Engine.Operations, m.Engine.Algorithms = hermes.DefinitionCapabilities().Capabilities, []string{}
 	suite.Cases[0].URL = "https://wrong.example/report"
-	if err := m.AuditRequirements(files, suite, dir); err == nil || !strings.Contains(err.Error(), "does not select") {
+	if err := m.AuditRequirements(suite, snapshot); err == nil || !strings.Contains(err.Error(), "does not select") {
 		t.Fatalf("wrong definition selection not rejected by real matcher: %v", err)
 	}
 	c := suite.Cases[0]

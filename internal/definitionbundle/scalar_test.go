@@ -61,9 +61,10 @@ content:
 	if err = bundle.WriteDefinitions(files, directory); err != nil {
 		t.Fatal(err)
 	}
+	snapshot := load(t, directory)
 	m.Engine.Operations = slices.Clone(support.Capabilities)
 	slices.Sort(m.Engine.Operations)
-	if err = m.AuditRequirements(files, suite, directory); err != nil {
+	if err = m.AuditRequirements(suite, snapshot); err != nil {
 		t.Fatalf("all implemented scalar operations and conditions should be auditable: %v", err)
 	}
 	for _, capability := range []string{
@@ -76,7 +77,7 @@ content:
 		t.Run(capability, func(t *testing.T) {
 			original := m.Engine.Operations
 			m.Engine.Operations = slices.DeleteFunc(slices.Clone(original), func(name string) bool { return name == capability })
-			if err := m.AuditRequirements(files, suite, directory); err == nil || !strings.Contains(err.Error(), capability) {
+			if err := m.AuditRequirements(suite, snapshot); err == nil || !strings.Contains(err.Error(), capability) {
 				t.Fatalf("missing scalar declaration not identified: %v", err)
 			}
 			m.Engine.Operations = original

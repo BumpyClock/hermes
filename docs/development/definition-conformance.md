@@ -108,9 +108,10 @@ and validated YAML is written with exclusive creation, never truncation.
 the real loader and matcher; it does not implement a second extraction engine.
 Only verified YAML is written into a new caller-selected directory.
 
-The bundle auditor covers the current scalar language as well as initial
-metadata/content/host capabilities. After the real loader validates a program,
-operation keys require `transform.<key>` and conditions require `condition.<key>`.
+The real loader records each capability a definition uses while it validates
+that definition, and `AuditRequirements` checks the loaded snapshot's recorded
+set. There is no separate YAML walker to keep in sync with the validator.
+Operation keys require `transform.<key>` and conditions require `condition.<key>`.
 The selected engine's authoritative capability set must contain every declared
 requirement; missing declarations also fail. Schema 1 alone does not authorize
 transforms on an older engine. Named algorithms are checked independently

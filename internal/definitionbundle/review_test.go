@@ -88,7 +88,7 @@ func TestArticleHostBindingMatchesRuntimeNormalization(t *testing.T) {
 			suite.Cases[0].URL = "https://" + host + "/report"
 			suite.Cases[0].Expect = map[string]string{"url": suite.Cases[0].URL}
 			suite.Cases[0].ExactlyOnce, suite.Cases[0].Exclude = []string{}, []string{}
-			err = m.AuditRequirements(files, suite, directory)
+			err = m.AuditRequirements(suite, load(t, directory))
 			if strings.HasSuffix(host, "..") {
 				if err == nil || !strings.Contains(err.Error(), "does not select") {
 					t.Fatalf("double-dot host must fail real definition binding: %v", err)
