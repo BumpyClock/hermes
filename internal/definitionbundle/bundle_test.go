@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -82,6 +83,59 @@ func TestPreparedPinnedBundle(t *testing.T) {
 	}
 	if err := bundle.WriteDefinitions(files, dir); err == nil {
 		t.Fatal("reused work directory accepted")
+	}
+}
+
+func TestDefinitionFilesMatchWrittenDefinitions(t *testing.T) {
+	m, files := pinned(t)
+	suite, err := bundle.ParseSuite(files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selected, err := bundle.DefinitionFiles(files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(t.TempDir(), "definitions")
+	if err = bundle.WriteDefinitions(files, dir); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) == 0 || len(entries) != len(selected) {
+		t.Fatalf("written %d definitions, selected %d", len(entries), len(selected))
+	}
+	for _, entry := range entries {
+		written, readErr := bundle.ReadFile(filepath.Join(dir, entry.Name()), definitions.MaxFileBytes)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if data, ok := selected[entry.Name()]; !ok || !bytes.Equal(data, written) || !bytes.Equal(data, files["definitions/"+entry.Name()]) {
+			t.Fatalf("definition %s differs between selection and written directory", entry.Name())
+		}
+	}
+	fromMemory, err := definitions.LoadFiles(selected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fromDir := load(t, dir)
+	if !maps.Equal(fromMemory.Sites(), fromDir.Sites()) {
+		t.Fatalf("sites: memory %v, directory %v", fromMemory.Sites(), fromDir.Sites())
+	}
+	memoryOperations, memoryAlgorithms := fromMemory.UsedCapabilities()
+	dirOperations, dirAlgorithms := fromDir.UsedCapabilities()
+	if !slices.Equal(memoryOperations, dirOperations) || !slices.Equal(memoryAlgorithms, dirAlgorithms) {
+		t.Fatalf("capabilities: memory %v %v, directory %v %v", memoryOperations, memoryAlgorithms, dirOperations, dirAlgorithms)
+	}
+	if err = m.AuditRequirements(suite, fromMemory); err != nil {
+		t.Fatal(err)
+	}
+
+	files["definitions/../escape.yaml"] = []byte("schema: 1\n")
+	if _, err = bundle.DefinitionFiles(files); err == nil || !strings.Contains(err.Error(), "invalid payload path") {
+		t.Fatalf("unsafe payload path selected: %v", err)
 	}
 }
 

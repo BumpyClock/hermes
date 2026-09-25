@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -93,26 +95,35 @@ func (m *Manifest) ReadArchive(data []byte, expectedSHA256 string) (map[string][
 	return files, nil
 }
 
+// DefinitionFiles selects the definitions/<name>.yaml payloads of verified
+// bundle files, keyed by <name>.yaml. The loaders record that flattened name as
+// each rule's definition file, which AuditRequirements matches.
+func DefinitionFiles(files map[string][]byte) (map[string][]byte, error) {
+	paths := slices.Sorted(maps.Keys(files))
+	if err := validatePayloadPaths(paths); err != nil {
+		return nil, err
+	}
+	selected := map[string][]byte{}
+	for _, name := range paths {
+		if strings.HasPrefix(name, "definitions/") {
+			selected[path.Base(name)] = files[name]
+		}
+	}
+	return selected, nil
+}
+
 // WriteDefinitions writes only already-verified YAML into a new caller-owned directory.
 // The directory must not exist; no archive-selected filesystem paths are used.
 func WriteDefinitions(files map[string][]byte, directory string) error {
-	paths := make([]string, 0, len(files))
-	for name := range files {
-		paths = append(paths, name)
-	}
-	slices.Sort(paths)
-	if err := validatePayloadPaths(paths); err != nil {
+	selected, err := DefinitionFiles(files)
+	if err != nil {
 		return err
 	}
-	if err := os.Mkdir(directory, 0o700); err != nil {
+	if err = os.Mkdir(directory, 0o700); err != nil {
 		return err
 	}
-	for _, name := range paths {
-		if !strings.HasPrefix(name, "definitions/") {
-			continue
-		}
-		target := filepath.Join(directory, filepath.Base(name))
-		if err := writeNewFile(target, files[name]); err != nil {
+	for _, name := range slices.Sorted(maps.Keys(selected)) {
+		if err = writeNewFile(filepath.Join(directory, name), selected[name]); err != nil {
 			return err
 		}
 	}

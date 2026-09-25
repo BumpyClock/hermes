@@ -14,12 +14,14 @@ import (
 // AuditRequirements checks a snapshot that the real loader already accepted.
 // The loader records capability use while validating, so this is an inventory
 // check against the manifest, not an alternative YAML interpreter.
-// The snapshot must be loaded from the directory that WriteDefinitions produced for the bundle.
+// The snapshot must be loaded from the bundle's DefinitionFiles, either in
+// memory with definitions.LoadFiles or from the directory that WriteDefinitions
+// produced.
 func (m *Manifest) AuditRequirements(suite *Suite, snapshot *definitions.Snapshot) error {
 	if err := m.CheckDeclaredCapabilities(snapshot.UsedCapabilities()); err != nil {
 		return err
 	}
-	// WriteDefinitions flattens definitions/<name>.yaml to <name>.yaml.
+	// DefinitionFiles flattens definitions/<name>.yaml to <name>.yaml.
 	sites := snapshot.Sites()
 	for _, c := range suite.Cases {
 		u, _ := url.Parse(c.URL)

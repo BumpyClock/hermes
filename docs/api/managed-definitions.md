@@ -60,7 +60,10 @@ Automatic discovery uses the same publisher and validation boundaries as exact
 pins.
 
 Snapshots are content-identified and stored under an updater-owned cache.
-Staging is validated before atomic activation. Each startup revalidates the
+A downloaded release is validated in memory before it is staged and atomically
+activated. Diagnostics from managed definitions, including
+`DefinitionOperationError.Source`, name the definition file (for example
+`example.yaml`) rather than a filesystem path. Each startup revalidates the
 cached manifest/archive bytes, engine capabilities, and definitions of any
 snapshot it returns. A release tag
 whose known archive digest changes is rejected. The loader does not alter local

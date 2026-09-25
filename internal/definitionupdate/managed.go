@@ -30,7 +30,10 @@ const (
 	maxReleaseInventorySize = 4 << 20
 )
 
-var versionPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$`)
+var (
+	versionPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$`)
+	digestPattern  = regexp.MustCompile(`^[0-9a-f]{64}$`)
+)
 
 // Support describes the engine contract supplied by the public API boundary.
 type Support struct {
@@ -132,7 +135,7 @@ func loadPinned(ctx context.Context, root string, config Config) (*definitions.S
 	if !errors.As(err, &acquisition) {
 		return nil, Metadata{}, fmt.Errorf("managed definitions %q: %w", config.Version, err)
 	}
-	cached, cacheMetadata, cacheErr := loadCached(root, config.Version, config.Support)
+	cached, cacheMetadata, cacheErr := loadCachedVersion(root, config.Version, config.Support)
 	if cacheErr != nil {
 		return nil, Metadata{}, fmt.Errorf("managed definitions %q: acquisition failed (%w); no usable cached snapshot (%v)", config.Version, err, cacheErr)
 	}
@@ -172,13 +175,17 @@ func acquire(ctx context.Context, root string, config Config) (*definitions.Snap
 	if manifest.Version != config.Version {
 		return nil, Metadata{}, fmt.Errorf("release manifest version %q does not match pin %q", manifest.Version, config.Version)
 	}
-	if err = checkIdentity(root, manifest.Version, manifest.Archive.SHA256); err != nil {
+	names, err := listCacheNames(root)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	if err = checkIdentity(root, names, manifest.Version, manifest.Archive.SHA256); err != nil {
 		return nil, Metadata{}, err
 	}
 	if err = manifest.CheckSupport(config.Support.Schema, config.Support.Operations, config.Support.Algorithms); err != nil {
 		return nil, Metadata{}, err
 	}
-	if snapshot, metadata, cacheErr := loadCached(root, manifest.Version, config.Support); cacheErr == nil && metadata.Digest == manifest.Archive.SHA256 {
+	if snapshot, metadata, cacheErr := loadCached(root, names, manifest.Version, config.Support); cacheErr == nil && metadata.Digest == manifest.Archive.SHA256 {
 		return snapshot, cacheCurrent(metadata), nil
 	}
 	archiveAsset, err := releaseAsset(descriptor, manifest.Archive.Name)
@@ -196,14 +203,11 @@ func acquire(ctx context.Context, root string, config Config) (*definitions.Snap
 	if err != nil {
 		return nil, Metadata{}, fmt.Errorf("release archive: %w", err)
 	}
-	snapshot, err := validateFiles(manifest, files, config.Support, filepath.Join(root, "staging"))
+	snapshot, err := validateFiles(manifest, files, config.Support)
 	if err != nil {
 		return nil, Metadata{}, err
 	}
-	if err := storeSnapshot(root, manifestBytes, archiveBytes, manifest); err != nil {
-		return nil, Metadata{}, err
-	}
-	if err := recordIdentity(root, identity{Version: manifest.Version, Digest: manifest.Archive.SHA256}); err != nil {
+	if err := activateSnapshot(root, manifestBytes, archiveBytes, manifest, identity{Version: manifest.Version, Digest: manifest.Archive.SHA256}); err != nil {
 		return nil, Metadata{}, err
 	}
 	return snapshot, Metadata{
@@ -258,10 +262,15 @@ func acquireAutomatic(ctx context.Context, root string, config Config) (*definit
 		if candidateErr = manifest.CheckSupport(config.Support.Schema, config.Support.Operations, config.Support.Algorithms); candidateErr != nil {
 			continue
 		}
-		if candidateErr = checkIdentity(root, manifest.Version, manifest.Archive.SHA256); candidateErr != nil {
+		// Every path past this listing returns, so it is taken at most once.
+		names, candidateErr := listCacheNames(root)
+		if candidateErr != nil {
 			return nil, Metadata{}, automaticFailure(ctx, candidateErr)
 		}
-		if snapshot, metadata, cacheErr := loadCached(root, manifest.Version, config.Support); cacheErr == nil && metadata.Digest == manifest.Archive.SHA256 {
+		if candidateErr = checkIdentity(root, names, manifest.Version, manifest.Archive.SHA256); candidateErr != nil {
+			return nil, Metadata{}, automaticFailure(ctx, candidateErr)
+		}
+		if snapshot, metadata, cacheErr := loadCached(root, names, manifest.Version, config.Support); cacheErr == nil && metadata.Digest == manifest.Archive.SHA256 {
 			return snapshot, cacheCurrent(metadata), nil
 		}
 		archiveAsset, candidateErr := releaseAsset(candidate, manifest.Archive.Name)
@@ -279,14 +288,11 @@ func acquireAutomatic(ctx context.Context, root string, config Config) (*definit
 		if candidateErr != nil {
 			return nil, Metadata{}, automaticFailure(ctx, fmt.Errorf("release archive: %w", candidateErr))
 		}
-		snapshot, candidateErr := validateFiles(manifest, files, config.Support, filepath.Join(root, "staging"))
+		snapshot, candidateErr := validateFiles(manifest, files, config.Support)
 		if candidateErr != nil {
 			return nil, Metadata{}, automaticFailure(ctx, candidateErr)
 		}
-		if candidateErr = storeSnapshot(root, manifestBytes, archiveBytes, manifest); candidateErr != nil {
-			return nil, Metadata{}, automaticFailure(ctx, candidateErr)
-		}
-		if candidateErr = recordIdentity(root, identity{
+		if candidateErr = activateSnapshot(root, manifestBytes, archiveBytes, manifest, identity{
 			Version: manifest.Version, Digest: manifest.Archive.SHA256,
 			ReleaseTag: candidate.TagName, PublishedAt: publishedAt.UTC().Format(time.RFC3339),
 		}); candidateErr != nil {
@@ -371,7 +377,13 @@ func fetchRelease(ctx context.Context, client *http.Client, version string) (rel
 }
 
 func fetchReleases(ctx context.Context, client *http.Client) ([]release, error) {
-	releases := make([]release, 0, releasePageSize)
+	// Each stable release keeps the publication time parsed during validation so
+	// sorting does not reparse timestamps in the comparator.
+	type datedRelease struct {
+		release   release
+		published time.Time
+	}
+	releases := make([]datedRelease, 0, releasePageSize)
 	tags := map[string]bool{}
 	for page := 1; page <= maxReleasePages; page++ {
 		endpoint := fmt.Sprintf("%s/releases?per_page=%d&page=%d", repositoryAPI, releasePageSize, page)
@@ -410,11 +422,12 @@ func fetchReleases(ctx context.Context, client *http.Client) ([]release, error) 
 			if !versionPattern.MatchString(candidate.TagName) || tags[candidate.TagName] {
 				return nil, automaticFailure(ctx, fmt.Errorf("release inventory has invalid or duplicate tag %q", candidate.TagName))
 			}
-			if _, err = time.Parse(time.RFC3339, candidate.PublishedAt); err != nil {
-				return nil, automaticFailure(ctx, fmt.Errorf("stable release %q has invalid publication time: %w", candidate.TagName, err))
+			published, parseErr := time.Parse(time.RFC3339, candidate.PublishedAt)
+			if parseErr != nil {
+				return nil, automaticFailure(ctx, fmt.Errorf("stable release %q has invalid publication time: %w", candidate.TagName, parseErr))
 			}
 			tags[candidate.TagName] = true
-			releases = append(releases, candidate)
+			releases = append(releases, datedRelease{release: candidate, published: published})
 		}
 		if len(releases) > releasePageSize*maxReleasePages {
 			return nil, automaticFailure(ctx, fmt.Errorf("release inventory exceeds %d releases", releasePageSize*maxReleasePages))
@@ -426,18 +439,20 @@ func fetchReleases(ctx context.Context, client *http.Client) ([]release, error) 
 			return nil, automaticFailure(ctx, fmt.Errorf("release inventory exceeds %d pages", maxReleasePages))
 		}
 	}
-	slices.SortFunc(releases, func(left, right release) int {
-		leftTime, _ := time.Parse(time.RFC3339, left.PublishedAt)
-		rightTime, _ := time.Parse(time.RFC3339, right.PublishedAt)
-		if newerRelease(leftTime, left.TagName, rightTime, right.TagName) {
+	slices.SortFunc(releases, func(left, right datedRelease) int {
+		if newerRelease(left.published, left.release.TagName, right.published, right.release.TagName) {
 			return -1
 		}
-		if newerRelease(rightTime, right.TagName, leftTime, left.TagName) {
+		if newerRelease(right.published, right.release.TagName, left.published, left.release.TagName) {
 			return 1
 		}
 		return 0
 	})
-	return releases, nil
+	ordered := make([]release, len(releases))
+	for i := range releases {
+		ordered[i] = releases[i].release
+	}
+	return ordered, nil
 }
 
 func newerRelease(leftTime time.Time, leftTag string, rightTime time.Time, rightTag string) bool {
@@ -601,7 +616,7 @@ func prepareRoot(root string) (string, error) {
 	if err = ensureDirectory(absolute); err != nil {
 		return "", fmt.Errorf("managed definitions cache: %w", err)
 	}
-	for _, name := range []string{"locks", "snapshots", "identities", "staging"} {
+	for _, name := range []string{"locks", "snapshots", "identities"} {
 		if err = ensureDirectory(filepath.Join(absolute, name)); err != nil {
 			return "", fmt.Errorf("managed definitions cache: %w", err)
 		}
@@ -623,7 +638,9 @@ func ensureDirectory(directory string) error {
 	return nil
 }
 
-func validateFiles(manifest *definitionbundle.Manifest, files map[string][]byte, support Support, stagingRoot string) (*definitions.Snapshot, error) {
+// validateFiles loads a verified release's definitions in memory, with the
+// same selection and loader validation as a directory that WriteDefinitions wrote.
+func validateFiles(manifest *definitionbundle.Manifest, files map[string][]byte, support Support) (*definitions.Snapshot, error) {
 	if err := manifest.CheckSupport(support.Schema, support.Operations, support.Algorithms); err != nil {
 		return nil, err
 	}
@@ -631,17 +648,12 @@ func validateFiles(manifest *definitionbundle.Manifest, files map[string][]byte,
 	if err != nil {
 		return nil, fmt.Errorf("release conformance envelope: %w", err)
 	}
-	stage, err := os.MkdirTemp(stagingRoot, "validate-")
+	selected, err := definitionbundle.DefinitionFiles(files)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = os.RemoveAll(stage) }()
-	directory := filepath.Join(stage, "definitions")
-	if err = definitionbundle.WriteDefinitions(files, directory); err != nil {
-		return nil, err
-	}
 	// Loader errors keep the prefix they had when the audit performed its own load.
-	snapshot, err := definitions.LoadDirectory(directory)
+	snapshot, err := definitions.LoadFiles(selected)
 	if err == nil {
 		err = manifest.AuditRequirements(suite, snapshot)
 	}
@@ -655,8 +667,22 @@ func snapshotDirectory(root, version, digest string) string {
 	return filepath.Join(root, "snapshots", version, digest)
 }
 
-func storeSnapshot(root string, manifestBytes, archiveBytes []byte, manifest *definitionbundle.Manifest) error {
-	if err := rejectVersionAlias(root, manifest.Version); err != nil {
+// activateSnapshot stores a validated release and records its identity. It
+// lists cache names again because a download separates it from the pre-download
+// checks, so the alias check stays adjacent to the entries it creates.
+func activateSnapshot(root string, manifestBytes, archiveBytes []byte, manifest *definitionbundle.Manifest, value identity) error {
+	names, err := listCacheNames(root)
+	if err != nil {
+		return err
+	}
+	if err = storeSnapshot(root, names, manifestBytes, archiveBytes, manifest); err != nil {
+		return err
+	}
+	return recordIdentity(root, names, value)
+}
+
+func storeSnapshot(root string, names cacheNames, manifestBytes, archiveBytes []byte, manifest *definitionbundle.Manifest) error {
+	if err := names.rejectAlias(manifest.Version); err != nil {
 		return err
 	}
 	parent := filepath.Join(root, "snapshots", manifest.Version)
@@ -721,11 +747,21 @@ func validateStoredSnapshot(directory, digest string) error {
 	return nil
 }
 
-func loadCached(root, version string, support Support) (*definitions.Snapshot, Metadata, error) {
-	if err := rejectVersionAlias(root, version); err != nil {
+// loadCachedVersion validates the cached snapshot for one version with a fresh
+// listing of cache names.
+func loadCachedVersion(root, version string, support Support) (*definitions.Snapshot, Metadata, error) {
+	names, err := listCacheNames(root)
+	if err != nil {
 		return nil, Metadata{}, err
 	}
-	cachedIdentity, hasIdentity, err := readIdentity(root, version)
+	return loadCached(root, names, version, support)
+}
+
+func loadCached(root string, names cacheNames, version string, support Support) (*definitions.Snapshot, Metadata, error) {
+	if err := names.rejectAlias(version); err != nil {
+		return nil, Metadata{}, err
+	}
+	cachedIdentity, hasIdentity, err := readIdentity(root, names, version)
 	if err != nil {
 		return nil, Metadata{}, err
 	}
@@ -739,7 +775,7 @@ func loadCached(root, version string, support Support) (*definitions.Snapshot, M
 		metadata Metadata
 	}
 	for _, entry := range entries {
-		if !entry.IsDir() || !regexp.MustCompile(`^[0-9a-f]{64}$`).MatchString(entry.Name()) {
+		if !entry.IsDir() || !digestPattern.MatchString(entry.Name()) {
 			continue
 		}
 		if hasIdentity && entry.Name() != cachedIdentity.Digest {
@@ -767,6 +803,11 @@ func loadAutomaticCache(root string, support Support) (*definitions.Snapshot, Me
 	if err != nil {
 		return nil, Metadata{}, err
 	}
+	snapshotEntries, err := os.ReadDir(filepath.Join(root, "snapshots"))
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	names := newCacheNames(snapshotEntries, entries)
 	type candidate struct {
 		known     identity
 		published time.Time
@@ -783,7 +824,7 @@ func loadAutomaticCache(root string, support Support) (*definitions.Snapshot, Me
 			return nil, Metadata{}, fmt.Errorf("case-folded cached release identity collision: %q and %q", previous, version)
 		}
 		seen[key] = version
-		known, exists, identityErr := readIdentity(root, version)
+		known, exists, identityErr := readIdentity(root, names, version)
 		if identityErr != nil || !exists {
 			continue
 		}
@@ -809,7 +850,7 @@ func loadAutomaticCache(root string, support Support) (*definitions.Snapshot, Me
 	})
 	// Validate newest first; a broken newer cache falls through to older ones.
 	for _, candidate := range candidates {
-		snapshot, metadata, cacheErr := loadCached(root, candidate.known.Version, support)
+		snapshot, metadata, cacheErr := loadCached(root, names, candidate.known.Version, support)
 		if cacheErr == nil && metadata.Digest == candidate.known.Digest {
 			return snapshot, metadata, nil
 		}
@@ -834,7 +875,7 @@ func loadSnapshot(directory string, support Support) (*definitions.Snapshot, Met
 	if err != nil {
 		return nil, Metadata{}, err
 	}
-	snapshot, err := validateFiles(manifest, files, support, filepath.Join(filepath.Dir(filepath.Dir(directory)), "..", "staging"))
+	snapshot, err := validateFiles(manifest, files, support)
 	if err != nil {
 		return nil, Metadata{}, err
 	}
@@ -848,8 +889,8 @@ func identityPath(root, version string) string {
 	return filepath.Join(root, "identities", version+".json")
 }
 
-func readIdentity(root, version string) (identity, bool, error) {
-	if err := rejectVersionAlias(root, version); err != nil {
+func readIdentity(root string, names cacheNames, version string) (identity, bool, error) {
+	if err := names.rejectAlias(version); err != nil {
 		return identity{}, false, err
 	}
 	data, err := definitionbundle.ReadFile(identityPath(root, version), definitionbundle.MaxManifestSize)
@@ -863,7 +904,7 @@ func readIdentity(root, version string) (identity, bool, error) {
 	if err = definitionbundle.DecodeJSON(data, &value); err != nil {
 		return identity{}, false, err
 	}
-	if value.Version != version || !regexp.MustCompile(`^[0-9a-f]{64}$`).MatchString(value.Digest) {
+	if value.Version != version || !digestPattern.MatchString(value.Digest) {
 		return identity{}, false, fmt.Errorf("invalid cached release identity for %q", version)
 	}
 	if value.ReleaseTag != "" && !versionPattern.MatchString(value.ReleaseTag) {
@@ -877,8 +918,8 @@ func readIdentity(root, version string) (identity, bool, error) {
 	return value, true, nil
 }
 
-func checkIdentity(root, version, digest string) error {
-	known, exists, err := readIdentity(root, version)
+func checkIdentity(root string, names cacheNames, version, digest string) error {
+	known, exists, err := readIdentity(root, names, version)
 	if err != nil {
 		return err
 	}
@@ -888,8 +929,8 @@ func checkIdentity(root, version, digest string) error {
 	return nil
 }
 
-func recordIdentity(root string, value identity) error {
-	if err := rejectVersionAlias(root, value.Version); err != nil {
+func recordIdentity(root string, names cacheNames, value identity) error {
+	if err := names.rejectAlias(value.Version); err != nil {
 		return err
 	}
 	data, err := json.Marshal(value)
@@ -897,7 +938,7 @@ func recordIdentity(root string, value identity) error {
 		return err
 	}
 	path := identityPath(root, value.Version)
-	if old, exists, err := readIdentity(root, value.Version); err != nil {
+	if old, exists, err := readIdentity(root, names, value.Version); err != nil {
 		return err
 	} else if exists {
 		if old.Digest != value.Digest {
@@ -908,20 +949,46 @@ func recordIdentity(root string, value identity) error {
 	return writeFile(path, data)
 }
 
-func rejectVersionAlias(root, version string) error {
-	for _, location := range []string{"snapshots", "identities"} {
-		entries, err := os.ReadDir(filepath.Join(root, location))
-		if err != nil {
-			return err
+// cacheNames is one listing of the version names under snapshots/ and
+// identities/, in directory order. One operation may reuse a listing: the cache
+// lock excludes other Hermes writers, and this process creates only entries
+// named exactly after the checked version, which rejectAlias never reports.
+type cacheNames struct {
+	snapshots  []string
+	identities []string
+}
+
+func listCacheNames(root string) (cacheNames, error) {
+	snapshots, err := os.ReadDir(filepath.Join(root, "snapshots"))
+	if err != nil {
+		return cacheNames{}, err
+	}
+	identities, err := os.ReadDir(filepath.Join(root, "identities"))
+	if err != nil {
+		return cacheNames{}, err
+	}
+	return newCacheNames(snapshots, identities), nil
+}
+
+func newCacheNames(snapshots, identities []os.DirEntry) cacheNames {
+	names := cacheNames{snapshots: make([]string, 0, len(snapshots)), identities: make([]string, 0, len(identities))}
+	for _, entry := range snapshots {
+		names.snapshots = append(names.snapshots, entry.Name())
+	}
+	for _, entry := range identities {
+		if name := entry.Name(); filepath.Ext(name) == ".json" {
+			names.identities = append(names.identities, strings.TrimSuffix(name, ".json"))
 		}
-		for _, entry := range entries {
-			name := entry.Name()
-			if location == "identities" {
-				if filepath.Ext(name) != ".json" {
-					continue
-				}
-				name = strings.TrimSuffix(name, ".json")
-			}
+	}
+	return names
+}
+
+// rejectAlias rejects a version that differs only by case from a cached
+// snapshot or identity name. Case-insensitive filesystems resolve such names to
+// the same entry, which would expose another release's identity or snapshot.
+func (names cacheNames) rejectAlias(version string) error {
+	for _, location := range [][]string{names.snapshots, names.identities} {
+		for _, name := range location {
 			if strings.EqualFold(name, version) && name != version {
 				return fmt.Errorf("case-folded managed cache version collision: %q and %q", version, name)
 			}

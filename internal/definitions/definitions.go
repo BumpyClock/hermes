@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -47,7 +49,7 @@ type rule struct {
 	hosts                                        []string
 	extractor                                    extractors.DefinitionExtractor
 	siteLine, siteColumn, hostsLine, hostsColumn int
-	// source is the definition file's base name within the loaded directory.
+	// source is the definition file's base name within the loaded directory or file set.
 	source string
 	// capabilities and algorithms record the language features this rule's validation accepted.
 	capabilities, algorithms map[string]bool
@@ -83,17 +85,53 @@ func (s *Snapshot) Match(host string) *extractors.DefinitionExtractor {
 
 // LoadDirectory reads only immediate .yaml/.yml regular files. Acceptance is atomic.
 func LoadDirectory(dir string) (*Snapshot, error) {
-	fail := func(err error) (*Snapshot, error) { return nil, &Error{Source: dir, Err: err} }
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return fail(err)
+		return nil, &Error{Source: dir, Err: err}
 	}
+	// os.ReadDir sorts by name, the same order LoadFiles uses.
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		names = append(names, entry.Name())
+	}
+	return load(dir, names, func(name string, limit int) (string, []byte, error) {
+		source := filepath.Join(dir, name)
+		data, err := readFile(source, limit)
+		return source, data, err
+	})
+}
+
+// fileSetSource is the Error.Source of LoadFiles errors that concern the whole file set.
+const fileSetSource = "in-memory definitions"
+
+// LoadFiles validates definition files keyed by file name, as LoadDirectory
+// would for a directory holding exactly those files, without filesystem access.
+// It applies the same .yaml/.yml selection, limits, and validation, and records
+// each key as its rule's definition file name. A selected key must be a base
+// file name. Acceptance is atomic.
+func LoadFiles(files map[string][]byte) (*Snapshot, error) {
+	return load(fileSetSource, slices.Sorted(maps.Keys(files)), func(name string, _ int) (string, []byte, error) {
+		// A directory entry is never a path, so a path-like key is rejected rather than flattened.
+		if strings.ContainsAny(name, `/\`) || filepath.Base(name) != name {
+			return name, nil, fmt.Errorf("definition name must be a base file name")
+		}
+		return name, files[name], nil
+	})
+}
+
+// definitionReader returns a selected file's diagnostic source and its bytes.
+// It may stop reading after limit+1 bytes; load rejects anything over limit.
+type definitionReader func(name string, limit int) (source string, data []byte, err error)
+
+// load validates the .yaml/.yml names in sorted order as one atomic set.
+func load(setSource string, names []string, read definitionReader) (*Snapshot, error) {
+	fail := func(err error) (*Snapshot, error) { return nil, &Error{Source: setSource, Err: err} }
 	s := &Snapshot{}
 	owners := map[string]string{}
 	sites := map[string]bool{}
 	total, files := 0, 0
-	for _, entry := range entries {
-		ext := strings.ToLower(filepath.Ext(entry.Name()))
+	for _, name := range names {
+		ext := strings.ToLower(filepath.Ext(name))
 		if ext != ".yaml" && ext != ".yml" {
 			continue
 		}
@@ -101,12 +139,20 @@ func LoadDirectory(dir string) (*Snapshot, error) {
 		if files > MaxFiles {
 			return fail(fmt.Errorf("file count exceeds %d", MaxFiles))
 		}
-		source := filepath.Join(dir, entry.Name())
-		r, size, err := loadFile(source, MaxTotalBytes-total)
+		limit := min(MaxFileBytes, MaxTotalBytes-total)
+		source, data, err := read(name, limit)
+		p := validator{source: source}
+		if err != nil {
+			return nil, p.error(nil, "", err)
+		}
+		if len(data) > limit {
+			return nil, p.error(nil, "", fmt.Errorf("definition byte limit exceeded (file %d, total %d)", MaxFileBytes, MaxTotalBytes))
+		}
+		r, err := parseFile(source, data)
 		if err != nil {
 			return nil, err
 		}
-		total += size
+		total += len(data)
 		if sites[r.extractor.Domain] {
 			return nil, &Error{Source: source, Line: r.siteLine, Column: r.siteColumn, Site: r.extractor.Domain, Field: "site", Err: fmt.Errorf("duplicate site identifier")}
 		}
@@ -129,43 +175,43 @@ func LoadDirectory(dir string) (*Snapshot, error) {
 	return s, nil
 }
 
-func loadFile(source string, remaining int) (rule, int, error) {
-	p := validator{source: source, capabilities: map[string]bool{}, algorithms: map[string]bool{}}
+// readFile reads at most limit+1 bytes from a regular file that is not a symlink.
+func readFile(source string, limit int) ([]byte, error) {
 	info, err := os.Lstat(source)
 	if err != nil {
-		return rule{}, 0, p.error(nil, "", err)
+		return nil, err
 	}
 	if !info.Mode().IsRegular() {
-		return rule{}, 0, p.error(nil, "", fmt.Errorf("definition must be a regular file, not a symlink or directory"))
+		return nil, fmt.Errorf("definition must be a regular file, not a symlink or directory")
 	}
 	//nolint:gosec // Explicit local configuration paths are the loader's input contract.
 	f, err := os.Open(source)
 	if err != nil {
-		return rule{}, 0, p.error(nil, "", err)
+		return nil, err
 	}
-	limit := min(MaxFileBytes, remaining)
 	data, err := io.ReadAll(io.LimitReader(f, int64(limit)+1))
-	err = errors.Join(err, f.Close())
-	if err != nil {
-		return rule{}, 0, p.error(nil, "", err)
-	}
-	if len(data) > limit {
-		return rule{}, 0, p.error(nil, "", fmt.Errorf("definition byte limit exceeded (file %d, total %d)", MaxFileBytes, MaxTotalBytes))
-	}
+	return data, errors.Join(err, f.Close())
+}
+
+// parseFile validates one definition document. source names it in diagnostics,
+// and its base name becomes the rule's recorded definition file name.
+func parseFile(source string, data []byte) (rule, error) {
+	p := validator{source: source, capabilities: map[string]bool{}, algorithms: map[string]bool{}}
 	var root yaml.Node
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
-	if err = decoder.Decode(&root); err != nil {
-		return rule{}, 0, p.error(nil, "", err)
+	err := decoder.Decode(&root)
+	if err != nil {
+		return rule{}, p.error(nil, "", err)
 	}
 	var extra yaml.Node
 	if err = decoder.Decode(&extra); err != io.EOF {
 		if err != nil {
-			return rule{}, 0, p.error(&extra, "", err)
+			return rule{}, p.error(&extra, "", err)
 		}
-		return rule{}, 0, p.bad(&extra, "", "expected exactly one YAML document")
+		return rule{}, p.bad(&extra, "", "expected exactly one YAML document")
 	}
 	if len(root.Content) != 1 {
-		return rule{}, 0, p.error(&root, "", fmt.Errorf("empty document"))
+		return rule{}, p.error(&root, "", fmt.Errorf("empty document"))
 	}
 	if root.Content[0].Kind == yaml.MappingNode {
 		items := root.Content[0].Content
@@ -177,12 +223,12 @@ func loadFile(source string, remaining int) (rule, int, error) {
 		}
 	}
 	if err = p.check(root.Content[0], "", 0); err != nil {
-		return rule{}, 0, err
+		return rule{}, err
 	}
 	r, err := p.rule(root.Content[0])
 	r.source = filepath.Base(source)
 	r.capabilities, r.algorithms = p.capabilities, p.algorithms
-	return r, len(data), err
+	return r, err
 }
 
 type validator struct {
