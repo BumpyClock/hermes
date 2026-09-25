@@ -166,24 +166,19 @@ func (o urlResolve) apply(e *execution, n *html.Node) error {
 	if err != nil || !exists {
 		return err
 	}
-	baseValue := e.base
-	if o.base != nil {
+	var base *url.URL
+	if o.base == nil {
+		base, err = e.defaultResolutionBase()
+	} else {
+		var baseValue string
 		baseValue, exists, err = o.base.read(e, n)
 		if err != nil || !exists {
 			return err
 		}
+		base, err = e.resolutionBase(baseValue)
 	}
-	sourceBase, err := httpURL(e.base)
-	if err != nil {
-		return fmt.Errorf("invalid article base: %w", err)
-	}
-	baseReference, err := url.Parse(baseValue)
 	if err != nil {
 		return err
-	}
-	base, err := httpURL(sourceBase.ResolveReference(baseReference).String())
-	if err != nil {
-		return fmt.Errorf("invalid URL resolution base: %w", err)
 	}
 	ref, err := url.Parse(value)
 	if err != nil {
@@ -212,16 +207,15 @@ type queryValue struct {
 }
 
 type urlBuild struct {
-	attribute, base string
-	path            []scalarSource
-	query           []queryValue
+	attribute string
+	base      *url.URL
+	path      []scalarSource
+	query     []queryValue
 }
 
 func (o urlBuild) apply(e *execution, n *html.Node) error {
-	u, err := httpURL(o.base)
-	if err != nil {
-		return err
-	}
+	// The copy keeps the shared validated base unchanged; it never has user info.
+	u := *o.base
 	for _, source := range o.path {
 		value, exists, err := source.read(e, n)
 		if err != nil || !exists {
@@ -343,12 +337,9 @@ func (o elementMove) apply(e *execution, n *html.Node) error {
 		return nil
 	}
 	sources = outermostNodes(sources)
-	for _, source := range sources {
-		for _, target := range targets {
-			if source == target || isAncestor(source, target) || (o.position == "replace" && isAncestor(target, source)) {
-				return fmt.Errorf("move destination cannot be the source or a descendant containing it")
-			}
-		}
+	if hasSelfOrAncestorIn(targets, nodeSet(sources)) ||
+		(o.position == "replace" && hasSelfOrAncestorIn(sources, nodeSet(targets))) {
+		return fmt.Errorf("move destination cannot be the source or a descendant containing it")
 	}
 	added := 0
 	for _, source := range sources {
@@ -533,18 +524,17 @@ func selectedDescendants(e *execution, root *html.Node, target selectorTarget) (
 	return matches, nil
 }
 
+// outermostNodes drops nodes below another selected node and preserves input
+// order. Callers pass document-order selections, so the outermost selected
+// ancestor of every dropped node is kept.
 func outermostNodes(nodes []*html.Node) []*html.Node {
+	selected := nodeSet(nodes)
 	result := make([]*html.Node, 0, len(nodes))
 	for _, node := range nodes {
 		contained := false
 		for parent := node.Parent; parent != nil; parent = parent.Parent {
-			for _, prior := range result {
-				if parent == prior {
-					contained = true
-					break
-				}
-			}
-			if contained {
+			if _, ok := selected[parent]; ok {
+				contained = true
 				break
 			}
 		}
@@ -553,6 +543,26 @@ func outermostNodes(nodes []*html.Node) []*html.Node {
 		}
 	}
 	return result
+}
+
+func nodeSet(nodes []*html.Node) map[*html.Node]struct{} {
+	set := make(map[*html.Node]struct{}, len(nodes))
+	for _, node := range nodes {
+		set[node] = struct{}{}
+	}
+	return set
+}
+
+// hasSelfOrAncestorIn reports whether any node or one of its ancestors is in set.
+func hasSelfOrAncestorIn(nodes []*html.Node, set map[*html.Node]struct{}) bool {
+	for _, node := range nodes {
+		for ; node != nil; node = node.Parent {
+			if _, ok := set[node]; ok {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func isAncestor(ancestor, node *html.Node) bool {

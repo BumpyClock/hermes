@@ -69,6 +69,46 @@ type execution struct {
 	ctx       context.Context
 	base      string
 	remaining int
+
+	// Lazily parsed URL bases shared by url.resolve matches. Callers must not
+	// mutate them.
+	articleBase, defaultBase       *url.URL
+	articleBaseErr, defaultBaseErr error
+	articleParsed, defaultParsed   bool
+}
+
+func (e *execution) sourceBase() (*url.URL, error) {
+	if !e.articleParsed {
+		e.articleBase, e.articleBaseErr = httpURL(e.base)
+		e.articleParsed = true
+	}
+	return e.articleBase, e.articleBaseErr
+}
+
+// defaultResolutionBase caches the resolution base used when url.resolve has
+// no explicit base: the article base resolved against itself.
+func (e *execution) defaultResolutionBase() (*url.URL, error) {
+	if !e.defaultParsed {
+		e.defaultBase, e.defaultBaseErr = e.resolutionBase(e.base)
+		e.defaultParsed = true
+	}
+	return e.defaultBase, e.defaultBaseErr
+}
+
+func (e *execution) resolutionBase(raw string) (*url.URL, error) {
+	sourceBase, err := e.sourceBase()
+	if err != nil {
+		return nil, fmt.Errorf("invalid article base: %w", err)
+	}
+	reference, err := url.Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+	base, err := httpURL(sourceBase.ResolveReference(reference).String())
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL resolution base: %w", err)
+	}
+	return base, nil
 }
 
 func (e *execution) spend(n int) error {

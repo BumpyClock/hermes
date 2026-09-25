@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -115,13 +116,20 @@ type descendantCondition struct {
 	present  bool
 }
 
+// errStopWalk ends a walk early once its visitor has its answer.
+var errStopWalk = errors.New("stop walk")
+
 func (c descendantCondition) matches(e *execution, n *html.Node) (bool, error) {
 	found := false
 	err := e.walk(n, func(child *html.Node, _ int) error {
 		if child != n && child.Type == html.ElementNode && c.selector.Match(child) {
 			found = true
+			return errStopWalk
 		}
 		return nil
 	})
+	if errors.Is(err, errStopWalk) {
+		err = nil
+	}
 	return found == c.present, err
 }

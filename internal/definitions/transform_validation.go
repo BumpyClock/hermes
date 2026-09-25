@@ -593,17 +593,19 @@ func (p *validator) jsonSource(n *yaml.Node, path string) (scalarSource, error) 
 
 func (p *validator) buildURL(n *yaml.Node, path string) (operation, error) {
 	a := p.arguments(n, path, "attribute", "base", "path", "query")
-	o := urlBuild{attribute: a.attribute("attribute"), base: a.string("base", false)}
+	o := urlBuild{attribute: a.attribute("attribute")}
+	rawBase := a.string("base", false)
 	if a.err != nil {
 		return nil, a.err
 	}
-	base, err := httpURL(o.base)
+	base, err := httpURL(rawBase)
 	if err != nil {
 		return nil, p.error(a.fields["base"], path+".base", err)
 	}
 	if _, err := url.ParseQuery(base.RawQuery); err != nil {
 		return nil, p.error(a.fields["base"], path+".base", err)
 	}
+	o.base = base
 	if segments := a.fields["path"]; segments != nil {
 		items, err := p.list(segments, path+".path")
 		if err != nil {
