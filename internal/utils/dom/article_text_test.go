@@ -16,6 +16,7 @@ func TestStripTagsWithBlockBoundaries(t *testing.T) {
 		{"figure caption", `<figure><img src="/image"><figcaption>Caption</figcaption></figure><p>Body</p>`, "Caption Body"},
 		{"inline adjacency", `<p>pre<span>fix</span>, <strong>mid</strong><em>dle</em>.</p>`, "prefix, middle."},
 		{"literal markup", `<p>&lt;tag&gt; &amp;amp; &lt;/tag&gt;</p>`, "<tag> &amp; </tag>"},
+		{"entities without tags", `&lt;tag&gt; &amp;amp; &lt;/tag&gt;`, "<tag> &amp; </tag>"},
 		{"nonvisible nodes", `<p>Visible</p><style>hidden</style><script>hidden</script><template>hidden</template><!--hidden-->`, "Visible"},
 		{"nonvisible only", `<script>hidden</script><template>hidden</template>`, ""},
 	} {

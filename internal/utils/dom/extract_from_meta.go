@@ -50,8 +50,9 @@ func stripTags(text string, blockBoundaries bool) string {
 		return text
 	}
 
-	// Fast-path: if no HTML tags present, return as-is
-	if strings.IndexByte(text, '<') == -1 {
+	// Fast-path: if no HTML tags present, return as-is. Article HTML can still
+	// hold entities without tags, for example after sanitizing removed them.
+	if strings.IndexByte(text, '<') == -1 && (!blockBoundaries || strings.IndexByte(text, '&') == -1) {
 		return text
 	}
 

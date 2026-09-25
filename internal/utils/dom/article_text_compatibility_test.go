@@ -31,7 +31,7 @@ func articleTextInputs() []string {
 }
 
 func originalArticleText(source string) string {
-	if strings.IndexByte(source, '<') == -1 {
+	if !strings.ContainsAny(source, "<&") {
 		return source
 	}
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(source))
