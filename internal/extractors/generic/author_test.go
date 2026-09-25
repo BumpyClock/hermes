@@ -14,6 +14,7 @@
 package generic
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -493,6 +494,53 @@ func BenchmarkGenericAuthorExtractor_Extract(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		extractor.Extract(doc.Selection, metaCache)
+	}
+}
+
+// loadAuthorBenchmarkFixture parses a fixture whose only author signal is a
+// rel=author link outside the article, so extraction reaches the selector tier
+// and the candidate filter walks every ancestor.
+func loadAuthorBenchmarkFixture(b *testing.B) (*goquery.Document, []string) {
+	b.Helper()
+	source, err := os.ReadFile("../../fixtures/www.cnet.com.html")
+	if err != nil {
+		b.Fatal(err)
+	}
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(source)))
+	if err != nil {
+		b.Fatal(err)
+	}
+	var metaCache []string
+	seen := map[string]bool{}
+	doc.Find("meta").Each(func(_ int, meta *goquery.Selection) {
+		if name := meta.AttrOr("name", ""); name != "" && !seen[name] {
+			metaCache = append(metaCache, name)
+			seen[name] = true
+		}
+	})
+	return doc, metaCache
+}
+
+func BenchmarkAuthorExtractFixture(b *testing.B) {
+	doc, metaCache := loadAuthorBenchmarkFixture(b)
+	extractor := &GenericAuthorExtractor{}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		extractor.Extract(doc.Selection, metaCache)
+	}
+}
+
+func BenchmarkIsArticleAuthorCandidate(b *testing.B) {
+	doc, _ := loadAuthorBenchmarkFixture(b)
+	node := doc.Find("a[rel=author]")
+	if node.Length() != 1 || node.Closest("article").Length() != 0 {
+		b.Fatalf("fixture no longer has one rel=author link outside an article: %d", node.Length())
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		isArticleAuthorCandidate(node)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/andybalholm/cascadia"
 
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/text"
@@ -56,12 +57,15 @@ var AUTHOR_SELECTORS = []string{
 	".byline",
 }
 
-// BYLINE_SELECTORS_RE - selectors with regex patterns for byline content
+// BYLINE_SELECTORS_RE - compiled selectors with regex patterns for byline content
 // Matches /^[\n\s]*By/i pattern from JavaScript.
 var bylineRe = regexp.MustCompile(`(?i)^[\n\s]*By`)
-var BYLINE_SELECTORS_RE = [][2]interface{}{
-	{"#byline", bylineRe},
-	{".byline", bylineRe},
+var BYLINE_SELECTORS_RE = []struct {
+	Selector goquery.Matcher
+	Pattern  *regexp.Regexp
+}{
+	{cascadia.MustCompile("#byline"), bylineRe},
+	{cascadia.MustCompile(".byline"), bylineRe},
 }
 
 // CLEAN_AUTHOR_RE - regex for cleaning author prefixes
@@ -69,6 +73,12 @@ var BYLINE_SELECTORS_RE = [][2]interface{}{
 var CLEAN_AUTHOR_RE = regexp.MustCompile(`(?i)^\s*(posted |written )?by\s*:?\s*(.*)`)
 
 var authorNavigationRE = regexp.MustCompile(`(?i)(^|[\s_-])(sidebar|navigation|nav|menu)($|[\s_-])`)
+
+var (
+	authorLinkMatcher       = cascadia.MustCompile("a[rel=author]")
+	authorContextMatcher    = cascadia.MustCompile("article, .byline, .author, .post-author, [itemprop=author]")
+	authorNavigationMatcher = cascadia.MustCompile("aside, nav, [role=navigation], [role=complementary]")
+)
 
 // GenericAuthorExtractor provides author extraction functionality.
 type GenericAuthorExtractor struct{}
@@ -99,14 +109,11 @@ func (e *GenericAuthorExtractor) Extract(doc *goquery.Selection, metaCache []str
 	}
 
 	// Last, use our looser regular-expression based selectors for potential authors.
-	for _, selectorRegex := range BYLINE_SELECTORS_RE {
-		selector := selectorRegex[0].(string)
-		regex := selectorRegex[1].(*regexp.Regexp)
-
-		node := doc.Find(selector)
+	for _, byline := range BYLINE_SELECTORS_RE {
+		node := doc.FindMatcher(byline.Selector)
 		if node.Length() == 1 {
 			text := strings.TrimSpace(node.Text())
-			if regex.MatchString(text) {
+			if byline.Pattern.MatchString(text) {
 				cleaned := cleanAuthor(text)
 				return &cleaned
 			}
@@ -117,11 +124,11 @@ func (e *GenericAuthorExtractor) Extract(doc *goquery.Selection, metaCache []str
 }
 
 func isArticleAuthorCandidate(node *goquery.Selection) bool {
-	if !node.Is("a[rel=author]") || node.Closest("article, .byline, .author, .post-author, [itemprop=author]").Length() != 0 {
+	if !node.IsMatcher(authorLinkMatcher) || node.ClosestMatcher(authorContextMatcher).Length() != 0 {
 		return true
 	}
 	for parent := node.Parent(); parent.Length() != 0; parent = parent.Parent() {
-		if parent.Is("aside, nav, [role=navigation], [role=complementary]") ||
+		if parent.IsMatcher(authorNavigationMatcher) ||
 			authorNavigationRE.MatchString(parent.AttrOr("id", "")+" "+parent.AttrOr("class", "")) {
 			return false
 		}
