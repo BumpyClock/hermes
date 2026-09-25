@@ -77,9 +77,9 @@ content:
   default_cleaner: false
 `)
 	source := `<article><p>A substantive report preserves factual context and a <a href="javascript:alert(1)">readable unsafe link label</a>.</p><p>The conclusion retains enough article text to exercise generic fallback meaningfully.</p><script>unsafe-script-marker</script></article>`
-	for _, snapshot := range []*Definitions{nil, s} {
+	for _, configure := range [][]Option{nil, {WithDefinitions(nil)}, {WithDefinitions(s)}} {
 		for _, format := range []string{"html", "markdown", "text"} {
-			r, err := New(WithDefinitions(snapshot), WithContentType(format)).ParseHTML(context.Background(), source, "https://example.com/story")
+			r, err := New(append(configure, WithContentType(format))...).ParseHTML(context.Background(), source, "https://example.com/story")
 			if err != nil {
 				t.Fatal(err)
 			}

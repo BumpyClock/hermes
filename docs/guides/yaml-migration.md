@@ -4,7 +4,9 @@ The external-only engine keeps the public Go module path, `New(opts ...Option)
 *Client`, `Parser` interface, existing options, and `Result` JSON shape. It does
 **not** preserve automatic selection of the compiled site rules shipped in
 v1.1.1. Unconfigured library clients and CLI commands now use generic extraction
-only, without reading definition files or downloading definitions.
+only, without reading definition files or downloading definitions. Their output
+also differs from v1.1.1 as described under
+[compatibility boundaries](#compatibility-boundaries).
 
 Applications that depended on site rules must explicitly supply a snapshot.
 The canonical corpus is maintained independently in
@@ -60,6 +62,18 @@ profiles, and definitions preserve approved article structures and media.
 Site acceptance evidence records selector repairs and inaccessible-site
 exceptions separately. The ineffective Wikipedia transform and fabricated
 YouTube placeholders are not a contract to reproduce.
+
+Generic output also differs from v1.1.1 for every client, including clients
+without a snapshot and CLI runs without a definition flag:
+
+- When generic extraction finds no article content, `Content` holds page text
+  from the [last-resort fallback](../api/hermes.md#parsing) instead of being
+  empty. A missing title falls back to `<title>` or the first `<h1>`.
+- Markdown and plain text are converted from sanitized HTML. Markdown links with
+  a scheme other than `http` or `https`, such as `javascript:` or `mailto:`,
+  render as their label or image, and non-ASCII URLs are percent-encoded as in
+  HTML output.
+- HTML output has no leading or trailing whitespace.
 
 Do not treat a passing synthetic fixture as a fresh live-site observation or an
 inaccessible-site exception as a successful scrape. Use the definitions

@@ -8,7 +8,7 @@
   ],
   "reasons": {
     "text": "StripTagsWithBlockBoundaries and shared text whitespace normalization preserve article block separation instead of concatenating adjacent words. Excerpts, counts and FormatMarkdown reflect the new content.",
-    "literal-markdown": "convertToMarkdown encodes literal HTML/entity syntax and uses valid asterisk emphasis. Excerpts, counts and FormatMarkdown reflect the new serialized content.",
+    "literal-markdown": "convertToMarkdown encodes literal HTML/entity syntax and uses valid asterisk emphasis. Every client now sanitizes content before Markdown conversion, so the javascript: URL anchor becomes its plain label (Unsafe link), matching the v1.1.1 sanitized HTML output. Excerpts, counts and FormatMarkdown reflect the new serialized content.",
     "arstechnica-markdown": "markdownLink drops the empty comments anchor and preserves whitespace outside link labels instead of inside them; no visible article words are removed. Excerpts, counts and FormatMarkdown reflect serialization changes."
   },
   "observations": {
@@ -20,8 +20,8 @@
     "article.html/93.184.216.34/text/fetch": ["8e0d274e2ee5960d6a13dacbfe56953e04a5478db8e9dd44c1a599da7333bd03", "d9709293be693bc6e96ffa6291aa2c46a4450e6c72bb7993831d688f75f25ecc"],
     "author.html/93.184.216.34/text/html": ["a7e0d10229c07af2fc19af3ce9f68be87f8dbf7d104d1870638d0d2bff86bf3b", "e6bcbaeb738ba3faab7df9049ca730dd60e8a229cf9967c45c272169ae18155b"],
     "author.html/93.184.216.34/text/fetch": ["a333d7902b3763bf6919d4c84bd543776eff9d61a17a1ca38bed0864c85e0f8c", "09f09c0b570d33f9ddc5240628c5b0c2274dd3019bd8fb2bca91d282bf89b399"],
-    "literal.html/93.184.216.34/markdown/html": ["485777353000c07b84d8f94a5e2bb7016814be0615201fedbdf9a128932cb3a8", "a8cb91f8ed0a49e97272833cb143b6adb43e5c4e2d022d6288cc16f65805e4a2"],
-    "literal.html/93.184.216.34/markdown/fetch": ["116c4497d7abfff6725053e9b5e9ce8379e6c6b333567843854eaa9f2878b3f7", "442aa01ba468d429025571732e3bd12b5cf4e77c2e9101b4837414b97c4b18b6"],
+    "literal.html/93.184.216.34/markdown/html": ["485777353000c07b84d8f94a5e2bb7016814be0615201fedbdf9a128932cb3a8", "498aef033a0ca806666046dcc483833be2e7ef415b70700a508a50247b83494b"],
+    "literal.html/93.184.216.34/markdown/fetch": ["116c4497d7abfff6725053e9b5e9ce8379e6c6b333567843854eaa9f2878b3f7", "45f183dfda53e86701243c61bc451925c6c6f0ee54b6af3dc8e5591a63e3db2c"],
     "literal.html/93.184.216.34/text/html": ["4a9608bc90637d7944b3fca206a89f15b476b28ed013cc2bcb943d90fc3ec3fc", "f642f0ad9e74ff5c0eed228adac2ed29dff7e05e52dfe94906d9a2f6b8378dd4"],
     "literal.html/93.184.216.34/text/fetch": ["7be3629533e4f2ba7528242f282a5e6e47a0232f4cca727692622bf6594aee40", "312bbeb793c5c728d9d0aa7306bc446baa8deaadc68d025a7254f229ce4f7a78"],
     "nytimes.html/93.184.216.34/text/html": ["29d831094d1d70ba1e0ca313ace79e6e5adeedf38a579a63f1f971c137f94382", "d6d181a57291602f21b78199c463eeb7075fb7b8a5f756eb748870b72b38cd6a"],

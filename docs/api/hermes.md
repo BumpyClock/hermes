@@ -61,12 +61,23 @@ Unconfigured clients use generic extraction only. Load an immutable external
 definition snapshot before constructing a client when site rules are required;
 parsing never reads definitions from disk or merges sources.
 
-When extraction uses the last-resort DOM-text fallback, literal text is HTML-escaped
-for HTML output and punctuation is backslash-escaped for Markdown output. Plain-text
-output preserves literal characters with normalized whitespace. This applies to both
-explicit definition snapshots and generic extraction; text resembling markup is not
-promoted into active HTML or Markdown. Plain-text results still require escaping
-before insertion into an HTML document.
+Every client, with or without a definition snapshot, sanitizes extracted article
+HTML before converting it to Markdown or plain text, and trims HTML output after
+sanitizing. Links in every output format keep only `http` and `https` targets; a
+link with another scheme, such as `javascript:` or `mailto:`, renders as its
+label or image. Markdown percent-encodes non-ASCII URLs as HTML output does.
+
+Generic extraction ends with a last-resort DOM-text fallback. A missing title
+comes from `<title>` or the first `<h1>`. Missing content comes from the text of
+the first nonempty article or content container, `main`, `[role=main]`, or
+`body` element. This applies to every client whenever generic extraction handles
+the page, including hosts that a loaded snapshot does not match. A matched
+definition uses generic field fallback but not this last-resort fallback.
+Literal fallback text is HTML-escaped for HTML output and punctuation is
+backslash-escaped for Markdown output. Plain-text output preserves literal
+characters with normalized whitespace. Text resembling markup is not promoted
+into active HTML or Markdown. Plain-text results still require escaping before
+insertion into an HTML document.
 
 Markdown conversion also preserves literal `<`, `>`, and `&` from ordinary HTML
 text nodes using character references, including in headings, emphasis, and link
@@ -74,7 +85,7 @@ labels. This shared behavior applies to selected definitions and generic
 extraction. It prevents escaped examples and literal entity strings
 from becoming markup during Markdown interpretation. Authored HTML formatting
 still converts to Markdown; code spans and blocks retain their literal contents.
-HTML and plain-text conversion are unchanged.
+HTML and plain-text output do not use this escaping.
 
 Examples:
 ```go

@@ -136,7 +136,7 @@ func parseCanonicalFixture(t *testing.T, snapshot *definitions.Snapshot, page, t
 		t.Fatal(err)
 	}
 	result, err := New().extractAllFieldsWithContext(context.Background(), doc, targetURL, parsedURL, ParserOptions{
-		Definitions: snapshot, DefinitionsConfigured: true, Fallback: true, ContentType: contentType,
+		Definitions: snapshot, Fallback: true, ContentType: contentType,
 	})
 	if err != nil {
 		t.Fatalf("%s %s: %v", targetURL, contentType, err)

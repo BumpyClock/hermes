@@ -110,7 +110,7 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	}
 
 	if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
-		setFormattedContent(result, content, opts.ContentType, opts.DefinitionsConfigured)
+		setFormattedContent(result, content, opts.ContentType)
 
 		// Update image extraction with content context
 		imageParams.Content = result.Content
@@ -167,7 +167,7 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 
 // tryDefinitionExtractor applies an explicitly configured external definition snapshot.
 func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Document, targetURL string, parsedURL *url.URL, opts ParserOptions, baseResult *Result, metaCache []string) (*Result, error) {
-	if !opts.DefinitionsConfigured || opts.Definitions == nil {
+	if opts.Definitions == nil {
 		return nil, nil
 	}
 	definitionExtractor := opts.Definitions.Match(parsedURL.Hostname())
@@ -223,7 +223,7 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 				return nil, fmt.Errorf("extract definition site %q content: %w", definitionExtractor.Domain, err)
 			}
 			if strings.TrimSpace(contentHTML) != "" {
-				setFormattedContent(result, contentHTML, opts.ContentType, true)
+				setFormattedContent(result, contentHTML, opts.ContentType)
 			}
 			break
 		}
@@ -263,7 +263,7 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 		// Fallback content extraction if no content was found
 		if result.Content == "" {
 			if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
-				setFormattedContent(result, content, opts.ContentType, true)
+				setFormattedContent(result, content, opts.ContentType)
 			}
 		}
 	}
@@ -283,8 +283,8 @@ func extractGenericContent(doc *goquery.Document, title, targetURL string) strin
 	})
 }
 
-func setFormattedContent(result *Result, content, contentType string, sanitizeBeforeConversion bool) {
-	result.Content = formatContent(content, contentType, sanitizeBeforeConversion)
+func setFormattedContent(result *Result, content, contentType string) {
+	result.Content = formatContent(content, contentType)
 	if result.Content != "" {
 		result.Excerpt = text.ExcerptContent(result.Content, 160)
 	}
@@ -309,7 +309,7 @@ func formatPlainText(content, contentType string) string {
 		}
 		return escaped.String()
 	default:
-		return formatContent(html.EscapeString(content), contentType, false)
+		return formatContent(html.EscapeString(content), contentType)
 	}
 }
 
@@ -848,7 +848,7 @@ func firstTextRune(node *html.Node) (rune, bool) {
 
 // formatContent applies the specified content type transformation and security sanitization
 // Trims inputs, supports common content type aliases, and returns sanitized output.
-func formatContent(content string, contentType string, sanitizeBeforeConversion bool) string {
+func formatContent(content string, contentType string) string {
 	// Trim both inputs
 	content = strings.TrimSpace(content)
 	contentType = strings.TrimSpace(contentType)
@@ -859,15 +859,9 @@ func formatContent(content string, contentType string, sanitizeBeforeConversion 
 	// Map aliases to canonical types
 	switch normalized {
 	case "text", "text/plain", "txt":
-		if sanitizeBeforeConversion {
-			content = security.SanitizeHTML(content)
-		}
-		return text.NormalizeSpaces(dom.StripTagsWithBlockBoundaries(content))
+		return text.NormalizeSpaces(dom.StripTagsWithBlockBoundaries(security.SanitizeHTML(content)))
 	case "markdown", "md", "text/markdown":
-		if sanitizeBeforeConversion {
-			content = security.SanitizeHTML(content)
-		}
-		return convertToMarkdown(content)
+		return convertToMarkdown(security.SanitizeHTML(content))
 	case "html", "text/html", "":
 		// Empty string defaults to HTML (expected behavior)
 	default:
@@ -876,12 +870,8 @@ func formatContent(content string, contentType string, sanitizeBeforeConversion 
 			log.Printf("WARNING: Unexpected contentType '%s', defaulting to HTML sanitization", contentType)
 		}
 	}
-	content = security.SanitizeHTML(content)
-	if sanitizeBeforeConversion {
-		// Removing a disallowed outer wrapper can expose boundary whitespace.
-		content = strings.TrimSpace(content)
-	}
-	return content
+	// Removing a disallowed outer wrapper can expose boundary whitespace.
+	return strings.TrimSpace(security.SanitizeHTML(content))
 }
 
 // resolveImageTemplateURL resolves template placeholders in responsive image URLs.

@@ -22,15 +22,14 @@ const (
 // Client is a thread-safe, reusable parser client for extracting content from web pages.
 // It manages its own HTTP client for connection pooling and can be shared across goroutines.
 type Client struct {
-	definitions           *definitions.Snapshot
-	definitionsConfigured bool
-	httpClient            *http.Client
-	httpClientProvided    bool
-	timeoutConfigured     bool
-	userAgent             string
-	timeout               time.Duration
-	allowPrivateNetworks  bool
-	contentType           string
+	definitions          *definitions.Snapshot
+	httpClient           *http.Client
+	httpClientProvided   bool
+	timeoutConfigured    bool
+	userAgent            string
+	timeout              time.Duration
+	allowPrivateNetworks bool
+	contentType          string
 
 	// Internal parser instance
 	parser *parser.Hermes
@@ -189,13 +188,12 @@ func (c *Client) wrapParseError(err error, ctx context.Context, op, url string) 
 // This centralizes the option building logic to avoid duplication.
 func (c *Client) buildParserOptions() *parser.ParserOptions {
 	return &parser.ParserOptions{
-		Definitions:           c.definitions,
-		DefinitionsConfigured: c.definitionsConfigured,
-		Fallback:              c.definitionsConfigured,
-		ContentType:           c.contentType,
-		Headers:               map[string]string{"User-Agent": c.userAgent},
-		HTTPClient:            c.httpClient,
-		AllowPrivateNetworks:  c.allowPrivateNetworks,
+		Definitions:          c.definitions,
+		Fallback:             true,
+		ContentType:          c.contentType,
+		Headers:              map[string]string{"User-Agent": c.userAgent},
+		HTTPClient:           c.httpClient,
+		AllowPrivateNetworks: c.allowPrivateNetworks,
 	}
 }
 

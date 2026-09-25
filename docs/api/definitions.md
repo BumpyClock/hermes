@@ -15,8 +15,8 @@ parsing never read definition files. Changes on disk require explicit loading an
 new clients. A failed load returns no snapshot, even if other files are valid.
 
 An explicitly configured client uses only its snapshot and generic fallback.
-`WithDefinitions(nil)` and a zero-value `Definitions` select generic-only parsing.
-Unconfigured clients are generic-only and perform no definition I/O.
+`WithDefinitions(nil)` and a zero-value `Definitions` behave exactly like omitting
+the option: generic-only parsing with no definition I/O.
 
 ## Local source and CLI
 

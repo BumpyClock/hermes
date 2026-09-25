@@ -16,7 +16,12 @@ content:
   groups: [[article]]
   default_cleaner: false
 `)
-	for name, snapshot := range map[string]*Definitions{"nil": nil, "unmatched": unmatched} {
+	for name, configure := range map[string][]Option{
+		"unconfigured": nil,
+		"nil":          {WithDefinitions(nil)},
+		"zero":         {WithDefinitions(&Definitions{})},
+		"unmatched":    {WithDefinitions(unmatched)},
+	} {
 		for _, tc := range []struct {
 			name string
 			text string
@@ -32,7 +37,7 @@ content:
 			for format, want := range map[string]string{"html": tc.html, "markdown": tc.md, "text": tc.text} {
 				t.Run(name+"/"+tc.name+"/"+format, func(t *testing.T) {
 					source := "<title>Review article</title><main><iframe>" + tc.text + "</iframe></main>"
-					result, err := New(WithDefinitions(snapshot), WithContentType(format)).ParseHTML(context.Background(), source, "https://93.184.216.34/review")
+					result, err := New(append(configure, WithContentType(format))...).ParseHTML(context.Background(), source, "https://93.184.216.34/review")
 					if err != nil {
 						t.Fatal(err)
 					}

@@ -80,10 +80,10 @@ type DefinitionSupport struct {
 }
 
 // WithDefinitions selects one immutable external definition snapshot.
-// A nil or zero snapshot explicitly selects generic-only parsing.
+// A nil or zero snapshot selects generic-only parsing, the same as omitting
+// this option.
 func WithDefinitions(snapshot *Definitions) Option {
 	return func(c *Client) {
-		c.definitionsConfigured = true
 		if snapshot == nil {
 			c.definitions = nil
 		} else {

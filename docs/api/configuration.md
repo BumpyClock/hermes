@@ -33,7 +33,7 @@ func WithDefinitions(snapshot *Definitions) Option
 | `WithUserAgent` | Sets the `User-Agent` header. The default is `hermes.DefaultUserAgent`. |
 | `WithAllowPrivateNetworks` | Permits private network and localhost URLs. The default is `false`. |
 | `WithContentType` | Sets the format of `Result.Content`. The default is `"html"`. |
-| `WithDefinitions` | Uses one immutable external snapshot loaded before client construction. Nil, zero-value, and unconfigured snapshots use generic extraction only. |
+| `WithDefinitions` | Uses one immutable external snapshot loaded before client construction. A nil or zero-value snapshot is the same as omitting the option: generic extraction only. |
 
 `LoadDefinitions` reads a local directory; `LoadManagedDefinitions` acquires or
 revalidates a managed snapshot at startup. Both return errors separately from

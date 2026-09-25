@@ -9,13 +9,12 @@ import (
 
 // ParserOptions configures the parser behavior.
 type ParserOptions struct {
-	Definitions           *definitions.Snapshot
-	DefinitionsConfigured bool
-	Fallback              bool              // Use generic extractor as fallback
-	ContentType           string            // Output format: "html", "markdown", "text"
-	Headers               map[string]string // Custom HTTP headers
-	HTTPClient            *http.Client      // HTTP client to use for requests
-	AllowPrivateNetworks  bool              // Allow SSRF to private networks (default: false)
+	Definitions          *definitions.Snapshot
+	Fallback             bool              // Use generic extractor as fallback
+	ContentType          string            // Output format: "html", "markdown", "text"
+	Headers              map[string]string // Custom HTTP headers
+	HTTPClient           *http.Client      // HTTP client to use for requests
+	AllowPrivateNetworks bool              // Allow SSRF to private networks (default: false)
 }
 
 // Result contains the extracted article data.

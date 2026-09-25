@@ -6,7 +6,7 @@ accessing live sites, or overwriting historical observations:
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/compatibility/run.py \
   --baseline v1.1.1 \
-  --candidate-ref bc6d1866871a50195fb5516eb5188527f3eca59d \
+  --candidate-ref CANDIDATE-COMMIT \
   --output .compatibility-runs/released-candidate \
   --samples 6 --benchtime 1s
 ```

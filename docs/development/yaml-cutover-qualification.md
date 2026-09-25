@@ -3,7 +3,9 @@
 This records local migration qualification, not authorization to publish an
 engine or definitions release. No compiled site definitions remain. Consumers
 must explicitly load YAML to retain site-specific extraction; unconfigured
-clients are generic-only.
+clients are generic-only. Configured and unconfigured clients share one output
+path: both sanitize content before Markdown/text conversion, trim sanitized HTML,
+and use the last-resort title/content fallback.
 
 ## Immutable inputs
 
@@ -132,39 +134,118 @@ sources with the same Go toolchain, fixture bytes, and harness:
 | Released consumers | All four unchanged example packages compile against both versions |
 | Generic fixture observations through both public entry points | 16 unchanged; 14 reviewed changes across 52 leaf fields; no unexpected differences |
 
-The final functional replay at `e4560ca` passes the same contracts, API checks,
-consumer compilation, and unchanged exact fixture allowlist without
-nondeterminism.
+The final functional replay at `e4560ca` passed the same contracts, API checks,
+consumer compilation, and the exact fixture allowlist as committed through
+`3bf5ae1`, without nondeterminism.
 
-The reviewed fixture changes are text block separation/whitespace, literal
-Markdown encoding, and empty-link/link-whitespace serialization. Result helpers,
-excerpts, and word counts reflect changed content. HTML content and author/date
-values in this comparison are unchanged. The exact before/after digests are
-allowlisted in `scripts/compatibility/intentional-changes.json`; changed or stale
-allowances fail rather than silently updating the baseline.
-
-Nine identical generic workloads (three fixtures and three formats) ran six
-one-second samples per version in alternating order, with `GOMAXPROCS=1` and
-`-test.cpu=1`. The immutable replay measured **1.75% to 4.48% higher median
-latency**. All ranges overlap; an earlier run of identical runtime bytes ranged
-from 5.02% faster to 0.13% slower. Shared-machine measurements therefore do not
-establish a stable causal latency regression or speedup. They are not evidence
-of identical performance.
+For `bc6d186`, nine identical generic workloads (three fixtures and three
+formats) ran six one-second samples per version in alternating order, with
+`GOMAXPROCS=1` and `-test.cpu=1`. The immutable replay measured **1.75% to 4.48%
+higher median latency**. All ranges overlap; an earlier run of identical runtime
+bytes ranged from 5.02% faster to 0.13% slower. Shared-machine measurements
+therefore do not establish a stable causal latency regression or speedup. They
+are not evidence of identical performance.
 
 Median bytes per operation changed from -0.20% to +2.26%; allocation counts
 changed from -0.17% to +0.31%. The reproducible maximum byte increase is NYTimes
 generic text output, consistent with the extra block-boundary conversion work.
 These are generic measurements, not configured-site, loading, or network timings.
+They predate generic pre-conversion sanitization, described below.
 
-Reproduce with:
+### Generic pre-conversion sanitization
+
+After `3bf5ae1`, the private configured-only switch was removed. Before that,
+only clients built with `WithDefinitions(...)` sanitized content before
+Markdown/text conversion, trimmed sanitized HTML, and used the last-resort
+title/content fallback; unconfigured clients stayed on the v1.1.1 generic
+conversion path. Every client now uses the former configured path. Plain-text
+article conversion also decodes entities in input that has no tags.
+
+The runner compared v1.1.1 with an unreferenced snapshot commit of that working
+tree, `6ad6506f1c5188d8eb348b8127659b431faf3a06` (candidate source archive
+SHA-256 `342e99eb6f4745c718d50a939cde203d5c1c3f6a0d0b155177de0066e46b13f4`):
+
+| Check | Result |
+| --- | --- |
+| Deterministic public error/format contracts | 38 of 38 unchanged; two captures per version agree |
+| Exported API shapes | All 21 released declarations unchanged; 11 additive definition APIs |
+| Released consumers | All four unchanged example packages compile against both versions |
+| Generic fixture observations through both public entry points | 16 unchanged; the same 14 reviewed observations across 52 leaf fields; no unexpected differences or stale allowances |
+
+Compared with the `3bf5ae1` candidate, only the two literal Markdown
+observations (`ParseHTML` and `Parse`) differ, in content, excerpt, and
+`FormatMarkdown` output: `[Unsafe link](javascript:alert(1))` becomes
+`Unsafe link`. The v1.1.1 HTML output already rendered that `javascript:` link
+as its plain label. Word counts, HTML and text output, the 38 contracts, and the
+other 28 observations are identical to `3bf5ae1`. Neither the entity-decoding
+change nor the shared last-resort fallback changes any compatibility
+observation.
+
+The reviewed fixture changes are text block separation/whitespace, literal
+Markdown encoding, removal of the unsafe `javascript:` link target from literal
+Markdown, and empty-link/link-whitespace serialization. Result helpers,
+excerpts, and word counts reflect changed content. HTML content and author/date
+values in this comparison are unchanged. The exact before/after digests are
+allowlisted in `scripts/compatibility/intentional-changes.json`; changed or stale
+allowances fail rather than silently updating the baseline.
+
+The allowlist binds a single candidate's exact output. It now records the
+sanitized literal Markdown digests, so replaying `bc6d186`, `e4560ca`, or
+`3bf5ae1` against it reports those two observations as both unexpected and
+stale. Their recorded passes used the allowlist as committed at `3bf5ae1`.
+
+The benchmark clients are unconfigured (`hermes.New(hermes.WithContentType(format))`),
+so generic Markdown/text workloads now pay the pre-conversion sanitizer pass.
+The documented command, with six alternating one-second samples, ran against
+`6ad6506` on Go 1.27.1, macOS/arm64, Apple M5 Max, with `GOMAXPROCS=1`. The
+machine was shared: its 1/5/15-minute load averages were 7.42/9.31/11.95 before
+the run and 6.15/7.68/10.51 after it.
+
+| Generic workload | v1.1.1 median [range] | `6ad6506` median [range] | Latency change | Bytes/op change | Allocations/op change |
+| --- | --- | --- | ---: | ---: | ---: |
+| Article HTML | 3.849 ms [3.738-4.769] | 4.068 ms [3.580-4.335] | +5.69% | -2.49% | -0.88% |
+| Article Markdown | 3.982 ms [3.588-4.337] | 3.994 ms [3.506-4.033] | +0.31% | -1.90% | -1.06% |
+| Article text | 4.014 ms [3.603-6.932] | 3.992 ms [3.387-4.260] | -0.55% | -1.40% | -0.62% |
+| NYTimes HTML | 12.293 ms [12.191-19.764] | 11.903 ms [10.975-13.371] | -3.17% | -8.96% | -4.90% |
+| NYTimes Markdown | 13.012 ms [12.710-14.681] | 13.194 ms [11.991-14.196] | +1.40% | -5.16% | +0.57% |
+| NYTimes text | 12.140 ms [11.534-12.910] | 12.221 ms [11.040-12.747] | +0.67% | -3.77% | +1.92% |
+| Ars HTML | 8.400 ms [8.027-8.839] | 8.760 ms [8.092-9.849] | +4.28% | -7.96% | -4.33% |
+| Ars Markdown | 8.910 ms [8.712-9.240] | 9.185 ms [8.389-11.855] | +3.09% | -3.92% | -2.77% |
+| Ars text | 8.494 ms [8.206-10.193] | 8.756 ms [8.109-10.387] | +3.08% | -4.09% | -2.55% |
+
+All latency ranges overlap, so this run establishes no latency regression,
+speedup, or equivalence. Bytes per operation fell in every workload.
+Allocation counts rose only for NYTimes Markdown and text, while NYTimes HTML
+fell by 4.90%. That format split is consistent with the added sanitizer pass,
+but no profile was taken. The comparison also includes every other change since
+v1.1.1, including the later extraction optimizations, so it does not isolate the
+sanitizer cost.
+
+Evidence is under `.compatibility-runs/`:
+`released-v1.1.1-worktree-generic-sanitize/` holds the first worktree capture,
+which reported two unexpected and two stale literal Markdown observations
+against the previous allowlist. Its `comparison.json` records that failure; its
+`acceptance.json` is a later `--verify-only` pass against the updated allowlist.
+`released-v1.1.1-snapshot-6ad6506/` holds the
+functional-only replay with the updated allowlist, and
+`released-v1.1.1-snapshot-6ad6506-bench/` holds the replay with benchmarks.
+The snapshot is an unreferenced commit object that Git garbage collection can
+remove. Each capture's retained `candidate.tar` is the reproducible source.
+
+Reproduce with an immutable candidate commit and a new output directory. For
+uncommitted source, replace `--candidate-ref` with `--candidate-worktree`:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/compatibility/run.py \
   --baseline v1.1.1 \
-  --candidate-ref bc6d1866871a50195fb5516eb5188527f3eca59d \
-  --output .compatibility-runs/released-candidate \
+  --candidate-ref CANDIDATE-COMMIT \
+  --output .compatibility-runs/NEW-CAPTURE \
   --samples 6 --benchtime 1s
 ```
+
+The historical `bc6d186` capture used
+`--candidate-ref bc6d1866871a50195fb5516eb5188527f3eca59d` with the allowlist as
+committed at `3bf5ae1`.
 
 See the [compatibility runner](../../scripts/compatibility/README.md) for capture
 provenance, exact-difference acceptance, and offline test commands.
@@ -202,11 +283,17 @@ handling also contributing. The sanitizer policy was not weakened to recover
 the old cost. These are two-site extraction measurements, not all-site,
 network, loading, concurrency, or production-throughput claims.
 
+That pre-conversion sanitizer is no longer configured-only. Unconfigured
+Markdown/text output now pays it too; see
+[generic pre-conversion sanitization](#generic-pre-conversion-sanitization).
+The 5.31-9.03% figures remain configured-site measurements of `e4560ca`. They
+were not remeasured after that change and are not a generic cost estimate.
+
 Reproduction and exact-output reference comparison are documented in the
 compatibility runner. Compact raw evidence remains under
-`.compatibility-runs/configured-v1.1.1-e4560ca-fb626db/`; the final generic
-functional evidence is under
-`.compatibility-runs/released-v1.1.1-pinned-e4560ca/`.
+`.compatibility-runs/configured-v1.1.1-e4560ca-fb626db/`; the `e4560ca` generic
+functional evidence, which passes against the allowlist as committed at
+`3bf5ae1`, is under `.compatibility-runs/released-v1.1.1-pinned-e4560ca/`.
 
 ## Deployment boundary
 
