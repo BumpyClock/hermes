@@ -201,13 +201,10 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 		result.Author = cleaners.CleanAuthor(author)
 	}
 
-	outputBaseURL := ""
-	if opts.DefinitionsConfigured {
-		outputBaseURL = targetURL
-		if baseHref := doc.Find("base[href]").First().AttrOr("href", ""); baseHref != "" {
-			if resolvedBase, err := parsedURL.Parse(baseHref); err == nil {
-				outputBaseURL = resolvedBase.String()
-			}
+	outputBaseURL := targetURL
+	if baseHref := doc.Find("base[href]").First().AttrOr("href", ""); baseHref != "" {
+		if resolvedBase, err := parsedURL.Parse(baseHref); err == nil {
+			outputBaseURL = resolvedBase.String()
 		}
 	}
 
@@ -228,10 +225,10 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 			} else {
 				contentHTML, err = processDefinitionContentWithBase(contentElements, doc, definitionExtractor.Content, result.Title, targetURL, outputBaseURL)
 			}
-			if err != nil && opts.DefinitionsConfigured {
+			if err != nil {
 				return nil, fmt.Errorf("extract definition site %q content: %w", definitionExtractor.Domain, err)
 			}
-			if err == nil && strings.TrimSpace(contentHTML) != "" {
+			if strings.TrimSpace(contentHTML) != "" {
 				setFormattedContent(result, contentHTML, opts.ContentType, true)
 			}
 			break
@@ -253,11 +250,7 @@ func (h *Hermes) tryDefinitionExtractor(ctx context.Context, doc *goquery.Docume
 	if imageURL, fieldErr := firstDefinitionField(ctx, doc, definitionExtractor.LeadImageURL); fieldErr != nil {
 		return nil, fieldErr
 	} else if imageURL != "" {
-		imageBaseURL := targetURL
-		if opts.DefinitionsConfigured {
-			imageBaseURL = outputBaseURL
-		}
-		result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, imageBaseURL)
+		result.LeadImageURL = cleaners.CleanLeadImageURL(imageURL, outputBaseURL)
 	}
 
 	// Fall back to generic extractors for missing fields if fallback is enabled
@@ -435,10 +428,6 @@ func hasCustomContent(contentElements *goquery.Selection) bool {
 		}
 	}
 	return false
-}
-
-func processDefinitionContent(contentElements *goquery.Selection, doc *goquery.Document, extractor *extractors.ContentExtractor, title, targetURL string) (string, error) {
-	return processDefinitionContentWithBase(contentElements, doc, extractor, title, targetURL, "")
 }
 
 func processDefinitionContentWithBase(contentElements *goquery.Selection, doc *goquery.Document, extractor *extractors.ContentExtractor, title, targetURL, outputBaseURL string) (string, error) {
@@ -841,24 +830,8 @@ func canRenderAdjacentEmphasis(selection *goquery.Selection, content string) boo
 }
 
 func canRenderAdjacentAsterisk(selection *goquery.Selection, content, nestedSelector string) bool {
-	node := selection.Get(0)
-	if node == nil || content == "" || content != strings.TrimSpace(content) ||
-		strings.ContainsAny(content, "\r\n") || selection.Find(nestedSelector).Length() != 0 {
-		return false
-	}
-
-	if parent := selection.Parent(); parent.Is("strong,b") {
-		return false
-	}
-	before, hasBefore := lastTextRune(node.PrevSibling)
-	after, hasAfter := firstTextRune(node.NextSibling)
-	if node.PrevSibling == nil {
-		before, hasBefore = ' ', true
-	}
-	if node.NextSibling == nil {
-		after, hasAfter = ' ', true
-	}
-	if !hasBefore || !hasAfter {
+	before, after, ok := asteriskNeighbors(selection, content, nestedSelector)
+	if !ok {
 		return false
 	}
 	if unicode.IsSpace(before) && unicode.IsSpace(after) {
@@ -870,23 +843,8 @@ func canRenderAdjacentAsterisk(selection *goquery.Selection, content, nestedSele
 }
 
 func renderFlankedStrong(selection *goquery.Selection, content string) *string {
-	node := selection.Get(0)
-	if node == nil || content == "" || content != strings.TrimSpace(content) ||
-		strings.ContainsAny(content, "\r\n") || selection.Find("strong,b,em,i,code").Length() != 0 {
-		return nil
-	}
-	if parent := selection.Parent(); parent.Is("strong,b") {
-		return nil
-	}
-	before, hasBefore := lastTextRune(node.PrevSibling)
-	after, hasAfter := firstTextRune(node.NextSibling)
-	if node.PrevSibling == nil {
-		before, hasBefore = ' ', true
-	}
-	if node.NextSibling == nil {
-		after, hasAfter = ' ', true
-	}
-	if !hasBefore || !hasAfter {
+	before, after, ok := asteriskNeighbors(selection, content, "strong,b,em,i,code")
+	if !ok {
 		return nil
 	}
 	characters := []rune(content)
@@ -902,6 +860,30 @@ func renderFlankedStrong(selection *goquery.Selection, content string) *string {
 		trailing = " "
 	}
 	return md.String(leading + "**" + content + "**" + trailing)
+}
+
+// asteriskNeighbors reports the runes adjacent to an inline element, treating a missing sibling as a space.
+func asteriskNeighbors(selection *goquery.Selection, content, nestedSelector string) (before, after rune, ok bool) {
+	node := selection.Get(0)
+	if node == nil || content == "" || content != strings.TrimSpace(content) ||
+		strings.ContainsAny(content, "\r\n") || selection.Find(nestedSelector).Length() != 0 {
+		return 0, 0, false
+	}
+	if parent := selection.Parent(); parent.Is("strong,b") {
+		return 0, 0, false
+	}
+	before, hasBefore := lastTextRune(node.PrevSibling)
+	after, hasAfter := firstTextRune(node.NextSibling)
+	if node.PrevSibling == nil {
+		before, hasBefore = ' ', true
+	}
+	if node.NextSibling == nil {
+		after, hasAfter = ' ', true
+	}
+	if !hasBefore || !hasAfter {
+		return 0, 0, false
+	}
+	return before, after, true
 }
 
 func leftFlankingAsterisk(before, after rune) bool {
