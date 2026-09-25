@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/andybalholm/cascadia"
 )
 
 func TestExtractCleanNodePreservesConfiguredMedia(t *testing.T) {
@@ -14,7 +15,7 @@ func TestExtractCleanNodePreservesConfiguredMedia(t *testing.T) {
 	}
 	cleaned := ExtractCleanNode(doc.Find("article"), doc, ContentCleanOptions{
 		CleanConditionally: true,
-		Preserve:           []string{".media", "script"},
+		PreserveMatchers:   []goquery.Matcher{cascadia.MustCompile(".media"), cascadia.MustCompile("script")},
 	})
 	content, err := cleaned.Html()
 	if err != nil {

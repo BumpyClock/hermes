@@ -20,7 +20,6 @@ type ContentCleanOptions struct {
 	Title              string
 	URL                string
 	DefaultCleaner     *bool // Use pointer to distinguish between unset and explicitly false
-	Preserve           []string
 	PreserveMatchers   []goquery.Matcher
 }
 
@@ -88,13 +87,6 @@ func ExtractCleanNode(article *goquery.Selection, doc *goquery.Document, opts Co
 		defaultCleaner = *opts.DefaultCleaner
 	}
 	preserve := opts.PreserveMatchers
-	if len(opts.Preserve) != 0 {
-		preserve = append([]goquery.Matcher(nil), preserve...)
-		for _, selector := range opts.Preserve {
-			// Closest uses Match; Single retains goquery's invalid-selector behavior.
-			preserve = append(preserve, goquery.Single(selector))
-		}
-	}
 
 	// Apply cleaning functions in the exact same order as JavaScript:
 	// Unlike the document-level cleaning in the generic extractor,
