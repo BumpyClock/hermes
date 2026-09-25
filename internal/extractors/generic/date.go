@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/andybalholm/cascadia"
 
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 	"github.com/BumpyClock/hermes/internal/utils/text"
@@ -18,7 +19,7 @@ import (
 // DATE_PUBLISHED_META_TAGS - Ordered list of meta tag names that denote likely date published dates
 // All attributes should be lowercase for faster case-insensitive matching
 // From most distinct to least distinct (matches JavaScript exactly).
-var DATE_PUBLISHED_META_TAGS = []string{
+var DATE_PUBLISHED_META_TAGS = dom.MustCompileMetaNames(
 	"article:published_time",
 	"displaydate",
 	"dc.date",
@@ -35,28 +36,28 @@ var DATE_PUBLISHED_META_TAGS = []string{
 	"lastmodified",
 	"created",
 	"date",
-}
+)
 
 // DATE_PUBLISHED_SELECTORS - Ordered list of CSS selectors to find likely date published dates
 // From most explicit to least explicit (matches JavaScript exactly).
-var DATE_PUBLISHED_SELECTORS = []string{
-	".hentry .dtstamp.published",
-	".hentry .published",
-	".hentry .dtstamp.updated",
-	".hentry .updated",
-	".single .published",
-	".meta .published",
-	".meta .postDate",
-	".entry-date",
-	".byline .date",
-	".postmetadata .date",
-	".article_datetime",
-	".date-header",
-	".story-date",
-	".dateStamp",
-	"#story .datetime",
-	".dateline",
-	".pubdate",
+var DATE_PUBLISHED_SELECTORS = []goquery.Matcher{
+	cascadia.MustCompile(".hentry .dtstamp.published"),
+	cascadia.MustCompile(".hentry .published"),
+	cascadia.MustCompile(".hentry .dtstamp.updated"),
+	cascadia.MustCompile(".hentry .updated"),
+	cascadia.MustCompile(".single .published"),
+	cascadia.MustCompile(".meta .published"),
+	cascadia.MustCompile(".meta .postDate"),
+	cascadia.MustCompile(".entry-date"),
+	cascadia.MustCompile(".byline .date"),
+	cascadia.MustCompile(".postmetadata .date"),
+	cascadia.MustCompile(".article_datetime"),
+	cascadia.MustCompile(".date-header"),
+	cascadia.MustCompile(".story-date"),
+	cascadia.MustCompile(".dateStamp"),
+	cascadia.MustCompile("#story .datetime"),
+	cascadia.MustCompile(".dateline"),
+	cascadia.MustCompile(".pubdate"),
 }
 
 // DATE_PUBLISHED_URL_RES - Ordered list of compiled regular expressions to find likely date
@@ -105,7 +106,7 @@ func (e GenericDateExtractorType) Extract(doc *goquery.Selection, url string, me
 	}
 
 	// Second, look through our selectors looking for potential date_published's
-	if selector := dom.ExtractFromSelectors(doc, DATE_PUBLISHED_SELECTORS, 5, false); selector != nil {
+	if selector := dom.ExtractFromMatchers(doc, DATE_PUBLISHED_SELECTORS, 5, false, nil); selector != nil {
 		datePublished = *selector
 		if cleaned := cleanDatePublished(datePublished, nil); cleaned != nil {
 			return cleaned

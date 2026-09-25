@@ -80,7 +80,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"foo", "baz"}
+		metaNames := MustCompileMetaNames("foo", "baz")
 		cachedNames := []string{"foo", "bat"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -98,7 +98,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"foo", "baz"}
+		metaNames := MustCompileMetaNames("foo", "baz")
 		cachedNames := []string{"foo", "bat"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -115,7 +115,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"foo", "baz"}
+		metaNames := MustCompileMetaNames("foo", "baz")
 		cachedNames := []string{"foo", "bat"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -132,7 +132,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"description"}
+		metaNames := MustCompileMetaNames("description")
 		cachedNames := []string{"description"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -149,7 +149,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"description"}
+		metaNames := MustCompileMetaNames("description")
 		cachedNames := []string{"description"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, false)
@@ -166,7 +166,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"baz", "qux"}
+		metaNames := MustCompileMetaNames("baz", "qux")
 		cachedNames := []string{"foo", "bat"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -182,7 +182,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"foo", "baz"}
+		metaNames := MustCompileMetaNames("foo", "baz")
 		cachedNames := []string{}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -198,7 +198,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"description"}
+		metaNames := MustCompileMetaNames("description")
 		cachedNames := []string{"description"}
 
 		// Updated behavior: now supports both 'value' and 'content' attributes
@@ -218,7 +218,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"foo", "bar"}
+		metaNames := MustCompileMetaNames("foo", "bar")
 		cachedNames := []string{"bar", "foo"} // both are available, but foo comes first in metaNames
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -239,7 +239,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"og:title"}
+		metaNames := MustCompileMetaNames("og:title")
 		cachedNames := []string{"og:title"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -260,7 +260,7 @@ func TestExtractFromMeta(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test prioritization - should return first match in metaNames order
-		metaNames := []string{"twitter:description", "description", "og:description"}
+		metaNames := MustCompileMetaNames("twitter:description", "description", "og:description")
 		cachedNames := []string{"description", "twitter:description", "og:description"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -277,7 +277,7 @@ func TestExtractFromMeta(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 		require.NoError(t, err)
 
-		metaNames := []string{"special"}
+		metaNames := MustCompileMetaNames("special")
 		cachedNames := []string{"special"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)
@@ -298,7 +298,7 @@ func TestExtractFromMeta(t *testing.T) {
 		require.NoError(t, err)
 
 		// Look for the 50th meta tag
-		metaNames := []string{"test50", "test99", "test1"}
+		metaNames := MustCompileMetaNames("test50", "test99", "test1")
 		cachedNames := []string{"test1", "test50", "test99"}
 
 		result := ExtractFromMeta(doc, metaNames, cachedNames, true)

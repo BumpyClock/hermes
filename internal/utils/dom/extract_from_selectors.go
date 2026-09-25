@@ -21,27 +21,22 @@ func isGoodNode(node *goquery.Selection, maxChildren int) bool {
 	return true
 }
 
-// ExtractFromSelectors finds content that may be extractable from the document
-// using CSS selectors. This is for flat meta-information, like author, title,
-// date published, etc.
+// ExtractFromMatchers finds content that may be extractable from the document
+// using precompiled CSS selectors. This is for flat meta-information, like
+// author, title, date published, etc.
 //
 // Parameters:
 // - doc: The goquery document/selection to search within
-// - selectors: List of CSS selectors to try in order
-// - maxChildren: Maximum number of child elements allowed (default 1)
-// - textOnly: If true, extract text content; if false, extract HTML (default true)
+// - matchers: Precompiled CSS selectors to try in order
+// - maxChildren: Maximum number of child elements allowed
+// - textOnly: If true, extract text content; if false, extract HTML
+// - accept: Optional filter that rejects candidates outside the caller's metadata scope
 //
 // Returns:
 // - *string: The extracted content, or nil if nothing suitable found.
-func ExtractFromSelectors(doc *goquery.Selection, selectors []string, maxChildren int, textOnly bool) *string {
-	return ExtractFromSelectorsWithFilter(doc, selectors, maxChildren, textOnly, nil)
-}
-
-// ExtractFromSelectorsWithFilter additionally rejects candidates outside the caller's metadata scope.
-func ExtractFromSelectorsWithFilter(doc *goquery.Selection, selectors []string, maxChildren int, textOnly bool, accept func(*goquery.Selection) bool) *string {
-	// eslint-disable-next-line no-restricted-syntax
-	for _, selector := range selectors {
-		nodes := doc.Find(selector)
+func ExtractFromMatchers(doc *goquery.Selection, matchers []goquery.Matcher, maxChildren int, textOnly bool, accept func(*goquery.Selection) bool) *string {
+	for _, matcher := range matchers {
+		nodes := doc.FindMatcher(matcher)
 
 		// If we didn't get exactly one of this selector, this may be
 		// a list of articles or comments. Skip it.

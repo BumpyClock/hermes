@@ -1,4 +1,4 @@
-// ABOUTME: Tests for the ExtractFromSelectors function
+// ABOUTME: Tests for the ExtractFromMatchers function
 // ABOUTME: Validates CSS selector content extraction with JavaScript compatibility
 
 package dom
@@ -8,9 +8,18 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/andybalholm/cascadia"
 )
 
-func TestExtractFromSelectors(t *testing.T) {
+func compileMatchers(selectors ...string) []goquery.Matcher {
+	matchers := make([]goquery.Matcher, len(selectors))
+	for i, selector := range selectors {
+		matchers[i] = cascadia.MustCompile(selector)
+	}
+	return matchers
+}
+
+func TestExtractFromMatchers(t *testing.T) {
 	tests := []struct {
 		name        string
 		html        string
@@ -192,7 +201,7 @@ func TestExtractFromSelectors(t *testing.T) {
 				t.Fatalf("Failed to parse HTML: %v", err)
 			}
 
-			result := ExtractFromSelectors(doc.Selection, tt.selectors, tt.maxChildren, tt.textOnly)
+			result := ExtractFromMatchers(doc.Selection, compileMatchers(tt.selectors...), tt.maxChildren, tt.textOnly, nil)
 
 			if tt.expectNil {
 				if result != nil {
@@ -209,7 +218,7 @@ func TestExtractFromSelectors(t *testing.T) {
 	}
 }
 
-func TestExtractFromSelectorsDefaultParameters(t *testing.T) {
+func TestExtractFromMatchersDefaultParameters(t *testing.T) {
 	html := `
 		<html>
 			<div class="author">Test Author</div>
@@ -222,11 +231,29 @@ func TestExtractFromSelectorsDefaultParameters(t *testing.T) {
 	}
 
 	// Test with default parameters (maxChildren=1, textOnly=true)
-	result := ExtractFromSelectors(doc.Selection, []string{".author"}, 1, true)
+	result := ExtractFromMatchers(doc.Selection, compileMatchers(".author"), 1, true, nil)
 	if result == nil {
 		t.Errorf("Expected 'Test Author', got nil")
 	} else if *result != "Test Author" {
 		t.Errorf("Expected 'Test Author', got %q", *result)
+	}
+}
+
+func TestExtractFromMatchersRejectedCandidateFallsThrough(t *testing.T) {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(`
+		<html>
+			<nav><a rel="author">Site Owner</a></nav>
+			<div class="byline">Article Author</div>
+		</html>
+	`))
+	if err != nil {
+		t.Fatalf("Failed to parse HTML: %v", err)
+	}
+
+	outsideNav := func(node *goquery.Selection) bool { return node.Closest("nav").Length() == 0 }
+	result := ExtractFromMatchers(doc.Selection, compileMatchers("a[rel=author]", ".byline"), 1, true, outsideNav)
+	if result == nil || *result != "Article Author" {
+		t.Fatalf("Expected the next matcher's candidate %q, got %v", "Article Author", result)
 	}
 }
 

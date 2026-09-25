@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/andybalholm/cascadia"
 
 	"github.com/BumpyClock/hermes/internal/cleaners"
 	"github.com/BumpyClock/hermes/internal/utils/dom"
@@ -18,19 +19,19 @@ var (
 	// An ordered list of meta tag names that denote likely article titles.
 	// All attributes should be lowercase for faster case-insensitive matching.
 	// From most distinct to least distinct.
-	STRONG_TITLE_META_TAGS = []string{
+	STRONG_TITLE_META_TAGS = dom.MustCompileMetaNames(
 		"tweetmeme-title",
 		"dc.title",
 		"rbtitle",
 		"headline",
 		"title",
-	}
+	)
 
 	// og:title is weak because it typically contains context that we don't like,
 	// for example the source site's name. Gotta get that brand into facebook!
-	WEAK_TITLE_META_TAGS = []string{
+	WEAK_TITLE_META_TAGS = dom.MustCompileMetaNames(
 		"og:title",
-	}
+	)
 
 	// An ordered list of CSS Selectors to find likely article titles.
 	// From most explicit to least explicit.
@@ -38,31 +39,31 @@ var (
 	// Note - this does not use classes like CSS. This checks to see if the string
 	// exists in the className, which is not as accurate as .className (which
 	// splits on spaces/endlines), but for our purposes it's close enough.
-	STRONG_TITLE_SELECTORS = []string{
-		".hentry .entry-title",
-		"h1#articleHeader",
-		"h1.articleHeader",
-		"h1.article",
-		".instapaper_title",
-		"#meebo-title",
+	STRONG_TITLE_SELECTORS = []goquery.Matcher{
+		cascadia.MustCompile(".hentry .entry-title"),
+		cascadia.MustCompile("h1#articleHeader"),
+		cascadia.MustCompile("h1.articleHeader"),
+		cascadia.MustCompile("h1.article"),
+		cascadia.MustCompile(".instapaper_title"),
+		cascadia.MustCompile("#meebo-title"),
 	}
 
-	WEAK_TITLE_SELECTORS = []string{
-		"article h1",
-		"#entry-title",
-		".entry-title",
-		"#entryTitle",
-		"#entrytitle",
-		".entryTitle",
-		".entrytitle",
-		"#articleTitle",
-		".articleTitle",
-		"post post-title",
-		"h1.title",
-		"h2.article",
-		"h1",
-		"html head title",
-		"title",
+	WEAK_TITLE_SELECTORS = []goquery.Matcher{
+		cascadia.MustCompile("article h1"),
+		cascadia.MustCompile("#entry-title"),
+		cascadia.MustCompile(".entry-title"),
+		cascadia.MustCompile("#entryTitle"),
+		cascadia.MustCompile("#entrytitle"),
+		cascadia.MustCompile(".entryTitle"),
+		cascadia.MustCompile(".entrytitle"),
+		cascadia.MustCompile("#articleTitle"),
+		cascadia.MustCompile(".articleTitle"),
+		cascadia.MustCompile("post post-title"),
+		cascadia.MustCompile("h1.title"),
+		cascadia.MustCompile("h2.article"),
+		cascadia.MustCompile("h1"),
+		cascadia.MustCompile("html head title"),
+		cascadia.MustCompile("title"),
 	}
 )
 
@@ -85,7 +86,7 @@ var GenericTitleExtractor = struct {
 
 		// Second, look through our content selectors for the most likely
 		// article title that is strongly associated with the headline.
-		title = dom.ExtractFromSelectors(doc, STRONG_TITLE_SELECTORS, 1, true)
+		title = dom.ExtractFromMatchers(doc, STRONG_TITLE_SELECTORS, 1, true, nil)
 		if title != nil && *title != "" {
 			return cleanTitle(*title, url, doc)
 		}
@@ -97,7 +98,7 @@ var GenericTitleExtractor = struct {
 		}
 
 		// Last, look for weaker selector tags that may match.
-		title = dom.ExtractFromSelectors(doc, WEAK_TITLE_SELECTORS, 1, true)
+		title = dom.ExtractFromMatchers(doc, WEAK_TITLE_SELECTORS, 1, true, nil)
 		if title != nil && *title != "" {
 			return cleanTitle(*title, url, doc)
 		}

@@ -16,7 +16,7 @@ import (
 // AUTHOR_META_TAGS - ordered list of meta tag names that denote likely article authors
 // From most distinct to least distinct. Note: "author" is too often the developer
 // of the page, so it is not included here.
-var AUTHOR_META_TAGS = []string{
+var AUTHOR_META_TAGS = dom.MustCompileMetaNames(
 	"byl",
 	"clmst",
 	"dc.author",
@@ -24,37 +24,37 @@ var AUTHOR_META_TAGS = []string{
 	"dc.creator",
 	"rbauthors",
 	"authors",
-}
+)
 
 // AUTHOR_MAX_LENGTH - maximum length for valid author names.
 const AUTHOR_MAX_LENGTH = 300
 
 // AUTHOR_SELECTORS - ordered list of CSS selectors to find likely article authors
 // From most explicit to least explicit. Uses class substring matching like JavaScript.
-var AUTHOR_SELECTORS = []string{
-	".entry .entry-author",
-	".author.vcard .fn",
-	".author .vcard .fn",
-	".byline.vcard .fn",
-	".byline .vcard .fn",
-	".byline .by .author",
-	".byline .by",
-	".byline .author",
-	".post-author.vcard",
-	".post-author .vcard",
-	"a[rel=author]",
-	"#by_author",
-	".by_author",
-	"#entryAuthor",
-	".entryAuthor",
-	".byline a[href*=author]",
-	"#author .authorname",
-	".author .authorname",
-	"#author",
-	".author",
-	".articleauthor",
-	".ArticleAuthor",
-	".byline",
+var AUTHOR_SELECTORS = []goquery.Matcher{
+	cascadia.MustCompile(".entry .entry-author"),
+	cascadia.MustCompile(".author.vcard .fn"),
+	cascadia.MustCompile(".author .vcard .fn"),
+	cascadia.MustCompile(".byline.vcard .fn"),
+	cascadia.MustCompile(".byline .vcard .fn"),
+	cascadia.MustCompile(".byline .by .author"),
+	cascadia.MustCompile(".byline .by"),
+	cascadia.MustCompile(".byline .author"),
+	cascadia.MustCompile(".post-author.vcard"),
+	cascadia.MustCompile(".post-author .vcard"),
+	cascadia.MustCompile("a[rel=author]"),
+	cascadia.MustCompile("#by_author"),
+	cascadia.MustCompile(".by_author"),
+	cascadia.MustCompile("#entryAuthor"),
+	cascadia.MustCompile(".entryAuthor"),
+	cascadia.MustCompile(".byline a[href*=author]"),
+	cascadia.MustCompile("#author .authorname"),
+	cascadia.MustCompile(".author .authorname"),
+	cascadia.MustCompile("#author"),
+	cascadia.MustCompile(".author"),
+	cascadia.MustCompile(".articleauthor"),
+	cascadia.MustCompile(".ArticleAuthor"),
+	cascadia.MustCompile(".byline"),
 }
 
 // BYLINE_SELECTORS_RE - compiled selectors with regex patterns for byline content
@@ -99,7 +99,7 @@ func (e *GenericAuthorExtractor) Extract(doc *goquery.Selection, metaCache []str
 	}
 
 	// Second, look through our selectors looking for potential authors.
-	authorPtr := dom.ExtractFromSelectorsWithFilter(doc, AUTHOR_SELECTORS, 2, true, isArticleAuthorCandidate)
+	authorPtr := dom.ExtractFromMatchers(doc, AUTHOR_SELECTORS, 2, true, isArticleAuthorCandidate)
 	if authorPtr != nil {
 		author = *authorPtr
 		if len(author) < AUTHOR_MAX_LENGTH {

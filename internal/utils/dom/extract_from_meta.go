@@ -5,9 +5,11 @@ package dom
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/andybalholm/cascadia"
 	"golang.org/x/net/html"
 )
 
@@ -122,32 +124,37 @@ func appendArticleText(output *strings.Builder, node *html.Node) {
 	}
 }
 
+// MetaNames is an ordered list of meta tag names, each paired with its
+// precompiled meta[name="..."] selector.
+type MetaNames struct {
+	names    []string
+	matchers []goquery.Matcher
+}
+
+// MustCompileMetaNames compiles the meta[name="..."] selector for each name in order.
+func MustCompileMetaNames(names ...string) MetaNames {
+	metaNames := MetaNames{names: names, matchers: make([]goquery.Matcher, len(names))}
+	for i, name := range names {
+		// JavaScript hardcodes type="name"; ExtractFromMeta checks "value" and "content".
+		metaNames.matchers[i] = cascadia.MustCompile(fmt.Sprintf("meta[name=\"%s\"]", name))
+	}
+	return metaNames
+}
+
 // ExtractFromMeta extracts content from HTML meta tags
 // Given a list of meta tag names to search for, find a meta tag associated.
 // This function provides 100% JavaScript compatibility.
-func ExtractFromMeta(doc *goquery.Document, metaNames []string, cachedNames []string, cleanTags bool) *string {
-	// Filter metaNames to only include names that exist in cachedNames
+func ExtractFromMeta(doc *goquery.Document, metaNames MetaNames, cachedNames []string, cleanTags bool) *string {
+	// Process only names that exist in cachedNames
 	// JavaScript uses: metaNames.filter(name => cachedNames.indexOf(name) !== -1)
 	// This maintains the order of metaNames, not cachedNames
-	var foundNames []string
-	for _, name := range metaNames {
-		for _, cached := range cachedNames {
-			if name == cached {
-				foundNames = append(foundNames, name)
-				break
-			}
+	for i, name := range metaNames.names {
+		if !slices.Contains(cachedNames, name) {
+			continue
 		}
-	}
-
-	// Process each found name in order
-	for _, name := range foundNames {
-		// JavaScript hardcodes type="name" and checks "value" attribute
-		// However, standard HTML meta tags use "content", so we check both
-		metaType := "name"
 
 		// Find meta tags with the specified name
-		selector := fmt.Sprintf("meta[%s=\"%s\"]", metaType, name)
-		nodes := doc.Find(selector)
+		nodes := doc.FindMatcher(metaNames.matchers[i])
 
 		// Get all non-empty values from both 'value' and 'content' attributes
 		var values []string
