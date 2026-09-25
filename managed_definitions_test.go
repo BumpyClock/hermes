@@ -48,6 +48,101 @@ func TestLoadManagedDefinitionsPinnedReleaseAndCacheFallback(t *testing.T) {
 	}
 }
 
+func TestLoadManagedDefinitionsPinnedCurrentCacheSkipsArchiveDownload(t *testing.T) {
+	manifest, archive := managedBundle(t)
+	cache := managedTestCache(t)
+	base := managedReleaseTransport(t, "synthetic-1", manifest, archive)
+	var mu sync.Mutex
+	requests := map[string]int{}
+	counted := managedTransport(func(request *http.Request) (*http.Response, error) {
+		mu.Lock()
+		requests[request.URL.String()]++
+		mu.Unlock()
+		return base.RoundTrip(request)
+	})
+	archiveRequests := func() int {
+		mu.Lock()
+		defer mu.Unlock()
+		total := 0
+		for target, count := range requests {
+			if strings.HasSuffix(target, ".tar") {
+				total += count
+			}
+		}
+		return total
+	}
+	options := ManagedDefinitionsOptions{Version: "synthetic-1", CacheDirectory: cache, Transport: counted}
+
+	activated, err := LoadManagedDefinitions(context.Background(), options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if activated.UpdateStatus != "pinned-new" || !activated.Updated || archiveRequests() != 1 {
+		t.Fatalf("pinned activation = %+v, archive requests = %d", activated, archiveRequests())
+	}
+
+	clear(requests)
+	current, err := LoadManagedDefinitions(context.Background(), options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if current.Snapshot == nil || current.Digest != activated.Digest || current.Source != "managed-cache" ||
+		current.CacheStatus != "current" || current.UpdateStatus != "cache-current" || current.Updated || current.Warning != nil {
+		t.Fatalf("pinned current cache = %+v", current)
+	}
+	if archiveRequests() != 0 {
+		t.Fatalf("pinned current cache downloaded the archive: %v", requests)
+	}
+	descriptorURL := "https://api.github.com/repos/BumpyClock/hermes-definitions/releases/tags/synthetic-1"
+	manifestURL := "https://github.com/BumpyClock/hermes-definitions/releases/download/synthetic-1/manifest.json"
+	if requests[descriptorURL] != 1 || requests[manifestURL] != 1 {
+		t.Fatalf("pinned current cache must still check the published release: %v", requests)
+	}
+}
+
+func TestLoadManagedDefinitionsAutomaticFallbackSkipsCorruptNewestCache(t *testing.T) {
+	baseManifest, archive := managedBundle(t)
+	oldManifest := automaticManifest(t, baseManifest, "definition-old")
+	newManifest := automaticManifest(t, baseManifest, "definition-new")
+	cache := managedTestCache(t)
+	for _, release := range []automaticRelease{
+		{tag: "release-old", publishedAt: "2026-01-01T00:00:00Z", manifest: oldManifest, archive: archive},
+		{tag: "release-new", publishedAt: "2026-01-02T00:00:00Z", manifest: newManifest, archive: archive},
+	} {
+		if _, err := LoadManagedDefinitions(context.Background(), ManagedDefinitionsOptions{
+			Automatic: true, CacheDirectory: cache, Transport: managedAutomaticTransport(t, []automaticRelease{release}),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	offline := ManagedDefinitionsOptions{
+		Automatic: true, CacheDirectory: cache,
+		Transport: managedTransport(func(*http.Request) (*http.Response, error) {
+			return nil, errors.New("release inventory unavailable")
+		}),
+	}
+
+	newest, err := LoadManagedDefinitions(context.Background(), offline)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newest.Version != "definition-new" || newest.UpdateStatus != "cache-after-failure" || newest.Warning == nil {
+		t.Fatalf("automatic fallback with intact newest cache = %+v", newest)
+	}
+
+	newBundle := filepath.Join(cache, "snapshots", "definition-new", digestFromManifest(t, newManifest), "bundle.tar")
+	if err = os.WriteFile(newBundle, []byte("corrupt"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	older, err := LoadManagedDefinitions(context.Background(), offline)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if older.Version != "definition-old" || older.Snapshot == nil || older.UpdateStatus != "cache-after-failure" || older.Warning == nil {
+		t.Fatalf("automatic fallback with corrupt newest cache = %+v", older)
+	}
+}
+
 func TestLoadManagedDefinitionsAutomaticSelectsChronologicalCompatibleRelease(t *testing.T) {
 	baseManifest, archive := managedBundle(t)
 	oldManifest := automaticManifest(t, baseManifest, "definition-old")

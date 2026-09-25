@@ -121,7 +121,6 @@ func Load(ctx context.Context, config Config) (*definitions.Snapshot, Metadata, 
 }
 
 func loadPinned(ctx context.Context, root string, config Config) (*definitions.Snapshot, Metadata, error) {
-	cached, cacheMetadata, cacheErr := loadCached(root, config.Version, config.Support)
 	snapshot, metadata, err := acquire(ctx, root, config)
 	if err == nil {
 		return snapshot, metadata, nil
@@ -130,15 +129,16 @@ func loadPinned(ctx context.Context, root string, config Config) (*definitions.S
 		return nil, Metadata{}, ctx.Err()
 	}
 	var acquisition *acquisitionError
-	if errors.As(err, &acquisition) && cacheErr == nil {
-		cacheMetadata.Warning = fmt.Errorf("managed definitions update for %q failed; using validated cached snapshot: %w", config.Version, acquisition)
-		cacheMetadata.UpdateStatus = "cache-after-failure"
-		return cached, cacheMetadata, nil
+	if !errors.As(err, &acquisition) {
+		return nil, Metadata{}, fmt.Errorf("managed definitions %q: %w", config.Version, err)
 	}
+	cached, cacheMetadata, cacheErr := loadCached(root, config.Version, config.Support)
 	if cacheErr != nil {
 		return nil, Metadata{}, fmt.Errorf("managed definitions %q: acquisition failed (%w); no usable cached snapshot (%v)", config.Version, err, cacheErr)
 	}
-	return nil, Metadata{}, fmt.Errorf("managed definitions %q: %w", config.Version, err)
+	cacheMetadata.Warning = fmt.Errorf("managed definitions update for %q failed; using validated cached snapshot: %w", config.Version, acquisition)
+	cacheMetadata.UpdateStatus = "cache-after-failure"
+	return cached, cacheMetadata, nil
 }
 
 func validateSupport(support Support) error {
@@ -178,6 +178,9 @@ func acquire(ctx context.Context, root string, config Config) (*definitions.Snap
 	if err = manifest.CheckSupport(config.Support.Schema, config.Support.Operations, config.Support.Algorithms); err != nil {
 		return nil, Metadata{}, err
 	}
+	if snapshot, metadata, cacheErr := loadCached(root, manifest.Version, config.Support); cacheErr == nil && metadata.Digest == manifest.Archive.SHA256 {
+		return snapshot, cacheCurrent(metadata), nil
+	}
 	archiveAsset, err := releaseAsset(descriptor, manifest.Archive.Name)
 	if err != nil {
 		return nil, Metadata{}, err
@@ -210,7 +213,6 @@ func acquire(ctx context.Context, root string, config Config) (*definitions.Snap
 }
 
 func loadAutomatic(ctx context.Context, root string, config Config) (*definitions.Snapshot, Metadata, error) {
-	cached, cacheMetadata, cacheErr := loadAutomaticCache(root, config.Support)
 	snapshot, metadata, err := acquireAutomatic(ctx, root, config)
 	if err == nil {
 		return snapshot, metadata, nil
@@ -218,6 +220,7 @@ func loadAutomatic(ctx context.Context, root string, config Config) (*definition
 	if ctx.Err() != nil {
 		return nil, Metadata{}, ctx.Err()
 	}
+	cached, cacheMetadata, cacheErr := loadAutomaticCache(root, config.Support)
 	if cacheErr == nil {
 		cacheMetadata.Warning = fmt.Errorf("managed definitions automatic update failed; using validated cached snapshot: %w", err)
 		cacheMetadata.UpdateStatus = "cache-after-failure"
@@ -259,10 +262,7 @@ func acquireAutomatic(ctx context.Context, root string, config Config) (*definit
 			return nil, Metadata{}, automaticFailure(ctx, candidateErr)
 		}
 		if snapshot, metadata, cacheErr := loadCached(root, manifest.Version, config.Support); cacheErr == nil && metadata.Digest == manifest.Archive.SHA256 {
-			metadata.Source = "managed-cache"
-			metadata.CacheStatus = "current"
-			metadata.UpdateStatus = "cache-current"
-			return snapshot, metadata, nil
+			return snapshot, cacheCurrent(metadata), nil
 		}
 		archiveAsset, candidateErr := releaseAsset(candidate, manifest.Archive.Name)
 		if candidateErr != nil {
@@ -298,6 +298,16 @@ func acquireAutomatic(ctx context.Context, root string, config Config) (*definit
 		}, nil
 	}
 	return nil, Metadata{}, &acquisitionError{err: fmt.Errorf("no compatible stable managed definition release")}
+}
+
+// cacheCurrent marks a validated cached snapshot whose digest matches the
+// published manifest, so the archive was not downloaded again.
+func cacheCurrent(metadata Metadata) Metadata {
+	metadata.Source = "managed-cache"
+	metadata.CacheStatus = "current"
+	metadata.UpdateStatus = "cache-current"
+	metadata.Updated = false
+	return metadata
 }
 
 func automaticFailure(ctx context.Context, err error) error {
@@ -752,12 +762,11 @@ func loadAutomaticCache(root string, support Support) (*definitions.Snapshot, Me
 	if err != nil {
 		return nil, Metadata{}, err
 	}
-	var best *struct {
-		snapshot   *definitions.Snapshot
-		metadata   Metadata
-		published  time.Time
-		releaseTag string
+	type candidate struct {
+		known     identity
+		published time.Time
 	}
+	var candidates []candidate
 	seen := map[string]string{}
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
@@ -778,27 +787,29 @@ func loadAutomaticCache(root string, support Support) (*definitions.Snapshot, Me
 		if known.ReleaseTag == "" || known.PublishedAt == "" {
 			continue
 		}
-		snapshot, metadata, cacheErr := loadCached(root, version, support)
-		if cacheErr != nil || metadata.Digest != known.Digest {
-			continue
-		}
 		published, parseErr := time.Parse(time.RFC3339, known.PublishedAt)
 		if parseErr != nil {
 			published = time.Time{}
 		}
-		if best == nil || newerRelease(published, known.ReleaseTag, best.published, best.releaseTag) {
-			best = &struct {
-				snapshot   *definitions.Snapshot
-				metadata   Metadata
-				published  time.Time
-				releaseTag string
-			}{snapshot: snapshot, metadata: metadata, published: published, releaseTag: known.ReleaseTag}
+		candidates = append(candidates, candidate{known: known, published: published})
+	}
+	slices.SortFunc(candidates, func(left, right candidate) int {
+		if newerRelease(left.published, left.known.ReleaseTag, right.published, right.known.ReleaseTag) {
+			return -1
+		}
+		if newerRelease(right.published, right.known.ReleaseTag, left.published, left.known.ReleaseTag) {
+			return 1
+		}
+		return 0
+	})
+	// Validate newest first; a broken newer cache falls through to older ones.
+	for _, candidate := range candidates {
+		snapshot, metadata, cacheErr := loadCached(root, candidate.known.Version, support)
+		if cacheErr == nil && metadata.Digest == candidate.known.Digest {
+			return snapshot, metadata, nil
 		}
 	}
-	if best == nil {
-		return nil, Metadata{}, fmt.Errorf("no intact compatible cached managed definition snapshot")
-	}
-	return best.snapshot, best.metadata, nil
+	return nil, Metadata{}, fmt.Errorf("no intact compatible cached managed definition snapshot")
 }
 
 func loadSnapshot(directory string, support Support) (*definitions.Snapshot, Metadata, error) {

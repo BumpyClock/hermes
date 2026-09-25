@@ -26,7 +26,10 @@ candidate names in conformance reports are not downloadable releases.
 When provided, `Version` is an exact release tag, not a range. The returned snapshot is immutable and non-nil on success. Its
 `Version`, archive `Digest`, `Source`, `CacheStatus`, `Updated`, and optional
 `Warning` identify the loaded content and whether startup activated a fresh
-download or used a validated cache.
+download or used a validated cache. A pinned load reports `UpdateStatus`
+`pinned-new` after activating a download, `cache-current` when the published
+manifest digest matches the validated cached snapshot (the archive is not
+downloaded again), or `cache-after-failure`.
 
 Set `Automatic: true` instead of `Version` to check the bounded public release
 inventory at startup. Hermes rejects draft and prerelease entries, validates
@@ -57,8 +60,9 @@ Automatic discovery uses the same publisher and validation boundaries as exact
 pins.
 
 Snapshots are content-identified and stored under an updater-owned cache.
-Staging is validated before atomic activation. Each startup revalidates cached
-manifest/archive bytes, engine capabilities, and definitions. A release tag
+Staging is validated before atomic activation. Each startup revalidates the
+cached manifest/archive bytes, engine capabilities, and definitions of any
+snapshot it returns. A release tag
 whose known archive digest changes is rejected. The loader does not alter local
 definition directories, merge local and managed sources, remove cached releases,
 or replace existing clients.
@@ -80,6 +84,9 @@ fatal and is returned as the context error rather than a cache success.
 
 Automatic mode can similarly retain the newest intact compatible cached
 snapshot when inventory discovery or a candidate download/validation fails.
+Cache fallback validates cached snapshots only after acquisition fails.
+Automatic fallback checks cached releases newest first and skips corrupt or
+incompatible entries.
 Pinned mode is the deliberate rollback control: restart with an older exact
 `Version`; it never substitutes a newer or different release.
 
