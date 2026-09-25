@@ -48,29 +48,18 @@ The contract pass uses the unmodified library. Its URLs contain numeric IP addre
 
 The fixture pass preserves site hostnames so custom extractors remain active.
 A Go build overlay substitutes a fixed public IP for DNS lookup. HTTP responses come from the fixture transport.
-The overlay does not change the source worktree.
+The overlay replaces no other source file and does not change the source worktree.
 
-Three existing map loops make production output nondeterministic:
+Attribute traversal is deterministic. These functions iterate `node.Attr` in source order instead of the map from `dom.GetAttrs`:
 
-- `internal/utils/dom/convert.go` emits attributes in map order.
-- `internal/resource/dom.go` can select different image URLs through last-write order.
-- `internal/utils/dom/clean.go` removes attributes in map order. Removal can rearrange the remaining attributes.
+- `ConvertNodeTo` in `internal/utils/dom/convert.go` emits attributes in source order.
+- `ConvertLazyLoadedImages` in `internal/resource/dom.go` visits image attributes in source order. When several attributes match, the last one sets `src` or `srcset`.
+- `CleanAttributes` in `internal/utils/dom/clean.go` removes attributes in place, so kept attributes stay in source order.
 
-The default comparison sorts those keys in both fixture builds.
-The tool requires all three source files to be byte-identical across worktrees before it applies this control.
-This checks extraction equivalence under identical traversal. It does not prove byte-identical output across arbitrary production executions.
-
-Use reverse key order to check an alternate traversal:
-
-```sh
-python3 scripts/compare_contract.py \
-  --base ../hermes --candidate . \
-  --pattern www.washingtonpost.com.html --map-order reverse \
-  --output /tmp/hermes-contract-reverse
-```
-
-Use `--map-order raw` to retain production traversal order.
-Raw comparisons can fail between two executions of the unchanged baseline.
+Both fixture builds therefore use production traversal order, and the tool has no `--map-order` option.
+Earlier revisions iterated these maps, so their fixture output can differ between two executions of the same revision.
+A comparison between such a revision and a later one also reports the attribute and image differences that the source-order change introduced.
+To compare two earlier revisions under the former sorted-key control, run `scripts/compare_contract.py` from one of those revisions.
 Relative dates can also depend on the current clock. Treat unexplained differences as unresolved, not as acceptable output changes.
 
 ## Evidence
@@ -95,6 +84,7 @@ The reverse-order Washington Post comparison matched 12 fixture observations and
 
 The raw comparison differed in eight observations. Two independent baseline captures differed in eleven observations.
 Those differences came from existing attribute order and image selection. This cleanup does not change those policies.
+These runs used the former `--map-order` option with its `sorted`, `reverse`, and `raw` modes.
 
 The acceptance checks passed:
 
