@@ -165,6 +165,8 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 
 	imgScores := make(map[string]int)
 	imageCount := imgs.Length()
+	// Mercury breaks ties by object key order: first-seen src position, last score.
+	srcOrder := make([]string, 0, imageCount)
 
 	imgs.Each(func(index int, img *goquery.Selection) {
 		src, exists := img.Attr("src")
@@ -180,6 +182,9 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 		score += scoreByDimensions(img)
 		score += int(scoreByPosition(imageCount, index))
 
+		if _, seen := imgScores[src]; !seen {
+			srcOrder = append(srcOrder, src)
+		}
 		imgScores[src] = score
 	})
 
@@ -187,9 +192,9 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 	var topUrl string
 	topScore := 0
 
-	for url, score := range imgScores {
-		if score > topScore {
-			topUrl = url
+	for _, src := range srcOrder {
+		if score := imgScores[src]; score > topScore {
+			topUrl = src
 			topScore = score
 		}
 	}
