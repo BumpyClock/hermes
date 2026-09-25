@@ -18,7 +18,6 @@ import (
 	hermes "github.com/BumpyClock/hermes"
 	"github.com/BumpyClock/hermes/internal/definitionbundle"
 	"github.com/BumpyClock/hermes/internal/definitionbundle/offline"
-	"github.com/BumpyClock/hermes/internal/definitions"
 )
 
 var (
@@ -204,13 +203,18 @@ func evaluate(result *report, manifestPath, archivePath, enginePin, buildPin, wo
 	if err != nil {
 		return fmt.Errorf("real engine loader: %w", err)
 	}
-	// The public snapshot hides its internal form, so the audit needs its own load of the same directory.
-	audited, err := definitions.LoadDirectory(work)
-	if err != nil {
-		return fmt.Errorf("real engine loader: %w", err)
-	}
-	if err = manifest.AuditRequirements(suite, audited); err != nil {
+	if err = manifest.CheckDeclaredCapabilities(snapshot.UsedCapabilities()); err != nil {
 		return err
+	}
+	for _, c := range suite.Cases {
+		want, siteErr := definitionbundle.DefinitionSite(files[c.Definition])
+		if siteErr != nil {
+			return fmt.Errorf("case %s definition %q: %w", c.ID, c.Definition, siteErr)
+		}
+		u, _ := url.Parse(c.URL)
+		if got, ok := snapshot.Site(u.Hostname()); !ok || got != want {
+			return fmt.Errorf("case %s: URL does not select declared definition %q", c.ID, c.Definition)
+		}
 	}
 	return runCases(result, snapshot, files, suite)
 }

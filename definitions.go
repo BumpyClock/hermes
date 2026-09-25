@@ -25,6 +25,31 @@ func LoadDefinitions(directory string) (*Definitions, error) {
 	return &Definitions{snapshot: s}, nil
 }
 
+// UsedCapabilities returns the sorted capability and named algorithm IDs that
+// the snapshot's definitions use, in the vocabulary of DefinitionCapabilities.
+// A nil or zero snapshot uses none. Returned slices are independent and safe
+// for callers to modify.
+func (d *Definitions) UsedCapabilities() (capabilities, algorithms []string) {
+	if d == nil {
+		return nil, nil
+	}
+	return d.snapshot.UsedCapabilities()
+}
+
+// Site returns the site identifier of the definition that host selects.
+// It applies the same host matching as parsing and reports false when parsing
+// that host would use generic extraction only.
+func (d *Definitions) Site(host string) (string, bool) {
+	if d == nil || d.snapshot == nil {
+		return "", false
+	}
+	rule := d.snapshot.Match(host)
+	if rule == nil {
+		return "", false
+	}
+	return rule.Domain, true
+}
+
 // DefinitionCapabilities describes the implemented local language and its limits.
 // Returned slices are independent and safe for callers to modify.
 func DefinitionCapabilities() DefinitionSupport {

@@ -363,3 +363,52 @@ func TestDefinitionCapabilitiesIndependent(t *testing.T) {
 		t.Fatal("capability storage is shared")
 	}
 }
+
+func TestDefinitionsUsedCapabilitiesAndSite(t *testing.T) {
+	snapshot, _ := localDefinitions(t, `schema: 1
+site: example
+hosts: [www.example.com, "*.example.org"]
+metadata:
+  title: [{text: h1}]
+content:
+  groups: [[article]]
+  transforms:
+    - target: descendants
+      selector: p
+      algorithm.apply: {name: abendblatt.deobfuscate}
+`)
+	capabilities, algorithms := snapshot.UsedCapabilities()
+	for _, capability := range []string{"content.groups", "hosts.exact-www", "hosts.wildcard", "metadata.text", "transform.algorithm.apply"} {
+		if !slices.Contains(capabilities, capability) {
+			t.Fatalf("UsedCapabilities() = %v, missing %q", capabilities, capability)
+		}
+	}
+	if slices.Contains(capabilities, "content.remove") || !slices.Equal(algorithms, []string{"abendblatt.deobfuscate"}) {
+		t.Fatalf("UsedCapabilities() = %v, %v", capabilities, algorithms)
+	}
+	support := DefinitionCapabilities()
+	for _, capability := range capabilities {
+		if !slices.Contains(support.Capabilities, capability) {
+			t.Fatalf("used capability %q is outside DefinitionCapabilities", capability)
+		}
+	}
+	capabilities[0] = "mutated"
+	if again, _ := snapshot.UsedCapabilities(); again[0] == "mutated" {
+		t.Fatal("capability storage is shared")
+	}
+
+	for host, want := range map[string]string{"example.com": "example", "WWW.Example.com.": "example", "news.example.org": "example", "example.org": "", "other.test": ""} {
+		site, ok := snapshot.Site(host)
+		if site != want || ok != (want != "") {
+			t.Fatalf("Site(%q) = %q, %t; want %q", host, site, ok, want)
+		}
+	}
+	for _, empty := range []*Definitions{nil, {}} {
+		if capabilities, algorithms := empty.UsedCapabilities(); len(capabilities)+len(algorithms) != 0 {
+			t.Fatalf("empty snapshot uses %v %v", capabilities, algorithms)
+		}
+		if site, ok := empty.Site("example.com"); ok || site != "" {
+			t.Fatalf("empty snapshot selected %q", site)
+		}
+	}
+}

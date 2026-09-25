@@ -111,6 +111,9 @@ Only verified YAML is written into a new caller-selected directory.
 The real loader records each capability a definition uses while it validates
 that definition, and `AuditRequirements` checks the loaded snapshot's recorded
 set. There is no separate YAML walker to keep in sync with the validator.
+The conformance executable loads the bundle once through `hermes.LoadDefinitions`
+and applies the same checks through the public `UsedCapabilities` and `Site`
+methods before running cases.
 Operation keys require `transform.<key>` and conditions require `condition.<key>`.
 The selected engine's authoritative capability set must contain every declared
 requirement; missing declarations also fail. Schema 1 alone does not authorize

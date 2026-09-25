@@ -135,6 +135,12 @@ implemented capabilities and these enforced limits:
 | UTF-8 bytes per scalar, including keys | 2,048 |
 
 Comments count toward byte limits. Validation happens before activation.
+`(*Definitions).UsedCapabilities()` returns the sorted capability and named
+algorithm IDs that a loaded snapshot uses, in the same vocabulary as
+`DefinitionCapabilities()`. `(*Definitions).Site(host)` reports the site that a
+host selects, using the same host matching as parsing; `false` means that
+host uses generic extraction only.
+
 Transform capabilities and their additional limits are documented in
 [ordered transforms](definition-transforms.md). Capability IDs are stable strings;
 consumers should compare membership, not depend on slice ordering.

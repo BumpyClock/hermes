@@ -312,3 +312,15 @@ func TestCompleteGateRequiresExactApprovedEvidence(t *testing.T) {
 		t.Fatal("incomplete inventory accepted")
 	}
 }
+
+func TestDefinitionSite(t *testing.T) {
+	site, err := bundle.DefinitionSite([]byte("schema: 1\nsite: example\nhosts: [example.com]\n"))
+	if err != nil || site != "example" {
+		t.Fatalf("DefinitionSite = %q, %v", site, err)
+	}
+	for _, data := range []string{"schema: 1\nhosts: [example.com]\n", "site: [unclosed\n"} {
+		if site, err := bundle.DefinitionSite([]byte(data)); err == nil {
+			t.Fatalf("DefinitionSite(%q) = %q, want error", data, site)
+		}
+	}
+}

@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"slices"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/BumpyClock/hermes/internal/definitions"
 )
 
@@ -14,16 +16,8 @@ import (
 // check against the manifest, not an alternative YAML interpreter.
 // The snapshot must be loaded from the directory that WriteDefinitions produced for the bundle.
 func (m *Manifest) AuditRequirements(suite *Suite, snapshot *definitions.Snapshot) error {
-	capabilities, algorithms := snapshot.UsedCapabilities()
-	for _, capability := range capabilities {
-		if !slices.Contains(m.Engine.Operations, capability) {
-			return fmt.Errorf("missing required operation declaration %q", capability)
-		}
-	}
-	for _, name := range algorithms {
-		if !slices.Contains(m.Engine.Algorithms, name) {
-			return fmt.Errorf("missing required named algorithm declaration %q", name)
-		}
+	if err := m.CheckDeclaredCapabilities(snapshot.UsedCapabilities()); err != nil {
+		return err
 	}
 	// WriteDefinitions flattens definitions/<name>.yaml to <name>.yaml.
 	sites := snapshot.Sites()
@@ -35,4 +29,35 @@ func (m *Manifest) AuditRequirements(suite *Suite, snapshot *definitions.Snapsho
 		}
 	}
 	return nil
+}
+
+// CheckDeclaredCapabilities requires the manifest to declare every capability
+// and named algorithm that the loaded definitions use.
+func (m *Manifest) CheckDeclaredCapabilities(capabilities, algorithms []string) error {
+	for _, capability := range capabilities {
+		if !slices.Contains(m.Engine.Operations, capability) {
+			return fmt.Errorf("missing required operation declaration %q", capability)
+		}
+	}
+	for _, name := range algorithms {
+		if !slices.Contains(m.Engine.Algorithms, name) {
+			return fmt.Errorf("missing required named algorithm declaration %q", name)
+		}
+	}
+	return nil
+}
+
+// DefinitionSite reads the site identifier of one definition file.
+// Call it only for files that the real loader already accepted.
+func DefinitionSite(data []byte) (string, error) {
+	var header struct {
+		Site string `yaml:"site"`
+	}
+	if err := yaml.Unmarshal(data, &header); err != nil {
+		return "", err
+	}
+	if header.Site == "" {
+		return "", fmt.Errorf("definition has no site")
+	}
+	return header.Site, nil
 }
