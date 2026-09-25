@@ -52,17 +52,13 @@ func TestLoadManagedDefinitionsPinnedCurrentCacheSkipsArchiveDownload(t *testing
 	manifest, archive := managedBundle(t)
 	cache := managedTestCache(t)
 	base := managedReleaseTransport(t, "synthetic-1", manifest, archive)
-	var mu sync.Mutex
+	// http.Client calls RoundTrip on the caller's goroutine, so the map needs no lock.
 	requests := map[string]int{}
 	counted := managedTransport(func(request *http.Request) (*http.Response, error) {
-		mu.Lock()
 		requests[request.URL.String()]++
-		mu.Unlock()
 		return base.RoundTrip(request)
 	})
 	archiveRequests := func() int {
-		mu.Lock()
-		defer mu.Unlock()
 		total := 0
 		for target, count := range requests {
 			if strings.HasSuffix(target, ".tar") {
