@@ -2,11 +2,10 @@ package resource
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-
-	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
 
 // NormalizeMetaTags normalizes meta tags for easier extraction
@@ -38,11 +37,13 @@ func NormalizeMetaTags(doc *goquery.Document) *goquery.Document {
 // ConvertLazyLoadedImages converts lazy-loaded images into normal images
 // Many sites have img tags with no source, or placeholders in src attribute
 // We need to properly fill in the src attribute from data-* attributes.
+// Attributes are visited in source order, so when several attributes match,
+// the last one sets src or srcset.
 func ConvertLazyLoadedImages(doc *goquery.Document) *goquery.Document {
 	doc.Find("img").Each(func(i int, img *goquery.Selection) {
-		attrs := dom.GetAttrs(img)
-
-		for attrName, value := range attrs {
+		// Iterate a snapshot because SetAttr can append to the live attributes.
+		for _, attr := range slices.Clone(img.Nodes[0].Attr) {
+			attrName, value := attr.Key, attr.Val
 			// Skip srcset attribute for srcset handling
 			if attrName != "srcset" && IS_LINK_RE.MatchString(value) && IS_SRCSET_RE.MatchString(value) {
 				img.SetAttr("srcset", value)

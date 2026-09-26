@@ -7,6 +7,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/html"
 
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
@@ -139,6 +140,53 @@ func TestConvertNodeTo(t *testing.T) {
 				assert.True(t, exists, "Attribute %s should exist", attr)
 				assert.Equal(t, expectedValue, actualValue, "Attribute %s value should be preserved", attr)
 			}
+		})
+	}
+}
+
+func TestConvertNodeTo_EscapesAttributeValuesInSourceOrder(t *testing.T) {
+	tests := []struct {
+		name     string
+		html     string
+		selector string
+		newTag   string
+		want     []html.Attribute
+	}{
+		{
+			name:     "double quotes in value",
+			html:     `<body><div class="c" alt='say "hi"' id="x">text</div></body>`,
+			selector: "div",
+			newTag:   "p",
+			want: []html.Attribute{
+				{Key: "class", Val: "c"},
+				{Key: "alt", Val: `say "hi"`},
+				{Key: "id", Val: "x"},
+			},
+		},
+		{
+			name:     "entity-like text and angle brackets in value",
+			html:     `<body><span title="a &amp;lt; b" data-range="1 &lt; 2 &gt; 0" hidden>text</span></body>`,
+			selector: "span",
+			newTag:   "div",
+			want: []html.Attribute{
+				{Key: "title", Val: "a &lt; b"},
+				{Key: "data-range", Val: "1 < 2 > 0"},
+				{Key: "hidden", Val: ""},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tt.html))
+			require.NoError(t, err)
+
+			dom.ConvertNodeTo(doc.Find(tt.selector), tt.newTag)
+
+			converted := doc.Find(tt.newTag)
+			require.Equal(t, 1, converted.Length())
+			assert.Equal(t, tt.want, converted.Nodes[0].Attr)
+			assert.Equal(t, "text", converted.Text())
 		})
 	}
 }

@@ -94,29 +94,20 @@ func (h *Hermes) extractAllFieldsWithContext(ctx context.Context, doc *goquery.D
 	default:
 	}
 
-	// Extract the lead image before content extraction.
-	imageExtractor := generic.NewGenericLeadImageExtractor()
-	imageParams := generic.ExtractorImageParams{
-		Doc:       doc,
-		Content:   "", // Will be set after content extraction
-		MetaCache: make(map[string]string),
-		HTML:      "", // Could enhance with original HTML
-	}
-	if imageURL := imageExtractor.Extract(imageParams); imageURL != nil && *imageURL != "" {
-		// Use the new cleaner that properly validates URLs
-		if cleaned := cleaners.CleanLeadImageURLValidated(*imageURL); cleaned != nil {
-			result.LeadImageURL = *cleaned
-		}
+	content := extractGenericContent(doc, result.Title, targetURL)
+
+	// Like Mercury, run after content extraction, even when it found nothing:
+	// meta tags, then article images, then link[rel=image_src]. The content
+	// argument is the article HTML because result.Content may be Markdown or text.
+	if imageURL := generic.NewGenericLeadImageExtractor().Extract(generic.ExtractorImageParams{
+		Doc:     doc,
+		Content: content,
+	}); imageURL != nil {
+		result.LeadImageURL = cleaners.CleanLeadImageURL(*imageURL, targetURL)
 	}
 
-	if content := extractGenericContent(doc, result.Title, targetURL); content != "" {
+	if content != "" {
 		setFormattedContent(result, content, opts.ContentType)
-
-		// Update image extraction with content context
-		imageParams.Content = result.Content
-		if imageURL := imageExtractor.Extract(imageParams); imageURL != nil && *imageURL != "" && result.LeadImageURL == "" {
-			result.LeadImageURL = cleaners.CleanLeadImageURL(*imageURL, targetURL)
-		}
 
 		// Update dek with excerpt context
 		dekExtractor := &generic.GenericDekExtractor{}

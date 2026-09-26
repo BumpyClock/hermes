@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -84,6 +86,48 @@ func TestResource_Create_WithLazyImages(t *testing.T) {
 	// Check that lazy images were converted
 	img1Src, _ := doc.Find("img").First().Attr("src")
 	assert.Equal(t, "https://example.com/image.jpg", img1Src)
+}
+
+// Mercury's convertLazyLoadedImages visits cheerio attributes in source order,
+// so the last matching attribute sets src or srcset.
+func TestConvertLazyLoadedImagesLastMatchInSourceOrderWins(t *testing.T) {
+	tests := []struct {
+		name       string
+		html       string
+		wantSrc    string
+		wantSrcset string
+	}{
+		{
+			name: "src candidates",
+			html: `<img src="placeholder.gif" data-hi-res-src="https://example.com/hi.jpg" ` +
+				`data-low-res-src="https://example.com/low.jpg" data-raw-src="https://example.com/raw.jpg">`,
+			wantSrc: "https://example.com/raw.jpg",
+		},
+		{
+			name: "srcset candidates",
+			html: `<img data-srcset="https://example.com/a.jpg 1x" data-lazy-srcset="https://example.com/b.jpg 2x" ` +
+				`data-hidpi-srcset="https://example.com/c.jpg 480w">`,
+			wantSrcset: "https://example.com/c.jpg 480w",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Repeat because the old map-driven choice changed between runs.
+			for range 25 {
+				doc, err := goquery.NewDocumentFromReader(strings.NewReader(tt.html))
+				require.NoError(t, err)
+
+				resource.ConvertLazyLoadedImages(doc)
+
+				img := doc.Find("img")
+				src, _ := img.Attr("src")
+				srcset, _ := img.Attr("srcset")
+				require.Equal(t, tt.wantSrc, src)
+				require.Equal(t, tt.wantSrcset, srcset)
+			}
+		})
+	}
 }
 
 func TestResource_Create_CleansTags(t *testing.T) {

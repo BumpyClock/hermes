@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -50,11 +51,14 @@ var (
 	GIF_RE                           = regexp.MustCompile(`(?i)\.gif(\?.*)?$`)
 	JPG_RE                           = regexp.MustCompile(`(?i)\.jpe?g(\?.*)?$`)
 	PHOTO_HINTS_RE                   = regexp.MustCompile(`(?i)figure|photo|image|caption`) // From constants.go
+
+	parseFloatPrefixRE = regexp.MustCompile(`^[+-]?(?:Infinity|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)`)
 )
 
 // ExtractorImageParams contains parameters for image extraction.
 type ExtractorImageParams struct {
-	Doc       *goquery.Document
+	Doc *goquery.Document
+	// Content is the extracted article HTML. Only its images are scored.
 	Content   string
 	MetaCache map[string]string
 	HTML      string
@@ -88,7 +92,7 @@ func (e *GenericLeadImageExtractor) Extract(params ExtractorImageParams) *string
 
 	// Try to find the "best" image via content scoring
 	if params.Content != "" {
-		if imageUrl := e.extractFromContent(doc, params.Content); imageUrl != nil {
+		if imageUrl := e.extractFromContent(params.Content); imageUrl != nil {
 			if cleanUrl := cleanImage(*imageUrl); cleanUrl != nil {
 				return cleanUrl
 			}
@@ -150,20 +154,20 @@ func (e *GenericLeadImageExtractor) extractFromMetaTags(doc *goquery.Document, m
 	return nil
 }
 
-// extractFromContent scores images in content and returns the highest scoring one.
-func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, content string) *string {
-	contentSelection := doc.Find(content)
-	if contentSelection.Length() == 0 {
-		// If content selector doesn't match, use the whole document
-		contentSelection = doc.Selection
+// extractFromContent scores images in the content HTML and returns the highest scoring one.
+func (e *GenericLeadImageExtractor) extractFromContent(content string) *string {
+	contentDoc, err := goquery.NewDocumentFromReader(strings.NewReader(content))
+	if err != nil {
+		return nil
 	}
 
-	imgs := contentSelection.Find("img")
+	imgs := contentDoc.Find("img")
 	if imgs.Length() == 0 {
 		return nil
 	}
 
-	imgScores := make(map[string]int)
+	// Mercury keeps fractional position scores, such as 0.5 and -0.5.
+	imgScores := make(map[string]float64)
 	imageCount := imgs.Length()
 	// Mercury breaks ties by object key order: first-seen src position, last score.
 	srcOrder := make([]string, 0, imageCount)
@@ -174,13 +178,9 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 			return
 		}
 
-		score := 0
-		score += scoreImageUrl(src)
-		score += scoreAttr(img)
-		score += scoreByParents(img)
-		score += scoreBySibling(img)
+		score := float64(scoreImageUrl(src) + scoreAttr(img) + scoreByParents(img) + scoreBySibling(img))
 		score += scoreByDimensions(img)
-		score += int(scoreByPosition(imageCount, index))
+		score += scoreByPosition(imageCount, index)
 
 		if _, seen := imgScores[src]; !seen {
 			srcOrder = append(srcOrder, src)
@@ -190,7 +190,7 @@ func (e *GenericLeadImageExtractor) extractFromContent(doc *goquery.Document, co
 
 	// Find the highest scoring image
 	var topUrl string
-	topScore := 0
+	topScore := 0.0
 
 	for _, src := range srcOrder {
 		if score := imgScores[src]; score > topScore {
@@ -259,9 +259,10 @@ func scoreImageUrl(url string) int {
 	return score
 }
 
-// scoreAttr gives bonus for alt attribute (non-presentational).
+// scoreAttr gives a bonus for a non-empty alt attribute. Like Mercury's
+// truthiness check, alt="" earns nothing.
 func scoreAttr(img *goquery.Selection) int {
-	if _, exists := img.Attr("alt"); exists {
+	if img.AttrOr("alt", "") != "" {
 		return 5
 	}
 	return 0
@@ -322,47 +323,52 @@ func scoreBySibling(img *goquery.Selection) int {
 	return score
 }
 
-// scoreByDimensions scores based on image dimensions.
-func scoreByDimensions(img *goquery.Selection) int {
-	score := 0
-	src, _ := img.Attr("src")
-
-	widthStr, widthExists := img.Attr("width")
-	heightStr, heightExists := img.Attr("height")
-
-	if !widthExists || !heightExists {
-		return 0
-	}
-
-	width, err1 := strconv.ParseFloat(widthStr, 64)
-	height, err2 := strconv.ParseFloat(heightStr, 64)
-
-	if err1 != nil || err2 != nil {
-		return 0
-	}
+// scoreByDimensions scores the width and height attributes like Mercury.
+// Each dimension counts only when parseFloat gives a nonzero number, so a
+// missing, zero, or non-numeric value is ignored. CleanImages removes height
+// from content images, which leaves the narrow-width penalty in effect.
+func scoreByDimensions(img *goquery.Selection) float64 {
+	score := 0.0
+	src := img.AttrOr("src", "")
+	width := parseFloatPrefix(img.AttrOr("width", ""))
+	height := parseFloatPrefix(img.AttrOr("height", ""))
 
 	// Penalty for skinny images
-	if width <= 50 {
+	if width != 0 && width <= 50 {
 		score -= 50
 	}
 
 	// Penalty for short images
-	if height <= 50 {
+	if height != 0 && height <= 50 {
 		score -= 50
 	}
 
 	// Area-based scoring (but not for sprites)
-	if width > 0 && height > 0 && !strings.Contains(src, "sprite") {
+	if width != 0 && height != 0 && !strings.Contains(src, "sprite") {
 		area := width * height
 		if area < 5000 {
 			// Smaller than 50 x 100
 			score -= 100
 		} else {
-			score += int(math.Round(area / 1000))
+			// The area can be infinite; a float score avoids an int overflow.
+			score += math.Round(area / 1000)
 		}
 	}
 
 	return score
+}
+
+// parseFloatPrefix reads a number like JavaScript parseFloat: it skips leading
+// whitespace and parses the longest numeric prefix, so "100px" is 100. It
+// returns 0 where parseFloat returns NaN, which is falsy in both cases.
+func parseFloatPrefix(value string) float64 {
+	number := parseFloatPrefixRE.FindString(strings.TrimLeftFunc(value, unicode.IsSpace))
+	if number == "" {
+		return 0
+	}
+	// Out-of-range values become ±Inf, as they do in JavaScript.
+	parsed, _ := strconv.ParseFloat(number, 64)
+	return parsed
 }
 
 // scoreByPosition gives bonus to images earlier in the content.

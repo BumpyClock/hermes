@@ -56,7 +56,8 @@
       "Bash(./hermes.exe:*)",
       "Bash(git log:*)",
       "WebFetch(domain:www.engadget.com)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Read(//Users/adityasharma/Projects/hermes/internal/extractors/generic/**)"
     ],
     "deny": [],
     "ask": [],

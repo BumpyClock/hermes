@@ -2,6 +2,7 @@ package dom
 
 import (
 	"fmt"
+	"html"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -59,33 +60,31 @@ func ConvertNodeTo(node *goquery.Selection, tag string) {
 		return
 	}
 
-	// Get all attributes from the original node
-	attrs := GetAttrs(node)
-
-	// Build attribute string
+	// Serialize attributes in source order. Attr values are unescaped by the
+	// parser, so they must be re-escaped before the replacement is reparsed.
 	var attribParts []string
-	for key, value := range attrs {
-		if value != "" {
-			attribParts = append(attribParts, fmt.Sprintf(`%s="%s"`, key, value))
+	for _, attr := range node.Nodes[0].Attr {
+		if attr.Val != "" {
+			attribParts = append(attribParts, fmt.Sprintf(`%s="%s"`, attr.Key, html.EscapeString(attr.Val)))
 		} else {
-			attribParts = append(attribParts, key)
+			attribParts = append(attribParts, attr.Key)
 		}
 	}
 	attribString := strings.Join(attribParts, " ")
 
 	// Get the HTML content
-	html, err := node.Html()
+	inner, err := node.Html()
 	if err != nil {
 		// Fallback to text content if HTML parsing fails
-		html = node.Text()
+		inner = node.Text()
 	}
 
 	// Create the replacement HTML
 	var replacement string
 	if attribString != "" {
-		replacement = fmt.Sprintf("<%s %s>%s</%s>", tag, attribString, html, tag)
+		replacement = fmt.Sprintf("<%s %s>%s</%s>", tag, attribString, inner, tag)
 	} else {
-		replacement = fmt.Sprintf("<%s>%s</%s>", tag, html, tag)
+		replacement = fmt.Sprintf("<%s>%s</%s>", tag, inner, tag)
 	}
 
 	// Replace the node

@@ -1,34 +1,24 @@
 package dom
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/net/html"
 )
 
 // CleanAttributes removes unwanted attributes from elements and keeps only whitelisted ones.
+// Kept attributes stay in source order.
 func CleanAttributes(doc *goquery.Document) *goquery.Document {
-	doc.Find("*").Each(func(index int, element *goquery.Selection) {
-		// Get all attributes first
-		attrs := GetAttrs(element)
-
-		// Remove attributes that are not whitelisted
-		for attrName := range attrs {
-			// Skip if it's in whitelist
-			if WHITELIST_ATTRS_RE.MatchString(attrName) {
-				continue
-			}
-
-			// Remove non-whitelisted attribute
-			element.RemoveAttr(attrName)
-		}
-
-		// Also remove specific unwanted attributes even if they're in whitelist
-		for _, attr := range REMOVE_ATTRS {
-			element.RemoveAttr(attr)
-		}
-	})
+	for _, node := range doc.Find("*").Nodes {
+		// Filter in place: goquery's RemoveAttr moves the last attribute into the
+		// removed slot, which reorders the attributes that remain.
+		node.Attr = slices.DeleteFunc(node.Attr, func(attr html.Attribute) bool {
+			return !WHITELIST_ATTRS_RE.MatchString(attr.Key) || slices.Contains(REMOVE_ATTRS, attr.Key)
+		})
+	}
 
 	return doc
 }

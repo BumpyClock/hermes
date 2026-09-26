@@ -11,6 +11,22 @@ import (
 	"github.com/BumpyClock/hermes/internal/utils/dom"
 )
 
+func TestCleanAttributesKeepsSourceOrder(t *testing.T) {
+	input := `<img onclick="track()" src="a.jpg" style="color: red" class="c" data-id="1" width="10" align="left" alt="a">`
+
+	// Repeat because the old map-driven removal produced a random order per run.
+	for range 25 {
+		doc, err := goquery.NewDocumentFromReader(strings.NewReader(input))
+		require.NoError(t, err)
+
+		dom.CleanAttributes(doc)
+
+		got, err := goquery.OuterHtml(doc.Find("img"))
+		require.NoError(t, err)
+		require.Equal(t, `<img src="a.jpg" class="c" width="10" alt="a"/>`, got)
+	}
+}
+
 func TestCleanAttributes(t *testing.T) {
 	tests := []struct {
 		name    string
