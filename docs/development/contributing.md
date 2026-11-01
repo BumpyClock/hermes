@@ -8,6 +8,16 @@ Use this guide to prepare code, tests, and documentation for a pull request.
 - Git.
 - Make for the commands below.
 - `golangci-lint` v2.13.2, built with support for the selected Go toolchain.
+- Python 3.11+ and Git for offline tooling and hook fixtures. CI uses Python 3.12.3.
+
+For deterministic Go/linter preparation, install Go 1.27.1 on `PATH`, then run:
+
+```bash
+GOTOOLCHAIN=go1.27.1 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
+go mod download
+```
+
+The explicit `GOTOOLCHAIN` matters. An older bootstrap compiler can otherwise build the linter with a Go version too old for this module.
 
 ## Prepare a local checkout
 
@@ -39,6 +49,23 @@ Use this guide to prepare code, tests, and documentation for a pull request.
    ```
 
 `make deps` runs `go mod download` and `go mod tidy`. It can change `go.mod` and `go.sum`.
+
+## Opt-in pre-push validation
+
+After preparing dependencies and committing the tracked hook files, explicitly opt in:
+
+```bash
+./scripts/install-hooks.sh
+make test-hooks
+```
+
+The installer is idempotent, works in linked worktrees, and refuses unrelated active hooks or `core.hooksPath`. It changes only repository-local configuration. It is never run automatically. Default hooks behind symlinked directories are preserved. Narrow `.gitattributes` rules keep only the shell entrypoint and installer on LF under `core.autocrlf`; Git-status errors fail closed.
+
+The hook requires a clean checkout, including untracked files, and validates only refs resolving to its checked-out `HEAD`. Other pushed refs fail with an actionable error; use their own clean checkout. Multiple refs, new branches, missing remote objects, renames and deletions are handled without fetching or stashing. Empty input or an empty diff broadens validation; deletion-only pushes do not run project checks.
+
+Changed existing Go files use configured `golangci-lint fmt --diff`, with any diff treated as failure. Shared configuration, dependency changes or uncertain paths broaden formatting to all tracked Go files. The hook always runs configured full-module lint, `go vet ./...`, `go build ./...` and offline release/compatibility tests. A reverse-dependency fast path is deliberately not claimed. All nonzero exits propagate. No source rewriting, automatic dependency/toolchain downloads, external definition downloads, live website checks, release operations or credential use occur. Prepare missing tools/dependencies explicitly; module access is offline and read-only during the hook.
+
+CI retains full Go race/coverage and CLI/benchmark checks. Fixture tests use stub tools and disposable Git repositories, not outbound pushes. Their pass does not prove compiler or linter acceptance. Hook latency depends on the prepared tool cache and machine; no nine-second budget is promised.
 
 ## Prepare a change
 
@@ -122,7 +149,8 @@ Choose checks that cover the affected behavior:
 | `make test-race` | Run the race and coverage checks from CI. |
 | `make test-release` | Run offline release-tool tests with Python 3.11 or later. |
 | `make test-compatibility` | Test the released-version comparison and exact-difference acceptance rules. |
-| `make verify` | Run lint, race tests with coverage, the CLI build, and release/compatibility-tool tests. |
+| `make test-hooks` | Test executable hook and installer behavior with stub tools in disposable Git repositories. |
+| `make verify` | Run lint, race tests with coverage, the CLI build, release/compatibility-tool tests and hook fixtures. |
 | `make benchmark` | Run benchmarks with allocation metrics, without ordinary tests. |
 | `make build` | Build the CLI at `bin/hermes`. |
 
@@ -135,6 +163,8 @@ make benchmark PACKAGES=./internal/parser BENCH=BenchmarkParseHTML BENCHFLAGS='-
 
 Before a pull request, run `make verify`. Report failures and omitted checks.
 All required checks must pass before merge. Do not reduce test coverage without an explanation.
+
+Compatible Linux CI, benchmark-script, and Claude jobs use Boat. The race step drops inherited/ambient `CAP_DAC_READ_SEARCH` with `setpriv` before `make test-race`. This preserves unreadable-file assertions under ordinary user permissions instead of skipping them; it changes only the test process, not account settings or test coverage. Runner-label changes do not fix provider API billing or authorize enabling public execution. Public execution follows the separately configured actor allowlist; outsiders and bots are not implicitly authorized. A successful live run remains an external acceptance gate. Do not change account settings or credentials as part of local validation.
 
 CI, benchmark checks, and automatic PR reviews cancel older runs for the same workflow and branch or pull request.
 Separate workflows and branches do not cancel each other.

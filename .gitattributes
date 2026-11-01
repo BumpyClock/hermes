@@ -1,1 +1,3 @@
 .tasque/events.jsonl merge=tasque-events
+.githooks/pre-push text eol=lf
+scripts/install-hooks.sh text eol=lf
