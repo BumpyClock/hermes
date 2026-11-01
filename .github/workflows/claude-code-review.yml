@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   claude-review:
-    runs-on: ubuntu-latest
+    runs-on: boat
     timeout-minutes: 20
     permissions:
       contents: read

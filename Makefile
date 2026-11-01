@@ -1,4 +1,4 @@
-.PHONY: build test test-race test-release test-compatibility verify lint clean install deps benchmark docker-build
+.PHONY: build test test-race test-release test-compatibility test-hooks verify lint clean install deps benchmark docker-build
 
 PACKAGES ?= ./...
 BENCH ?= .
@@ -19,7 +19,10 @@ test-release:
 test-compatibility:
 	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/compatibility -p 'test_*.py' -v
 
-verify: lint test-race build test-release test-compatibility
+test-hooks:
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_pre_push.py' -v
+
+verify: lint test-race build test-release test-compatibility test-hooks
 
 lint:
 	golangci-lint run
